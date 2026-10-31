@@ -1,0 +1,81 @@
+# Contexto del proyecto (léelo siempre antes de trabajar)
+
+Tesis de pregrado de Hans Quispe (Ingeniería de Sistemas, Universidad de Lima), curso Seminario de Investigación I.
+Tema: detectar y localizar personas ocultas por vegetación en imágenes de dron, fusionando la imagen RGB y la térmica.
+
+Pregunta central: ¿un detector que recibe RGB + térmica encuentra más personas que el mismo detector con una sola
+cámara, cuando la vegetación tapa más del 70 % del cuerpo?
+
+## Reglas de trabajo
+
+- Trabaja **por fases**, según `FASES.md`. Al terminar una fase, detente, resume lo que hiciste y espera mi confirmación.
+- **Nunca** modifiques, muevas ni borres nada dentro del dataset original.
+- Nada de rutas ni hiperparámetros escritos a mano dentro del código: todo va en `configs/` y se pasa como argumento.
+- Semilla fija `seed=0` en todo lo aleatorio.
+- Cada entrenamiento o evaluación agrega una fila a `reports/bitacora.csv` (fecha, fase, modelo, configuración, resultado).
+- Si algo no está claro o los datos no son como dice este archivo, **muéstrame ejemplos y pregúntame** antes de suponer.
+- Ejecuta Python con el entorno virtual del proyecto (`.venv`).
+- La memoria es limitada (16 GB de RAM y 8 GB en la GPU): procesa las imágenes por partes, nunca todas en memoria.
+
+## Equipo
+
+- Laptop con Windows 11, Intel Core i7-13620H (10 núcleos, 16 hilos), 16 GB de RAM.
+- GPU NVIDIA GeForce RTX 4070 Laptop GPU, 8 GB, límite de 55 W.
+- Todos los entrenamientos que se reporten corren en esta misma laptop.
+- El controlador NVIDIA era el 555.97 (CUDA 12.5): hay que actualizarlo antes de instalar PyTorch.
+
+## Rutas
+
+- Dataset original: `C:\Users\User\Downloads\WiSARDv1` (solo lectura).
+- Proyecto: esta carpeta. Datos procesados en `data\` (no van a GitHub).
+- Proyecto anterior, solo como consulta: `C:\Users\User\sar-fusion\reports\` (scripts `emparejamiento.py` y
+  `analisis_pares.py`, y `resumen_wisard.md`). Se puede reutilizar código de ahí, pero los resultados se regeneran aquí.
+
+## Lo que ya sabemos de WiSARDv1 (análisis del 28 y 29 de octubre de 2026)
+
+- 80 carpetas planas, una por vuelo y modalidad: `AAMMDD_Sitio_Dron_VIS[_ID]` (RGB) e `..._IR[_ID]` (térmica).
+- Cada imagen tiene un `.txt` con el mismo nombre en formato YOLO (`clase cx cy w h`, normalizado). Solo clase 0 = persona.
+- Un `.txt` vacío significa 0 cajas, no "descartar". Una carpeta sin ningún `.txt` está sin anotar.
+- Térmicas: 640 × 512. RGB: 1920 × 1080, 2720 × 1530, 3840 × 2160 o 4096 × 2160.
+- **No hay** archivos `.yaml` de metadatos ni lista de pares. Las imágenes no tienen EXIF.
+- **Emparejamiento:** la carpeta VIS con número N va con la IR con número N+1 del mismo `fecha_sitio_dron`
+  (en `220109_Baker` el número sale del nombre de archivo: DJI_0582 con DJI_0583). Dentro de cada pareja, los
+  fotogramas se emparejan **por posición** en orden natural, hasta la longitud mínima.
+- Resultado esperado: 14 839 pares en total; 5 739 con las dos imágenes anotadas.
+- **Exclusión:** Baker VIS_1/IR_1, posiciones 2051 a 2179 (en la térmica hay personas sin caja). Tras excluirlas
+  quedan **5 610 pares anotados** en 8 parejas de vuelos de 4 sitios (MtErie, Carnation, FHL, Baker).
+- La térmica ve aproximadamente la franja central de la RGB (x de 0.18 a 0.84, y de 0.06 a 0.98; cerca del 60 % del
+  área), salvo en **Carnation 0023/0024**, donde la RGB tiene zoom y la relación se invierte.
+- 476 pares tienen persona en la térmica y ninguna en la RGB, casi todos de FHL (394 en FHL 0405/0406). Son los
+  candidatos a oclusión severa.
+
+## Decisiones fijas (no cambiar sin consultarme)
+
+- **Detector:** YOLO26s de Ultralytics, con pesos preentrenados `yolo26s.pt`.
+- **Tres modelos:** fusión temprana (4 canales: RGB alineada + térmica), solo RGB alineada y solo térmica.
+- **Fusión temprana:** imagen TIFF de 4 canales, `channels: 4` en el yaml del dataset.
+  Verificado: con 4 canales, la primera capa recibe los pesos preentrenados en los 3 canales de color y el cuarto
+  queda al azar. Se probará también inicializar el cuarto canal con el promedio de los pesos de color.
+- **Etiquetas de referencia:** las de la imagen térmica, para los tres modelos.
+- **Alineación:** la RGB se recorta a la zona que ve la térmica y se lleva a 640 × 512. La transformación se estima por
+  vuelo con puntos de control marcados a mano (homografía con OpenCV) y se verifica con superposiciones.
+- **Partición por vuelo** (cada vuelo en una sola partición). Se define en la fase 3.
+- **Oclusión:** solo en las personas de la partición de prueba. Dos cajas por persona en cada imagen del par: cuerpo
+  completo (estimado) y parte visible. λ = 1 − área visible / área completa.
+- **Niveles** según λ en la imagen RGB: baja (0 a 35 %), moderada (35 a 70 %), severa (más de 70 %).
+- **Configuración base:** 100 épocas, imagen de 640, lote 16 (bajar si no entra en 8 GB; el mismo para los tres),
+  optimizador y tasa de aprendizaje por defecto de Ultralytics para YOLO26 (registrar cuáles fueron).
+- **Métricas:** recall, precisión (umbral de confianza 0.5), F2 y mAP@0.5, por nivel de oclusión, con script propio
+  sobre pycocotools. Al evaluar un nivel, las personas de los otros niveles se marcan como ignoradas.
+- **Prueba estadística:** McNemar (statsmodels) entre modelos dentro de cada nivel, corrección de Bonferroni, α = 0.05.
+
+## Estructura del repositorio
+
+```
+configs/     yaml de datasets y de entrenamiento
+scripts/     código de cada fase
+data/        datos procesados (fuera de git)
+reports/     tablas, figuras, resúmenes y bitácora
+runs/        salidas de entrenamiento (fuera de git)
+docs/        reglas de anotación y notas
+```

@@ -1,0 +1,15 @@
+# Datos y salidas pesadas
+data/
+runs/
+*.pt
+*.tif
+*.tiff
+
+# Entorno de Python
+.venv/
+__pycache__/
+*.pyc
+
+# Sistema
+.DS_Store
+Thumbs.db
