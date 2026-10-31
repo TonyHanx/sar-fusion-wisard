@@ -1,7 +1,8 @@
 # Fase 2. Alineación de la RGB con la térmica (en curso)
 
-Fecha: 2026-10-31 · Estado: exclusiones aplicadas (**4 806 pares**). En curso: homografía automática de cada vuelo
-a partir de los centros de las cajas, validada con los puntos manuales de MtErie 0003. Después siguen los TIFF.
+Fecha: 2026-10-31 · Estado: exclusiones aplicadas (**4 806 pares**). Alineación automática calculada; **esperando
+decisiones** sobre el modelo (homografía o semejanza), la validación con puntos manuales y los desfases (ver
+"Alineación automática"). Después siguen los TIFF.
 
 ## Decisiones tomadas el 2026-10-31
 
@@ -63,9 +64,115 @@ porque desde ahí las personas se separan entre cámaras.
 - **Cámara levantada hacia el horizonte:** FHL 0134 cerca de 22–35, FHL 0405 270–280. Coincide; se conserva.
 - **Desfase en giros rápidos:** en MtErie 0005 160–161 y Baker 620 y 625 la térmica muestra un instante distinto del
   de la RGB (la RGB sale movida y las personas no caen en el mismo sitio). No es despegue, aterrizaje ni zoom. Se
-  medirá con la distancia entre centros y se mostrará con las superposiciones.
+  medirá con la distancia entre centros y se mostrará con las superposiciones (resultado más abajo).
 
-## Puntos de control manuales (solo para validar y para los vuelos que fallen)
+## Alineación automática con los centros de las cajas (2026-10-31)
+
+Script: `scripts/fase2_homografias_cajas.py` (configuración en `homografias_cajas` de `configs/fase2.yaml`). Salidas
+en `configs/homografias_cajas.yaml` y `reports/alineacion/homografias_cajas/`.
+
+Método: en cada vuelo, los pares con persona en la RGB y en la térmica se reparten al azar (seed=0) en dos mitades.
+Con la de calibración se emparejan las personas de las dos imágenes (algoritmo húngaro sobre la distancia entre
+centros, empezando por la franja nominal) y se estima la transformación con RANSAC (umbral 8 px, tres vueltas de
+emparejar y estimar). Con la de evaluación se mide la distancia entre el centro de cada caja térmica y el de su caja
+RGB llevada a la térmica, en px térmicos (640 × 512). Se ignoran las cajas cortadas por el borde de la térmica, y las
+cajas repetidas cuentan una vez.
+
+### Resultado por vuelo (homografía, pares de evaluación)
+
+| Vuelo | Pares con persona en ambas | Pares evaluados | Personas | Media (px) | Mediana (px) | Máximo (px) | Las personas usadas cubren |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| MtErie 0003 | 261 | 127 | 494 | 10.4 | 3.7 | 87 | 26 % |
+| MtErie 0005 | 264 | 125 | 193 | 15.9 | 9.8 | 401 | 29 % |
+| MtErie 0007 | 164 | 80 | 119 | 11.2 | 7.1 | 116 | 4 % |
+| FHL 0134 | 75 | 36 | 66 | 1.8 | 1.3 | 9 | 1 % |
+| FHL 0401 | 766 | 375 | 1 457 | 10.7 | 5.1 | 240 | 63 % |
+| FHL 0405 | 400 | 196 | 258 | 7.7 | 3.8 | 306 | 42 % |
+| Baker | 1 931 | 926 | 2 127 | 8.6 | 4.7 | 491 | 52 % |
+
+La media la dominan los desfases de los giros rápidos (máximos de 100 a 490 px); la mediana describe mejor la
+alineación del resto. Con la franja nominal, sin estimar nada, las medianas son 4.7, 11.0, 6.3, 3.8, 6.8, 5.6 y 5.8 px.
+
+### Problema: la homografía completa se deforma donde las personas ocupan poco espacio
+
+Una homografía tiene 8 grados de libertad. Cuando todas las personas usadas están en una zona pequeña de la imagen,
+fuera de esa zona la transformación queda sin determinar. La tabla muestra la zona de la RGB que ve la térmica según
+cada modelo (esquinas de la térmica llevadas a la RGB; la franja nominal es x 0.18–0.84, y 0.06–0.98):
+
+| Vuelo | Homografía | Semejanza (escala, giro y traslación) | Mediana homografía / semejanza (px) |
+|---|---|---|---:|
+| MtErie 0003 | x 0.19–0.81, y 0.15–1.00 (trapecio) | x 0.19–0.84, y 0.05–0.98 | 3.7 / 4.3 |
+| MtErie 0005 | x 0.17–0.79, y 0.06–0.96 (trapecio) | x 0.19–0.83, y 0.07–0.98 | 9.8 / 8.3 |
+| MtErie 0007 | x −0.28–0.74, **y −1.22–0.95** | x 0.17–0.86, y 0.02–0.99 | 7.1 / 5.7 |
+| FHL 0134 | **x 0.26–1.26, y −0.57–0.99** | x 0.19–0.83, y 0.06–0.97 | 1.3 / 1.5 |
+| FHL 0401 | x 0.18–0.82, y 0.07–0.97 | x 0.19–0.83, y 0.06–0.98 | 5.1 / 4.9 |
+| FHL 0405 | x 0.19–0.84, y 0.09–0.99 | x 0.18–0.84, y 0.05–0.98 | 3.8 / 4.8 |
+| Baker | x 0.18–0.82, y 0.07–0.98 | x 0.18–0.83, y 0.06–0.98 | 4.7 / 4.6 |
+
+En FHL 0134 y MtErie 0007 la homografía no tiene sentido físico: la RGB alineada sale como un trapecio torcido (ver
+`superposiciones_210417_MtErie_Enterprise_0007.jpg`). La distancia de evaluación no lo detecta, porque las personas
+de evaluación están en la misma zona que las de calibración. La semejanza da en los 7 vuelos un campo de visión casi
+igual a la franja nominal, con medianas parecidas. Es lo que se espera de dos cámaras montadas juntas y mirando en la
+misma dirección. El modelo afín da resultados intermedios (`comparacion_modelos.csv`). Además, el resultado de RANSAC
+cambia algo si solo cambia el orden de los pares de calibración: la mediana varía hasta 2.3 px en MtErie 0005 con la
+homografía y 1.4 px con la semejanza. Con seed=0 y el mismo orden, el resultado es reproducible.
+
+### Validación con los puntos manuales de MtErie 0003
+
+| | Todos (19) | Inicio, pos 0 (5) | Mitad, pos 132 (8) | Final, pos 263 (6) |
+|---|---:|---:|---:|---:|
+| Error medio, homografía (px) | 41.5 (máx. 262) | 99.8 | 9.3 | 36.0 |
+| Error medio, semejanza (px) | 37.7 | 89.0 | 9.8 | 32.2 |
+| Error medio, franja nominal (px) | 36.1 | 84.5 | 8.9 | 31.9 |
+
+Los puntos de inicio y de final no son coherentes entre sí. Prueba: se quita un punto, se ajusta una semejanza con
+los demás puntos del mismo fotograma y se mide dónde cae el punto quitado. En inicio queda a 72–286 px y en final a
+28–59 px. En mitad queda a 5–14 px, salvo el punto 8 (33 px, en el borde inferior). El punto 1 de inicio está en la
+RGB en x = 0.03, fuera de la zona que ve la térmica según los tres modelos. Además, en la posición 0 las personas de
+las dos cámaras están separadas unos 30 px (el dron está subiendo; ver "Desfases en todo el vuelo"). Solo los puntos
+de mitad sirven como referencia, y su propia coherencia (~10 px) es del mismo orden que el error de la alineación
+automática. Imagen: `puntos_manuales_210417_MtErie_Enterprise_0003.jpg`.
+
+### MtErie 0007
+
+En todo el barrido (0 a 171) el dron va bajo el dosel con la cámara mirando de frente, no solo en 0, 86 y 171. Es un
+bosque abierto de troncos delgados con helechos, y el dron avanza por un sendero. Hay 1 o 2 personas pequeñas y
+lejanas, casi siempre en la parte baja o en el borde izquierdo. No hay despegue, aterrizaje ni cambio de zoom, y las
+dos cámaras muestran la misma escena.
+
+Error de alineación por separado (pares de evaluación): homografía media 11.2 px, mediana 7.1, máximo 116, 80 pares
+(119 personas); semejanza 8.2 / 5.7 / 147. Por tercios del vuelo (homografía): 19.9 / 8.8 / 9.2 px. Mediana relativa
+a la altura de la caja térmica: 0.14. Las personas cubren solo el 4 % de la térmica (siempre cerca de la línea del
+sendero), y por eso la homografía se deforma.
+
+### Giros rápidos (todos sus pares, distancia máxima por par con la homografía)
+
+| Vuelo | Posiciones y distancia (px) |
+|---|---|
+| MtErie 0005 | 158: 4.5 · 159: 13.7 · **160: 170** · **161: 51** · **162: 39** · 163: 17 |
+| Baker | 618–619: sin personas emparejadas (la persona de la RGB sale por arriba) · **620: 80** · **621: 60** · **622: 49** · **623: 57** · **624: 64** · **625: 60** · **626: 26** · 627: 2.6 |
+
+En los dos casos la térmica muestra un instante distinto del de la RGB. En Baker todas las personas aparecen corridas
+en la misma dirección mientras la cámara gira, y en 627 vuelven a coincidir. Imágenes: `revisar_*.jpg`.
+
+### Desfases en todo el vuelo
+
+Con la homografía de cada vuelo se midió la distancia en todos los pares con persona en ambas (las dos mitades).
+383 de los 3 739 pares (10 %) tienen alguna persona a más de 25 px. Hay 70 tramos de 2 o más pares seguidos por encima
+de 25 px (`desfases.csv`). Los que revisé a ojo son de tres tipos:
+
+- **Desfase temporal con la cámara girando** (todas las personas corridas igual): por ejemplo, Baker 282–295 y
+  620–626.
+- **Personas que caminan cerca del dron, con desfase:** FHL 0401 857–877. Aquí la separación empieza en la 857
+  (857: 26 px, 858: 32, 862 a 877: de 24 a 60). En 852–856 está entre 6 y 15 px. El aterrizaje excluido empieza en la
+  878.
+- **Error del modelo:** MtErie 0007 23–55, por la homografía deformada.
+
+También aparece MtErie 0003 0–11 (el dron sube al empezar; de 28 a 40 px), que en el barrido parecía coincidir.
+
+Este método no puede revisar los pares sin persona en la RGB, entre ellos los 473 "solo térmica".
+
+## Puntos de control manuales (para validar y para los vuelos que fallen)
 
 `scripts/marcar_puntos.py` sirve para marcar puntos a mano en tres fotogramas por vuelo, preconfigurados en
 `marcado.fotogramas` de `configs/fase2.yaml` (parte estable, con detalles visibles en las dos cámaras). Hoy se usa
@@ -89,7 +196,6 @@ deflate (0.92 MB). Son unos **8.2 GiB** en total. Es una estimación hecha con m
 
 ## Pendiente
 
-1. Homografía automática por vuelo con los centros de las cajas; distancia entre centros en la otra mitad; validación
-   con los puntos manuales de MtErie 0003; MtErie 0007 (cámara de frente bajo el dosel) por separado; giros rápidos de
-   MtErie 0005 160–161 y Baker 620 y 625.
+1. Decidir el modelo (homografía o semejanza), qué hacer con la validación manual de MtErie 0003 y con los desfases
+   (incluidos el inicio del aterrizaje de FHL 0401 y el inicio de MtErie 0003). Volver a calcular con lo que se decida.
 2. Alinear y escribir los PNG y TIFF por partes; 10 superposiciones por vuelo.

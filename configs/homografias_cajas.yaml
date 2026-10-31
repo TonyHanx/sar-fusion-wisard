@@ -1,0 +1,175 @@
+210417_MtErie_Enterprise_0003:
+  H_rgb_a_termica:
+  - - 0.2882192214315119
+    - 0.04245928154554025
+    - -264.14206052938744
+  - - -0.015891740335600403
+    - 0.34439760580598117
+    - -79.63470090235184
+  - - -3.393135433293043e-05
+    - 0.00013954407906363044
+    - 1.0
+  modelo: homografia
+  tam_rgb:
+  - 3840
+  - 2160
+  tam_termica:
+  - 640
+  - 512
+  metodo: centros de cajas de personas, RANSAC
+  pares_calibracion: 130
+  inliers: 337
+  error_inliers_medio_px: 2.66
+  distancia_media_evaluacion_px: 10.42
+  distancia_mediana_evaluacion_px: 3.66
+  calculada: '2026-10-31T10:51:59'
+210417_MtErie_Enterprise_0005:
+  H_rgb_a_termica:
+  - - 0.2053438432251797
+    - -0.0004184380453190467
+    - -137.2741825855876
+  - - -0.0161922343258665
+    - 0.21372358039828707
+    - 3.5791596399712877
+  - - -6.677037341379193e-05
+    - -3.038498685618999e-05
+    - 1.0
+  modelo: homografia
+  tam_rgb:
+  - 3840
+  - 2160
+  tam_termica:
+  - 640
+  - 512
+  metodo: centros de cajas de personas, RANSAC
+  pares_calibracion: 132
+  inliers: 94
+  error_inliers_medio_px: 4.35
+  distancia_media_evaluacion_px: 15.92
+  distancia_mediana_evaluacion_px: 9.79
+  calculada: '2026-10-31T10:52:01'
+210417_MtErie_Enterprise_0007:
+  H_rgb_a_termica:
+  - - 0.08700859893733898
+    - -0.03885945937617027
+    - 30.778091316471397
+  - - -0.05936451615307696
+    - 0.0632031719907209
+    - 177.24538181259607
+  - - -0.00016620717831228063
+    - -0.0001561213817161626
+    - 1.0
+  modelo: homografia
+  tam_rgb:
+  - 3840
+  - 2160
+  tam_termica:
+  - 640
+  - 512
+  metodo: centros de cajas de personas, RANSAC
+  pares_calibracion: 82
+  inliers: 72
+  error_inliers_medio_px: 3.67
+  distancia_media_evaluacion_px: 11.18
+  distancia_mediana_evaluacion_px: 7.07
+  calculada: '2026-10-31T10:52:02'
+210924_FHL_Enterprise_0134:
+  H_rgb_a_termica:
+  - - 1.1385807083096255
+    - -0.20133216740460666
+    - -467.77289364138795
+  - - 0.32742219359820496
+    - 0.5772922831846263
+    - -210.63341615095092
+  - - 0.0010529877344364
+    - -0.000659060013301581
+    - 1.0
+  modelo: homografia
+  tam_rgb:
+  - 1920
+  - 1080
+  tam_termica:
+  - 640
+  - 512
+  metodo: centros de cajas de personas, RANSAC
+  pares_calibracion: 38
+  inliers: 63
+  error_inliers_medio_px: 1.39
+  distancia_media_evaluacion_px: 1.78
+  distancia_mediana_evaluacion_px: 1.27
+  calculada: '2026-10-31T10:52:03'
+210924_FHL_Enterprise_0401:
+  H_rgb_a_termica:
+  - - 0.4992461959992418
+    - 0.0030881305136139787
+    - -176.40958984593118
+  - - -0.015974396211316584
+    - 0.51196225088212
+    - -20.75297114438241
+  - - -2.6096633593091914e-05
+    - 6.902178439440748e-06
+    - 1.0
+  modelo: homografia
+  tam_rgb:
+  - 1920
+  - 1080
+  tam_termica:
+  - 640
+  - 512
+  metodo: centros de cajas de personas, RANSAC
+  pares_calibracion: 383
+  inliers: 949
+  error_inliers_medio_px: 3.53
+  distancia_media_evaluacion_px: 10.7
+  distancia_mediana_evaluacion_px: 5.09
+  calculada: '2026-10-31T10:52:04'
+210924_FHL_Enterprise_0405:
+  H_rgb_a_termica:
+  - - 0.5767003251701597
+    - 0.047843946043289474
+    - -236.6233822693768
+  - - 0.00982183470240301
+    - 0.6134897820719748
+    - -70.35186839977939
+  - - 3.895935373504e-05
+    - 0.00011512081804824568
+    - 1.0
+  modelo: homografia
+  tam_rgb:
+  - 1920
+  - 1080
+  tam_termica:
+  - 640
+  - 512
+  metodo: centros de cajas de personas, RANSAC
+  pares_calibracion: 200
+  inliers: 206
+  error_inliers_medio_px: 3.39
+  distancia_media_evaluacion_px: 7.71
+  distancia_mediana_evaluacion_px: 3.82
+  calculada: '2026-10-31T10:52:05'
+220109_Baker_Enterprise_1:
+  H_rgb_a_termica:
+  - - 0.5171869867613224
+    - 0.024774309861667038
+    - -195.3297815503095
+  - - -0.008483503922776676
+    - 0.539496255520859
+    - -35.034112567979356
+  - - -2.5084895362905243e-05
+    - 5.11956144457233e-05
+    - 1.0
+  modelo: homografia
+  tam_rgb:
+  - 1920
+  - 1080
+  tam_termica:
+  - 640
+  - 512
+  metodo: centros de cajas de personas, RANSAC
+  pares_calibracion: 966
+  inliers: 1419
+  error_inliers_medio_px: 3.33
+  distancia_media_evaluacion_px: 8.57
+  distancia_mediana_evaluacion_px: 4.67
+  calculada: '2026-10-31T10:52:07'
