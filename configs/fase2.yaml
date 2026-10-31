@@ -107,3 +107,38 @@ lado_a_lado:
     210924_FHL_Enterprise_0401: [inicio, 10, 50, mitad, 850, 870, final]
   alto_panel: 512
   salida: alineacion/lado_a_lado    # dentro de reports/
+
+# Homografía automática RGB -> térmica de cada vuelo con los centros de las cajas de personas
+# (scripts/fase2_homografias_cajas.py). Solo pares con persona en las dos imágenes; la mitad (al azar, seed) estima
+# la homografía y la otra mitad mide la distancia entre centros. Decidido el 2026-10-31 en lugar del marcado a mano.
+homografias_cajas:
+  modelo: homografia                # el que se guarda: homografia (8 grados de libertad), afin (6) o semejanza (4)
+  modelos_comparados: [homografia, afin, semejanza]   # además de la franja nominal, con la misma partición
+  fraccion_calibracion: 0.5
+  compuerta_inicial_px: 80          # distancia máxima (px térmicos) para emparejar personas con la franja nominal
+  compuerta_px: 30                  # la misma, con la homografía ya estimada
+  iteraciones: 3                    # emparejar y volver a estimar
+  umbral_ransac_px: 8.0
+  max_iter_ransac: 5000
+  confianza_ransac: 0.999
+  margen_borde_px: 3                # se ignoran las cajas que tocan el borde de la térmica (persona cortada)
+  # Criterios para avisar y proponer el marcado a mano (propuestos por Claude el 2026-10-31, pendientes de aprobar)
+  pares_calibracion_minimos: 30
+  cobertura_minima: 0.10            # fracción de la térmica que cubren las personas usadas (envolvente convexa)
+  deformacion_maxima: 0.10          # cuánto se aleja de un rectángulo el campo de visión implicado (unidades de la RGB)
+  distancia_mediana_maxima_px: 5    # la media la dominan los desfases de giros rápidos; la mediana no
+  error_puntos_manuales_max_px: 3.0 # el mismo umbral que umbral_variacion_px del marcado a mano
+  # Tramos de desfase: pares seguidos con persona en las dos imágenes muy separadas tras la alineación
+  umbral_desfase_px: 25
+  desfase_min_pares: 2
+  desfase_hueco_max: 1
+  validacion_manual: [210417_MtErie_Enterprise_0003]   # vuelos con puntos marcados a mano
+  revisar:                          # tramos a revisar con la distancia entre centros (giros rápidos)
+    210417_MtErie_Enterprise_0005: [158, 163]
+    220109_Baker_Enterprise_1: [618, 627]
+  peores_por_vuelo: 3               # superposiciones de los pares de evaluación con mayor distancia
+  superposiciones_por_vuelo: 10     # pares repartidos a lo largo del vuelo, para revisar la alineación a ojo
+  alto_panel: 384
+  calidad_jpg: 88
+  salida: configs/homografias_cajas.yaml            # relativo a la raíz del repositorio
+  carpeta_reporte: alineacion/homografias_cajas     # dentro de reports/

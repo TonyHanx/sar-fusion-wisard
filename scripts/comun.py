@@ -72,6 +72,15 @@ def fotogramas_clave(posiciones):
     return {"inicio": posiciones[0], "mitad": posiciones[len(posiciones) // 2], "final": posiciones[-1]}
 
 
+def homografia_franja(franja, tam_rgb, tam_termica):
+    """Homografía inicial RGB -> térmica a partir de la franja normalizada de CLAUDE.md."""
+    (x0, x1), (y0, y1) = franja["x"], franja["y"]
+    (w, h), (tw, th) = tam_rgb, tam_termica
+    return np.array([[tw / ((x1 - x0) * w), 0, -x0 / (x1 - x0) * tw],
+                     [0, th / ((y1 - y0) * h), -y0 / (y1 - y0) * th],
+                     [0, 0, 1]])
+
+
 def panel(ruta, alto, fov=None):
     """Imagen reducida a `alto` px con sus cajas en rojo y, opcionalmente, un rectángulo amarillo normalizado."""
     img = Image.open(ruta)

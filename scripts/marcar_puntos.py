@@ -24,21 +24,12 @@ import cv2
 import numpy as np
 import yaml
 
-from comun import RAIZ, fotogramas_clave, leer_cajas_yolo, leer_rutas, leer_yaml, pares_utilizables
+from comun import RAIZ, fotogramas_clave, homografia_franja, leer_cajas_yolo, leer_rutas, leer_yaml, pares_utilizables
 
 VENTANA, LUPA = "marcar puntos", "lupa"
 NOMBRES = ["inicio", "mitad", "final"]
 VERDE, AMARILLO, CELESTE, ROJO = (0, 255, 0), (0, 220, 255), (255, 255, 0), (0, 0, 255)
 SEPARACION, BARRA = 10, 56
-
-
-def homografia_franja(franja, tam_rgb, tam_termica):
-    """Homografía inicial RGB -> térmica a partir de la franja normalizada de CLAUDE.md."""
-    (x0, x1), (y0, y1) = franja["x"], franja["y"]
-    (w, h), (tw, th) = tam_rgb, tam_termica
-    return np.array([[tw / ((x1 - x0) * w), 0, -x0 / (x1 - x0) * tw],
-                     [0, th / ((y1 - y0) * h), -y0 / (y1 - y0) * th],
-                     [0, 0, 1]])
 
 
 def aplicar(H, x, y):
