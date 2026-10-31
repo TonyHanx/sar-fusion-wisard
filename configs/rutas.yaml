@@ -1,0 +1,6 @@
+# Rutas del proyecto. Las relativas se resuelven desde la raíz del repositorio.
+dataset: C:/Users/User/Downloads/WiSARDv1   # solo lectura
+data: data
+reports: reports
+runs: runs
+bitacora: reports/bitacora.csv

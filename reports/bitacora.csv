@@ -1,0 +1,2 @@
+fecha,fase,modelo,configuracion,resultado
+2026-10-30T21:11:44,0,yolo26s.pt,prueba de predicción; 210924_FHL_Enterprise_IR_0406/210924_FHL_Enterprise_IR_0406.mp4_00000.jpg; imgsz=640; conf=0.25,"0 detecciones de persona, 2 de referencia; 22.5 ms en GPU"
