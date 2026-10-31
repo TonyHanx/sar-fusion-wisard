@@ -20,7 +20,6 @@ vuelo,bloque,lado,posicion,fondo_dx_px,fondo_dy_px,fondo_px,respuesta,fiable,ext
 210417_MtErie_Enterprise_0005,202-204,antes,201,-4.48,5.71,7.26,0.05,False,False
 210417_MtErie_Enterprise_0005,202-204,después,205,-2.49,-0.2,2.5,0.34,True,False
 210417_MtErie_Enterprise_0005,209-211,antes,208,2.08,102.85,102.87,0.17,True,True
-210417_MtErie_Enterprise_0005,209-211,antes,207,3.71,98.78,98.84,0.02,False,False
 210417_MtErie_Enterprise_0005,209-211,después,212,3.09,-2.06,3.71,0.32,True,False
 210417_MtErie_Enterprise_0005,220-221,antes,219,2.5,7.4,7.81,0.31,True,False
 210417_MtErie_Enterprise_0005,220-221,después,222,1.54,-1.29,2.01,0.26,True,False
@@ -76,6 +75,8 @@ vuelo,bloque,lado,posicion,fondo_dx_px,fondo_dy_px,fondo_px,respuesta,fiable,ext
 210924_FHL_Enterprise_0405,65-67,después,68,1.42,-20.66,20.71,0.11,True,True
 210924_FHL_Enterprise_0405,65-67,después,69,1.6,-23.43,23.49,0.12,True,True
 210924_FHL_Enterprise_0405,65-67,después,70,2.49,-0.1,2.49,0.12,True,False
+210924_FHL_Enterprise_0405,160-161,antes,159,-4.86,-1.88,5.22,0.14,True,False
+210924_FHL_Enterprise_0405,160-161,después,162,-4.3,-2.2,4.83,0.21,True,False
 220109_Baker_Enterprise_1,185-188,antes,184,39.99,-4.59,40.25,0.45,True,True
 220109_Baker_Enterprise_1,185-188,antes,183,-58.9,37.74,69.96,0.02,False,False
 220109_Baker_Enterprise_1,185-188,después,189,10.96,-0.39,10.97,0.33,True,False

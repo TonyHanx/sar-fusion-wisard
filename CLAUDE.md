@@ -73,8 +73,11 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
     18 pares; las extensiones de FHL 0405 y MtErie 0005 se revisaron a ojo.
   - Decisiones en `configs/revision_desfases.yaml`; las exclusiones generadas, en `configs/exclusiones_desfase.yaml`
     (`exclusiones_adicionales` de `configs/fase1.yaml`).
-  - En total salen 155 pares por desfase. **Quedan 4 620 pares anotados** en 7 parejas de vuelos de 3 sitios
-    (MtErie, FHL, Baker); 471 de ellos con persona solo en la térmica. FHL 0405: 930 (salen 13), con sus 394 "solo
+  - **Al cerrar:** se excluye a mano **MtErie 0005 207** (fondo +99 px, en `exclusiones` de `configs/fase1.yaml`) y,
+    tras revisarlo a ojo, **FHL 0405 160–161** (fondo corrido; en `tramos_adicionales`). El resto de "Lo que queda
+    sin excluir" se queda.
+  - En total salen 158 pares por desfase. **Quedan 4 617 pares anotados** en 7 parejas de vuelos de 3 sitios
+    (MtErie, FHL, Baker); 471 de ellos con persona solo en la térmica. FHL 0405: 928 (salen 15), con sus 394 "solo
     térmica". Lo que queda sin excluir está en `reports/fase2.md`, "Lo que queda sin excluir".
 - La térmica ve aproximadamente la franja central de la RGB (x de 0.18 a 0.84, y de 0.06 a 0.98; cerca del 60 % del
   área), salvo en **Carnation 0023/0024**, donde la RGB tiene zoom y la relación se invierte.

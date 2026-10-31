@@ -1222,8 +1222,6 @@ vuelo,posicion,distancia_px,alto_caja_termica_px,distancia_relativa,cuenta
 210417_MtErie_Enterprise_0005,205,0.359,21.0,0.017,True
 210417_MtErie_Enterprise_0005,206,26.328,28.0,0.94,True
 210417_MtErie_Enterprise_0005,206,34.513,23.0,1.501,True
-210417_MtErie_Enterprise_0005,207,15.409,19.0,0.811,True
-210417_MtErie_Enterprise_0005,207,103.712,23.0,4.509,False
 210417_MtErie_Enterprise_0005,212,257.264,33.0,7.796,False
 210417_MtErie_Enterprise_0005,212,6.229,22.0,0.283,True
 210417_MtErie_Enterprise_0005,212,3.761,25.0,0.15,True
@@ -4740,10 +4738,6 @@ vuelo,posicion,distancia_px,alto_caja_termica_px,distancia_relativa,cuenta
 210924_FHL_Enterprise_0405,158,182.186,9.0,20.243,False
 210924_FHL_Enterprise_0405,159,4.237,18.0,0.235,True
 210924_FHL_Enterprise_0405,159,183.269,9.0,20.363,False
-210924_FHL_Enterprise_0405,160,19.43,18.0,1.079,True
-210924_FHL_Enterprise_0405,160,168.048,9.0,18.672,False
-210924_FHL_Enterprise_0405,161,20.79,18.0,1.155,True
-210924_FHL_Enterprise_0405,161,167.012,7.0,23.859,False
 210924_FHL_Enterprise_0405,162,0.323,19.0,0.017,True
 210924_FHL_Enterprise_0405,162,189.493,7.0,27.07,False
 210924_FHL_Enterprise_0405,163,0.91,18.0,0.051,True
