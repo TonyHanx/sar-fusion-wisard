@@ -53,9 +53,14 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
   quedan 5 590 pares anotados en 8 parejas de vuelos de 4 sitios (MtErie, Carnation, FHL, Baker).
 - **Exclusiones de la fase 2 (31 de octubre de 2026):** Carnation 0023/0024 completo, de los tres modelos (zoom
   variable en la RGB, que cubre cerca del 11 % de la térmica; posible desfase en la posición 470); despegue de Baker
-  (0 a 15); cambio de zoom de FHL 0401 (0 a 10) y aterrizaje de FHL 0401 (878 a 895). Quedan **4 806 pares
-  anotados** en 7 parejas de vuelos de 3 sitios (MtErie, FHL, Baker); 473 de ellos con persona solo en la térmica.
-  Todas las exclusiones están en `configs/fase1.yaml`, con su motivo.
+  (0 a 15); cambio de zoom de FHL 0401 (0 a 10) y aterrizaje de FHL 0401 (857 a 895); desfases entre cámaras
+  (la térmica muestra otro instante) en MtErie 0005 (160 a 162) y Baker (620 a 626); inicio de MtErie 0003 (0 a 11;
+  con la semejanza no pasa de 21 px, pendiente de confirmar). Quedan
+  **4 763 pares anotados** en 7 parejas de vuelos de 3 sitios (MtErie, FHL, Baker); 473 de ellos con persona solo en
+  la térmica. Todas las exclusiones están en `configs/fase1.yaml`, con su motivo.
+- **Regla de desfase (propuesta, sin aplicar):** excluir los tramos de 2 o más pares seguidos con alguna persona a más
+  de 25 px entre cámaras tras la alineación, y los pares "solo térmica" a 2 posiciones o menos de ellos. Sacaría 243
+  pares (241 + 2 "solo térmica"); quedarían 4 520. Ver `reports/fase2.md`.
 - La térmica ve aproximadamente la franja central de la RGB (x de 0.18 a 0.84, y de 0.06 a 0.98; cerca del 60 % del
   área), salvo en **Carnation 0023/0024**, donde la RGB tiene zoom y la relación se invierte.
 - 476 pares tienen persona en la térmica y ninguna en la RGB, casi todos de FHL (394 en FHL 0405/0406). Son los
@@ -69,9 +74,14 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
   Verificado: con 4 canales, la primera capa recibe los pesos preentrenados en los 3 canales de color y el cuarto
   queda al azar. Se probará también inicializar el cuarto canal con el promedio de los pesos de color.
 - **Etiquetas de referencia:** las de la imagen térmica, para los tres modelos.
-- **Alineación:** la RGB se recorta a la zona que ve la térmica y se lleva a 640 × 512. La transformación se estima por
-  vuelo con puntos de control marcados a mano (homografía con OpenCV) y se verifica con superposiciones.
-- **Partición por vuelo** (cada vuelo en una sola partición). Se define en la fase 3.
+- **Alineación:** la RGB se recorta a la zona que ve la térmica y se lleva a 640 × 512. La transformación es una
+  **semejanza por vuelo** (escala, giro y traslación; `cv2.estimateAffinePartial2D`) estimada con los centros de las
+  cajas de personas de los pares con persona en las dos imágenes, con RANSAC y seed=0: la mitad de esos pares la
+  estima y la otra mitad mide la distancia entre centros. Se valida con puntos de control marcados a mano y con
+  superposiciones. La homografía completa se descartó porque se deforma donde las personas ocupan poco espacio
+  (FHL 0134, MtErie 0007). Decidido el 31 de octubre de 2026.
+- **Partición por vuelo** (cada vuelo en una sola partición). Se define en la fase 3. MtErie 0007 (bajo el dosel, con
+  la cámara de frente) va en validación.
 - **Oclusión:** solo en las personas de la partición de prueba. Dos cajas por persona en cada imagen del par: cuerpo
   completo (estimado) y parte visible. λ = 1 − área visible / área completa.
 - **Niveles** según λ en la imagen RGB: baja (0 a 35 %), moderada (35 a 70 %), severa (más de 70 %).
