@@ -37,13 +37,13 @@ Las fases siguen el flujo de trabajo de la Figura 1 (pasos 1 a 7).
 >
 > 1. Genera `data/pares.csv` con una fila por par: vuelo, sitio, posición, ruta RGB, ruta térmica, cajas RGB,
 >    cajas térmicas, si ambas imágenes están anotadas y si el par está excluido (tramo de Baker).
-> 2. Comprueba que salgan 14 839 pares, 5 739 con ambas imágenes anotadas y 5 610 tras la exclusión.
+> 2. Comprueba que salgan 14 839 pares, 5 739 con ambas imágenes anotadas y 5 590 tras la exclusión.
 >    Si no coinciden, detente y muéstrame la diferencia.
 > 3. Genera `reports/tabla_pares_por_vuelo.csv` con, por vuelo: pares anotados y pares con persona solo en la térmica.
 > 4. Escribe `reports/fase1.md` con el resumen.
 
 **Revisa:**
-- Los totales coinciden (5 610 pares). La tabla por vuelo es la Tabla 9 del reporte.
+- Los totales coinciden (5 590 pares). La tabla por vuelo es la Tabla 9 del reporte.
 
 ---
 
