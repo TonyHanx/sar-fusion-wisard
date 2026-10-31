@@ -54,7 +54,7 @@ exclusiones_adicionales:
 esperado:
   pares: 14839
   pares_anotados: 5739
-  pares_anotados_sin_excluidos: 4640   # 4 775 antes de los desfases de la regla relativa (salen 135)
+  pares_anotados_sin_excluidos: 4620   # 4 775 antes de los desfases (salen 135 + 2 de FHL 0401 371-372 + 18 de la extensión por el fondo)
 
 # Salidas
 pares: pares.csv                              # dentro de data/

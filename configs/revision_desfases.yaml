@@ -3,6 +3,19 @@
 # persona (personas_tramos.csv) y el desplazamiento del fondo (fondo_tramos.csv). Los px son de la térmica (640 × 512).
 # Los tramos "todas corridas" (2 o más personas, todas a más de 1 altura) no están aquí: se excluyen sin revisión.
 # Lo lee scripts/fase2_revision_desfases.py --aplicar, que escribe configs/exclusiones_desfase.yaml.
+
+# Tramos decididos después de la revisión (no están en tramos.csv).
+tramos_adicionales:
+  - {vuelo: 210924_FHL_Enterprise_0401, desde: 371, hasta: 372, decision: excluir,
+     motivo: "apareció al volver a estimar la semejanza (mediana 0.99 -> 1.02 en la 371); las 4 personas y el fondo se corren juntos +15, +26 y +65 px de la 370 a la 372; en la 369 coinciden. Decidido el 2026-10-31"}
+
+# Extensiones por el fondo revisadas a ojo (las de FHL 0405, MtErie 0005 y MtErie 0007), con las imágenes ext_*.jpg.
+extensiones:
+  - {vuelo: 210417_MtErie_Enterprise_0005, desde: 208, hasta: 208, decision: excluir,
+     motivo: "el fondo se corre +103 px en vertical; la única persona RGB está a +112 px de la persona térmica de arriba (el mismo corrimiento) y coincide con la de abajo por casualidad"}
+  - {vuelo: 210924_FHL_Enterprise_0405, desde: 68, hasta: 69, decision: excluir,
+     motivo: "el fondo sigue corrido −21 y −23 px en vertical, como en la 67 (−25); en la 68 la persona se corre igual (−19 px); en la 70 todo coincide"}
+
 tramos:
   # MtErie 0003
   - {vuelo: 210417_MtErie_Enterprise_0003, desde: 44, hasta: 50, decision: excluir,

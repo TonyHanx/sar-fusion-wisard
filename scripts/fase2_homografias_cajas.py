@@ -1,7 +1,9 @@
 """Fase 2: transformación RGB -> térmica de cada vuelo a partir de los centros de las cajas de personas.
 
-Para cada vuelo se toman los pares utilizables con persona en la RGB y en la térmica y se reparten al azar (seed) en
-dos mitades:
+Para cada vuelo se toman los pares utilizables con persona en la RGB y en la térmica y se reparten en dos mitades por
+bloques fijos de `bloque_reparto_posiciones` posiciones, alternados (con 20: 0-19 calibración, 20-39 evaluación,
+40-59 calibración...). Así el reparto no cambia al excluir pares, y los fotogramas seguidos, casi iguales, no quedan en
+las dos mitades (decidido el 2026-10-31; antes era al azar con seed):
 - calibración: se emparejan las personas de la RGB con las de la térmica (algoritmo húngaro sobre la distancia entre
   centros, empezando con la franja nominal de CLAUDE.md) y se estima la transformación con RANSAC. Se repite
   `iteraciones` veces, emparejando cada vez con la estimación anterior y una compuerta de distancia.
@@ -11,6 +13,9 @@ dos mitades:
 El modelo que se guarda es `modelo` (homografia, afin o semejanza). Además se comparan los `modelos_comparados` con
 la misma partición, incluida la franja nominal sin estimar nada. "Campo de visión" es la zona de la RGB que ve la
 térmica según cada modelo (esquinas de la térmica llevadas a la RGB, normalizadas).
+
+Con `transformacion_congelada: true` no se estima ni se reescribe la transformación guardada: se lee de `salida` y
+solo se evalúa (distancias, regla de desfase, imágenes). Los otros modelos se siguen estimando para comparar.
 
 Se ignoran las cajas térmicas que tocan el borde de la imagen y las cajas RGB que, llevadas a la térmica, se salen de
 ella (personas cortadas o fuera de la vista de la térmica). Las cajas repetidas dentro de un mismo .txt cuentan una
@@ -28,7 +33,7 @@ con otros radios. El script solo propone (exclusion_desfase_propuesta.csv) y hac
 revisan y se excluyen con scripts/fase2_revision_desfases.py, que escribe configs/exclusiones_desfase.yaml (lo lee
 configs/fase1.yaml).
 
-Salidas: configs/homografias_cajas.yaml y, en reports/alineacion/homografias_cajas/: resumen.csv,
+Salidas: configs/homografias_cajas.yaml (si no está congelada) y, en reports/alineacion/homografias_cajas/: resumen.csv,
 comparacion_modelos.csv, distancias.csv, distancia_por_par.csv, personas_desfase.csv, desfases.csv,
 exclusion_desfase_propuesta.csv, sensibilidad_radio.csv, validacion_manual.csv y las imágenes (superposiciones, peores
 pares, ejemplos de desfase y puntos manuales). Agrega una fila a la bitácora.
@@ -306,6 +311,9 @@ def main():
     reporte = rutas["reports"] / c["carpeta_reporte"]
     reporte.mkdir(parents=True, exist_ok=True)
     fuente = ImageFont.truetype(cfg["fuente"], 15)
+    congelada = c["transformacion_congelada"]
+    guardadas = yaml.safe_load((RAIZ / c["salida"]).read_text(encoding="utf-8")) if congelada else {}
+    campos_info = ["pares_calibracion_usados", "correspondencias", "inliers", "error_inliers_medio_px", "cobertura"]
 
     resumen, comparacion, todas, por_par, desfases, excluir, validacion, salida_h = [], [], [], [], [], [], [], {}
     personas_desfase, sensibilidad, contexto = [], [], {}
@@ -314,10 +322,8 @@ def main():
         tam_rgb = Image.open(D / g.ruta_rgb.iloc[0]).size
         H0 = homografia_franja(cfg["franja_inicial"], tam_rgb, tam_ter)
         ambos = g[(g.cajas_rgb > 0) & (g.cajas_termica > 0)]
-        orden = np.random.default_rng(seed).permutation(len(ambos))
-        n_cal = round(len(ambos) * c["fraccion_calibracion"])
-        mitad = pd.Series("evaluación", index=ambos.index)
-        mitad.iloc[orden[:n_cal]] = "calibración"
+        bloque = ambos.posicion // c["bloque_reparto_posiciones"]
+        mitad = pd.Series(np.where(bloque % 2 == 0, "calibración", "evaluación"), index=ambos.index)
         leidos = {r.posicion: (r.posicion, cajas_px((D / r.ruta_rgb).with_suffix(".txt"), tam_rgb),
                                cajas_px((D / r.ruta_termica).with_suffix(".txt"), tam_ter)) for r in ambos.itertuples()}
         cal = [leidos[p] for p in mitad.index[mitad == "calibración"]]
@@ -336,7 +342,15 @@ def main():
         # comparación de modelos con la misma partición
         modelos = {}
         for modelo in ["franja", *c["modelos_comparados"]]:
-            H, info = (H0, {}) if modelo == "franja" else estimar(cal, H0, c, tam_ter, modelo, seed)
+            if modelo == "franja":
+                H, info = H0, {}
+            elif congelada and modelo == c["modelo"]:
+                if vuelo not in guardadas or guardadas[vuelo]["modelo"] != modelo:
+                    raise SystemExit(f"{vuelo}: no hay una transformación '{modelo}' congelada en {c['salida']}")
+                H = np.array(guardadas[vuelo]["H_rgb_a_termica"], np.float64)
+                info = {k: guardadas[vuelo][k] for k in campos_info}
+            else:
+                H, info = estimar(cal, H0, c, tam_ter, modelo, seed)
             if H is None:
                 comparacion.append({"vuelo": vuelo, "modelo": modelo, "estimada": False})
                 continue
@@ -404,10 +418,16 @@ def main():
         resumen.append(fila)
         salida_h[vuelo] = {"H_rgb_a_termica": [[float(x) for x in r] for r in H], "modelo": c["modelo"],
                            "tam_rgb": list(tam_rgb), "tam_termica": list(tam_ter),
-                           "metodo": "centros de cajas de personas, RANSAC", "pares_calibracion": len(cal),
-                           "inliers": info["inliers"], "error_inliers_medio_px": round(info["error_inliers_medio_px"], 2),
+                           "metodo": "centros de cajas de personas, RANSAC",
+                           "reparto": f"bloques de {c['bloque_reparto_posiciones']} posiciones alternados",
+                           "pares_calibracion": len(cal), "pares_evaluacion": len(ev),
+                           "pares_calibracion_usados": int(info["pares_calibracion_usados"]),
+                           "correspondencias": int(info["correspondencias"]), "inliers": int(info["inliers"]),
+                           "error_inliers_medio_px": round(float(info["error_inliers_medio_px"]), 2),
+                           "cobertura": round(float(info["cobertura"]), 4),
                            "distancia_media_evaluacion_px": round(float(fila["distancia_media_px"]), 2),
                            "distancia_mediana_evaluacion_px": round(float(fila["distancia_mediana_px"]), 2),
+                           "pares_utilizables": len(g),
                            "calculada": datetime.now().isoformat(timespec="seconds")}
 
         # medidas por par en todos los pares con persona en ambas (las dos mitades): distancia con el emparejamiento
@@ -493,7 +513,11 @@ def main():
         if fila["revisar_a_mano"]:
             print(f"  REVISAR: {fila['revisar_a_mano']}")
 
-    (RAIZ / c["salida"]).write_text(yaml.safe_dump(salida_h, allow_unicode=True, sort_keys=False), encoding="utf-8")
+    if not congelada:
+        cabecera = ("# Generado por scripts/fase2_homografias_cajas.py. Para congelarla (no volver a estimarla), "
+                    "transformacion_congelada: true en configs/fase2.yaml.\n")
+        (RAIZ / c["salida"]).write_text(cabecera + yaml.safe_dump(salida_h, allow_unicode=True, sort_keys=False),
+                                        encoding="utf-8")
     pd.DataFrame(resumen).round(3).to_csv(reporte / "resumen.csv", index=False, encoding="utf-8")
     comp = pd.DataFrame(comparacion).round(3)
     comp.to_csv(reporte / "comparacion_modelos.csv", index=False, encoding="utf-8")
@@ -569,8 +593,10 @@ def main():
     print("\nEjemplos en la hoja:\n" + "\n".join(e["titulo"] for e in ejemplos))
 
     r = pd.DataFrame(resumen)
-    agregar_a_bitacora(rutas["bitacora"], 2, f"transformación RGB->térmica por centros de cajas ({c['modelo']})",
-                       f"RANSAC {c['umbral_ransac_px']} px, {c['fraccion_calibracion']:.0%} calibración, seed={seed}",
+    agregar_a_bitacora(rutas["bitacora"], 2, f"transformación RGB->térmica por centros de cajas ({c['modelo']}"
+                       + (", congelada: solo evaluación)" if congelada else ")"),
+                       f"RANSAC {c['umbral_ransac_px']} px, bloques de {c['bloque_reparto_posiciones']} posiciones "
+                       f"alternados (calibración / evaluación), seed={seed}",
                        "distancia media / mediana en evaluación: " + "; ".join(
                            f"{v.split('_Enterprise_')[0][7:]} {v.split('_')[-1]} {m:.1f} / {md:.1f} px"
                            for v, m, md in zip(r.vuelo, r.distancia_media_px, r.distancia_mediana_px))

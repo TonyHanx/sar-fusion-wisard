@@ -44,3 +44,4 @@ tramo,vuelo,desde,hasta,pares,tipo,revisado,decision,motivo,solo_termica_excluid
 43,220109_Baker_Enterprise_1,639,641,3,una persona,True,excluir,"la persona se corre (+47 a +55, +34 a +44) px; el fondo, parecido",
 44,220109_Baker_Enterprise_1,652,654,3,una persona,True,excluir,la persona se corre −63 a −70 px en vertical; fondo −62 a −72 px,
 45,220109_Baker_Enterprise_1,795,801,7,una persona,True,excluir,la persona se corre −35 a −47 px en x y va en aumento; fondo −32 a −52 px,
+46,210924_FHL_Enterprise_0401,371,372,2,adicional,True,excluir,"apareció al volver a estimar la semejanza (mediana 0.99 -> 1.02 en la 371); las 4 personas y el fondo se corren juntos +15, +26 y +65 px de la 370 a la 372; en la 369 coinciden. Decidido el 2026-10-31",

@@ -14,15 +14,22 @@ térmica (correlación de fase de los gradientes de las dos imágenes; con respu
 es fiable). Guarda la lista congelada en tramos.csv, el detalle por persona en personas_tramos.csv (vector de la
 persona térmica a la caja RGB más cercana, en px térmicos) y el fondo por par en fondo_tramos.csv.
 
-Paso 2 (--aplicar). Junta los "todas corridas" con las decisiones del archivo `decisiones` (escrito tras revisar) y
-escribe `salida_exclusiones` con el formato de las exclusiones de configs/fase1.yaml. Incluye los pares "solo térmica"
-vecinos de cada tramo excluido. configs/fase1.yaml lo lee en `exclusiones_adicionales`. Escribe revision.csv y agrega
-una fila a la bitácora.
+Paso 2 (--aplicar). Junta los "todas corridas" con las decisiones del archivo `decisiones` (escrito tras revisar),
+más sus `tramos_adicionales` (tramos decididos después, p. ej. FHL 0401 371-372). Luego extiende cada tramo de desfase
+excluido (y los de `semillas_manuales`) a los pares vecinos seguidos mientras el fondo esté corrido más de
+`extension_fondo_min_px`, con medida fiable, usando la transformación congelada. La extensión se corta en un par sin
+anotar, en una exclusión puesta a mano en configs/fase1.yaml o en otro tramo excluido. Las extensiones que caen en
+`vuelos_revisar_todos` necesitan una decisión en `extensiones` del archivo `decisiones`: si falta, hace su imagen
+(ext_*.jpg) y se detiene. Escribe `salida_exclusiones` con el formato de las exclusiones de configs/fase1.yaml,
+incluidos los pares "solo térmica" vecinos de cada tramo excluido y de cada extensión. configs/fase1.yaml lo lee en
+`exclusiones_adicionales`. Escribe revision.csv, extensiones.csv y fondo_extensiones.csv, y agrega una fila a la
+bitácora.
 
 Uso: python scripts/fase2_revision_desfases.py --config configs/fase2.yaml --rutas configs/rutas.yaml [--aplicar]
 """
 import argparse
 from datetime import datetime
+from types import SimpleNamespace
 
 import cv2
 import numpy as np
@@ -44,6 +51,13 @@ def desplazamiento_fondo(al, ter, sigma, ventana):
         return (g - g.mean()) / (g.std() + 1e-9)
     (dx, dy), resp = cv2.phaseCorrelate(gradiente(ter), gradiente(al), ventana)
     return dx, dy, resp
+
+
+def preparar(par, D, H, tam_ter):
+    """RGB alineada y térmica del par, en RGB y al tamaño de la térmica."""
+    al = cv2.cvtColor(cv2.warpPerspective(cv2.imread(str(D / par.ruta_rgb)), H, tuple(tam_ter)), cv2.COLOR_BGR2RGB)
+    ter = np.array(Image.open(D / par.ruta_termica).convert("RGB"))
+    return al, ter
 
 
 def clasificar(des, personas, c, cr):
@@ -106,12 +120,6 @@ def imagen_tramo(t, g, D, H, tam_rgb, tam_ter, c, cr, fuente, fuente_t):
     w, h = rec[2] - rec[0], rec[3] - rec[1]
     s = min(cr["panel_ancho_max"] / w, cr["panel_alto_max"] / h, cr["zoom_max"])
 
-    def preparar(p):
-        par = g.loc[p]
-        al = cv2.cvtColor(cv2.warpPerspective(cv2.imread(str(D / par.ruta_rgb)), H, tuple(tam_ter)), cv2.COLOR_BGR2RGB)
-        ter = np.array(Image.open(D / par.ruta_termica).convert("RGB"))
-        return al, ter
-
     def dibujar(img, p, escala, desplaz, cajas=True):
         if not cajas:
             return img
@@ -132,7 +140,7 @@ def imagen_tramo(t, g, D, H, tam_rgb, tam_ter, c, cr, fuente, fuente_t):
     ventana = cv2.createHanningWindow(tuple(tam_ter), cv2.CV_64F)
     paneles, fondo = [], []
     for p in posiciones:
-        al, ter = preparar(p)
+        al, ter = preparar(g.loc[p], D, H, tam_ter)
         dx, dy, resp = desplazamiento_fondo(al, ter, cr["fondo_sigma"], ventana)
         fiable = resp >= cr["fondo_respuesta_min"]
         fondo.append({"tramo": t.tramo, "vuelo": t.vuelo, "posicion": p, "fondo_dx_px": dx, "fondo_dy_px": dy,
@@ -148,7 +156,7 @@ def imagen_tramo(t, g, D, H, tam_rgb, tam_ter, c, cr, fuente, fuente_t):
                  + "dxy: " + " ".join(f"({f['dx_px']:+.0f},{f['dy_px']:+.0f})" for f in orden))
         paneles.append((img, texto))
     # peor par: completa (con el recorte en amarillo), RGB alineada y térmica del recorte
-    al, ter = preparar(t.peor)
+    al, ter = preparar(g.loc[t.peor], D, H, tam_ter)
     ancho_c = cr["panel_ancho_max"]
     sc = ancho_c / tam_ter[0]
     completa = Image.fromarray(((al.astype(float) + ter) / 2).astype(np.uint8)).resize(
@@ -172,9 +180,11 @@ def imagen_tramo(t, g, D, H, tam_rgb, tam_ter, c, cr, fuente, fuente_t):
             d.multiline_text((x + 4, im.height + 3), texto, fill=(0, 0, 0), font=fuente_t, spacing=2)
         filas.append(fila)
     cab = Image.new("RGB", (filas[0].width, 30), (255, 255, 255))
-    ImageDraw.Draw(cab).text((6, 5), f"Tramo {t.tramo}: {t.vuelo} {t.desde}-{t.hasta} | {t.tipo} | personas por par "
-                             f"{t.personas_por_par} | mediana máx. {t.mediana_relativa_max:.2f} | rojo: térmica, "
-                             f"verde: RGB alineada, *: no cuenta", fill=(0, 0, 0), font=fuente)
+    cabecera = getattr(t, "cabecera", None) or (
+        f"Tramo {t.tramo}: {t.vuelo} {t.desde}-{t.hasta} | {t.tipo} | personas por par {t.personas_por_par} | "
+        f"mediana máx. {t.mediana_relativa_max:.2f}")
+    ImageDraw.Draw(cab).text((6, 5), cabecera + " | rojo: térmica, verde: RGB alineada, *: no cuenta", fill=(0, 0, 0),
+                             font=fuente)
     filas_personas = [{"tramo": t.tramo, "vuelo": t.vuelo, "posicion": p, **f}
                       for p in posiciones for f in datos[p][2]]
     return apilar([cab, *filas], sep=6), filas_personas, fondo
@@ -210,9 +220,51 @@ def revisar(cfg, c, cr, rutas, carpeta):
     print(f"a revisar: {tr.revisar.sum()} tramos ({tr[tr.revisar].pares.sum()} pares); imágenes en {carpeta}")
 
 
+def solo_termica(g):
+    """Posiciones con persona en la térmica y ninguna en la RGB (g indexado por posición)."""
+    return set(g.index[(g.cajas_termica > 0) & (g.cajas_rgb == 0)].astype(int))
+
+
+def bloques(posiciones):
+    """Tramos de posiciones seguidas: [(desde, hasta), ...]."""
+    out = []
+    for p in sorted(posiciones):
+        if out and p == out[-1][1] + 1:
+            out[-1][1] = p
+        else:
+            out.append([p, p])
+    return [tuple(b) for b in out]
+
+
+def extender(vuelo, ocupadas, g, bloqueadas, H, D, tam_ter, cr, ventana):
+    """Extiende cada bloque de posiciones excluidas por desfase a los vecinos seguidos con el fondo corrido más de
+    `extension_fondo_min_px` (medida fiable). Se corta en un par sin anotar, en una exclusión puesta a mano o en otro
+    bloque. Devuelve las medidas (incluido el par donde se corta) y las extensiones."""
+    medidas, extensiones = [], []
+    for a, b in bloques(ocupadas):
+        for lado, paso, p in (("antes", -1, a - 1), ("después", 1, b + 1)):
+            nuevos = []
+            while p in g.index and p not in bloqueadas and p not in ocupadas:
+                dx, dy, resp = desplazamiento_fondo(*preparar(g.loc[p], D, H, tam_ter), cr["fondo_sigma"], ventana)
+                fiable = resp >= cr["fondo_respuesta_min"]
+                extiende = bool(fiable and np.hypot(dx, dy) > cr["extension_fondo_min_px"])
+                medidas.append({"vuelo": vuelo, "bloque": f"{a}-{b}", "lado": lado, "posicion": p, "fondo_dx_px": dx,
+                                "fondo_dy_px": dy, "fondo_px": float(np.hypot(dx, dy)), "respuesta": resp,
+                                "fiable": fiable, "extiende": extiende})
+                if not extiende:
+                    break
+                nuevos.append(p)
+                p += paso
+            if nuevos:
+                extensiones.append({"vuelo": vuelo, "bloque": f"{a}-{b}", "lado": lado, "desde": min(nuevos),
+                                    "hasta": max(nuevos), "pares": len(nuevos)})
+    return medidas, extensiones
+
+
 def aplicar(cfg, c, cr, rutas, carpeta):
+    decisiones = leer_yaml(RAIZ / cr["decisiones"])
     tr = pd.read_csv(carpeta / "tramos.csv", keep_default_na=False)
-    dec = pd.DataFrame(leer_yaml(RAIZ / cr["decisiones"])["tramos"])
+    dec = pd.DataFrame(decisiones["tramos"])
     tr = tr.merge(dec[["vuelo", "desde", "hasta", "decision", "motivo"]], on=["vuelo", "desde", "hasta"], how="left")
     sin = tr[tr.revisar & tr.decision.isna()]
     if len(sin):
@@ -220,9 +272,32 @@ def aplicar(cfg, c, cr, rutas, carpeta):
     auto = ~tr.revisar
     tr.loc[auto, "decision"] = "excluir"
     tr.loc[auto, "motivo"] = "todas las personas (2 o más) se corren más de 1 altura: sin revisión"
+
     pares = pares_anotados(rutas["data"] / cfg["pares"])
     carpetas = pares.groupby("vuelo")[["carpeta_rgb", "carpeta_termica"]].first()
-    exclusiones, filas = [], []
+    grupos = {v: g.set_index("posicion") for v, g in pares.groupby("vuelo")}
+    vuelo_de = pares.groupby("carpeta_rgb").vuelo.first()
+    bloq = {}  # exclusiones puestas a mano en configs/fase1.yaml (no las generadas)
+    for e in leer_yaml(RAIZ / cr["config_fase1"])["exclusiones"]:
+        if e["carpeta_rgb"] in vuelo_de.index:
+            bloq.setdefault(vuelo_de[e["carpeta_rgb"]], set()).update(range(e["desde"], e["hasta"] + 1))
+    vec = c["vecindad_solo_termica"]
+
+    def vecinos_solo_termica(vuelo, desde, hasta, ya):
+        return [p for p in sorted(solo_termica(grupos[vuelo])) if desde - vec <= p <= hasta + vec
+                and not desde <= p <= hasta and p not in bloq.get(vuelo, set()) and p not in ya]
+
+    # tramos decididos después de la revisión (p. ej. tras volver a estimar la semejanza)
+    adic = []
+    for i, a in enumerate(decisiones.get("tramos_adicionales") or []):
+        adic.append({"tramo": int(tr.tramo.max()) + i + 1, "vuelo": a["vuelo"], "desde": a["desde"],
+                     "hasta": a["hasta"], "pares": a["hasta"] - a["desde"] + 1, "tipo": "adicional", "revisar": True,
+                     "decision": a["decision"], "motivo": a["motivo"],
+                     "posiciones_solo_termica": " ".join(map(str, vecinos_solo_termica(a["vuelo"], a["desde"],
+                                                                                         a["hasta"], set())))})
+    tr = pd.concat([tr, pd.DataFrame(adic)], ignore_index=True) if adic else tr
+
+    exclusiones, filas, ocupadas = [], [], {}
     for t in tr.itertuples():
         vecinos = [int(p) for p in str(t.posiciones_solo_termica).split()] if t.decision == "excluir" else []
         vecinos = [p for p in vecinos if not t.desde <= p <= t.hasta]
@@ -233,29 +308,109 @@ def aplicar(cfg, c, cr, rutas, carpeta):
             continue
         base = {"carpeta_rgb": carpetas.loc[t.vuelo, "carpeta_rgb"],
                 "carpeta_termica": carpetas.loc[t.vuelo, "carpeta_termica"]}
+        origen = "regla relativa" if t.tipo != "adicional" else "regla relativa, tras volver a estimar la semejanza"
         exclusiones.append({**base, "desde": int(t.desde), "hasta": int(t.hasta),
-                            "motivo": f"desfase entre cámaras (regla relativa, {t.tipo}): {t.motivo}"})
+                            "motivo": f"desfase entre cámaras ({origen}, {t.tipo}): {t.motivo}"})
         exclusiones += [{**base, "desde": p, "hasta": p,
-                         "motivo": f"solo térmica a 2 posiciones o menos del desfase {t.desde}-{t.hasta}"}
+                         "motivo": f"solo térmica a {vec} posiciones o menos del desfase {t.desde}-{t.hasta}"}
                         for p in vecinos]
+        ocupadas.setdefault(t.vuelo, set()).update(range(int(t.desde), int(t.hasta) + 1), vecinos)
     rev = pd.DataFrame(filas)
     rev.to_csv(carpeta / "revision.csv", index=False, encoding="utf-8")
+
+    # extensión por el fondo, con la transformación congelada
+    for s in cr["semillas_manuales"]:
+        ocupadas.setdefault(s["vuelo"], set()).update(range(s["desde"], s["hasta"] + 1))
+    Hs = yaml.safe_load((RAIZ / c["salida"]).read_text(encoding="utf-8"))
+    D, tam_ter = rutas["dataset"], tuple(cfg["tam_termica"])
+    ventana = cv2.createHanningWindow(tam_ter, cv2.CV_64F)
+    medidas, ext = [], []
+    for vuelo in sorted(ocupadas):
+        H = np.array(Hs[vuelo]["H_rgb_a_termica"], np.float64)
+        m, e = extender(vuelo, ocupadas[vuelo], grupos[vuelo], bloq.get(vuelo, set()), H, D, tam_ter, cr, ventana)
+        medidas += m
+        ext += e
+    med = pd.DataFrame(medidas)
+    med.round(2).to_csv(carpeta / "fondo_extensiones.csv", index=False, encoding="utf-8")
+    ext = pd.DataFrame(ext, columns=["vuelo", "bloque", "lado", "desde", "hasta", "pares"])
+    ext["revisar"] = ext.vuelo.isin(cr["vuelos_revisar_todos"])
+    dext = pd.DataFrame(decisiones.get("extensiones") or [], columns=["vuelo", "desde", "hasta", "decision", "motivo"])
+    ext = ext.merge(dext, on=["vuelo", "desde", "hasta"], how="left")
+    umbral = cr["extension_fondo_min_px"]
+
+    def fondo_de(e):
+        x = med[(med.vuelo == e.vuelo) & med.posicion.between(e.desde, e.hasta)].sort_values("posicion")
+        return x, ", ".join(f"{int(r.posicion)}: ({r.fondo_dx_px:+.0f}, {r.fondo_dy_px:+.0f})" for r in x.itertuples())
+
+    # imágenes de las extensiones que se revisan a ojo
+    fuente = ImageFont.truetype(cfg["fuente"], 16)
+    fuente_t = ImageFont.truetype(cfg["fuente"], 13)
+    for i, e in enumerate(ext[ext.revisar].itertuples()):
+        x, texto = fondo_de(e)
+        t = SimpleNamespace(tramo=f"E{i + 1}", vuelo=e.vuelo, desde=e.desde, hasta=e.hasta, tipo="extensión",
+                            peor=int(x.loc[x.fondo_px.idxmax(), "posicion"]),
+                            cabecera=f"Extensión {e.lado} del desfase {e.bloque}: {e.vuelo} {e.desde}-{e.hasta} "
+                                     f"({e.pares} pares, fondo > {umbral} px)")
+        H = np.array(Hs[e.vuelo]["H_rgb_a_termica"], np.float64)
+        img, _, _ = imagen_tramo(t, grupos[e.vuelo], D, H, tuple(Hs[e.vuelo]["tam_rgb"]), tam_ter, c, cr, fuente,
+                                 fuente_t)
+        img.save(carpeta / f"ext_{e.vuelo}_{e.desde:04d}-{e.hasta:04d}.jpg", quality=cr["calidad_jpg"])
+    sin = ext[ext.revisar & ext.decision.isna()]
+    if len(sin):
+        ext.to_csv(carpeta / "extensiones.csv", index=False, encoding="utf-8")
+        raise SystemExit(f"Extensiones a revisar sin decisión (imágenes ext_*.jpg en {carpeta}):\n"
+                         f"{sin[['vuelo', 'bloque', 'lado', 'desde', 'hasta', 'pares']].to_string()}")
+    for k, e in zip(ext.index, ext.itertuples()):
+        if not e.revisar:
+            ext.loc[k, ["decision", "motivo"]] = ["excluir", f"fondo corrido más de {umbral} px (sin revisión): "
+                                                             + fondo_de(e)[1]]
+
+    excluidas = {v: set(p) for v, p in ocupadas.items()}
+    ext["solo_termica_excluidos"] = ""
+    for k, e in zip(ext.index, ext.itertuples()):
+        if e.decision != "excluir":
+            continue
+        base = {"carpeta_rgb": carpetas.loc[e.vuelo, "carpeta_rgb"],
+                "carpeta_termica": carpetas.loc[e.vuelo, "carpeta_termica"]}
+        nuevos = [p for p in range(e.desde, e.hasta + 1) if p not in excluidas[e.vuelo]]
+        if nuevos:
+            exclusiones.append({**base, "desde": int(min(nuevos)), "hasta": int(max(nuevos)),
+                                "motivo": f"desfase entre cámaras (extensión {e.lado} del tramo {e.bloque} por el "
+                                          f"fondo): {e.motivo}"})
+        excluidas[e.vuelo].update(range(e.desde, e.hasta + 1))
+        vecinos = vecinos_solo_termica(e.vuelo, e.desde, e.hasta, excluidas[e.vuelo])
+        exclusiones += [{**base, "desde": p, "hasta": p,
+                         "motivo": f"solo térmica a {vec} posiciones o menos de la extensión {e.desde}-{e.hasta}"}
+                        for p in vecinos]
+        excluidas[e.vuelo].update(vecinos)
+        ext.loc[k, "solo_termica_excluidos"] = " ".join(map(str, vecinos))
+    ext.to_csv(carpeta / "extensiones.csv", index=False, encoding="utf-8")
+
     cabecera = (f"# Generado por scripts/fase2_revision_desfases.py --aplicar el "
                 f"{datetime.now().isoformat(timespec='seconds')} (no editar a mano).\n"
-                f"# Desfases de la regla relativa: los tramos 'todas corridas' sin revisión y los revisados a ojo con "
-                f"decisión 'excluir' ({cr['decisiones']}).\n")
+                f"# Desfases de la regla relativa: los tramos 'todas corridas' sin revisión, los revisados a ojo con "
+                f"decisión 'excluir' y los tramos adicionales ({cr['decisiones']}), más su extensión por el fondo.\n")
     (RAIZ / cr["salida_exclusiones"]).write_text(
         cabecera + yaml.safe_dump({"exclusiones": exclusiones}, allow_unicode=True, sort_keys=False, width=200),
         encoding="utf-8")
+
     ex = rev[rev.decision == "excluir"]
     n_vec = sum(len(s.split()) for s in ex.solo_termica_excluidos)
-    resumen = (f"{len(ex)} de {len(rev)} tramos excluidos ({(~rev.revisado).sum()} sin revisión): "
-               f"{ex.pares.sum()} pares de desfase + {n_vec} solo térmica")
+    ee = ext[ext.decision == "excluir"]
+    n_ext = len(set((e.vuelo, p) for e in ee.itertuples() for p in range(e.desde, e.hasta + 1))
+                - {(v, p) for v, s in ocupadas.items() for p in s})
+    n_vec_ext = sum(len(s.split()) for s in ee.solo_termica_excluidos)
+    resumen = (f"{len(ex)} de {len(rev)} tramos excluidos ({(~rev.revisado).sum()} sin revisión, "
+               f"{(ex.tipo == 'adicional').sum()} adicionales): {ex.pares.sum()} pares de desfase + {n_vec} solo "
+               f"térmica; extensión por el fondo (> {umbral} px): {len(ee)} de {len(ext)} extensiones, {n_ext} pares "
+               f"+ {n_vec_ext} solo térmica")
+    pd.set_option("display.width", 250)
     print(rev.to_string(index=False))
+    print(ext.to_string(index=False))
     print(resumen)
-    agregar_a_bitacora(rutas["bitacora"], 2, "revisión de desfases (regla relativa)",
+    agregar_a_bitacora(rutas["bitacora"], 2, "revisión de desfases (regla relativa) y extensión por el fondo",
                        f"mediana relativa > {c['umbral_desfase_relativo']}, radio {c['radio_cerca_alturas']} alturas, "
-                       f"{cr['decisiones']}", resumen)
+                       f"fondo > {umbral} px, transformación congelada, {cr['decisiones']}", resumen)
 
 
 def main():

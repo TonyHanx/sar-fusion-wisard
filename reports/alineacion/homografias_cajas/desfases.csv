@@ -1,5 +1,7 @@
 vuelo,desde,hasta,pares,mediana_relativa_max,peor,distancia_max_px,en_regla_anterior,solo_termica_cerca,posiciones_solo_termica
-210417_MtErie_Enterprise_0005,71,73,3,1.12,73,13.74,False,0,
-210417_MtErie_Enterprise_0005,85,87,3,1.13,85,24.55,False,1,88
-210924_FHL_Enterprise_0134,268,272,5,1.57,270,4.96,False,0,
-210924_FHL_Enterprise_0401,371,372,2,2.46,372,75.19,True,0,
+210417_MtErie_Enterprise_0005,71,73,3,1.11,73,14.55,False,0,
+210417_MtErie_Enterprise_0005,85,87,3,1.12,85,24.97,False,1,88
+210924_FHL_Enterprise_0134,261,269,9,1.55,268,5.4,False,2,259 260
+210924_FHL_Enterprise_0134,271,272,2,1.39,272,6.77,False,0,
+210924_FHL_Enterprise_0401,571,572,2,2.04,572,35.8,False,0,
+210924_FHL_Enterprise_0405,160,161,2,1.16,161,20.79,False,0,
