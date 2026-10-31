@@ -1,0 +1,20 @@
+# Fase 1: reconstrucción de los pares RGB-térmicos de WiSARDv1.
+extensiones_imagen: [.jpg, .jpeg]
+
+# Tramos excluidos (posiciones inclusivas, dentro de la pareja de carpetas).
+exclusiones:
+  - carpeta_rgb: 220109_Baker_Enterprise_VIS_1
+    carpeta_termica: 220109_Baker_Enterprise_IR_1
+    desde: 2051
+    hasta: 2179
+    motivo: en la térmica hay personas sin caja
+
+# Totales que deben salir (análisis del 28 y 29 de octubre de 2026).
+esperado:
+  pares: 14839
+  pares_anotados: 5739
+  pares_anotados_sin_excluidos: 5610
+
+# Salidas
+pares: pares.csv                              # dentro de data/
+tabla_por_vuelo: tabla_pares_por_vuelo.csv    # dentro de reports/
