@@ -1,0 +1,11 @@
+# Fase 0: prueba de predicción con los pesos preentrenados (COCO, clase 0 = persona).
+seed: 0
+pesos: yolo26s.pt
+# Imagen térmica de prueba, relativa a la raíz del dataset.
+imagen: 210924_FHL_Enterprise_IR_0406/210924_FHL_Enterprise_IR_0406.mp4_00000.jpg
+dispositivo: 0
+imgsz: 640
+conf: 0.25
+clases: [0]
+salida: fase0_prueba        # carpeta dentro de runs/
+entorno: entorno.md         # archivo dentro de reports/
