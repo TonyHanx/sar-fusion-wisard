@@ -1,0 +1,224 @@
+# Generado por scripts/fase2_revision_desfases.py --aplicar el 2026-10-31T17:57:13 (no editar a mano).
+# Desfases de la regla relativa: los tramos 'todas corridas' sin revisión y los revisados a ojo con decisión 'excluir' (configs/revision_desfases.yaml).
+exclusiones:
+- carpeta_rgb: 210417_MtErie_Enterprise_VIS_0003
+  carpeta_termica: 210417_MtErie_Enterprise_IR_0004
+  desde: 44
+  hasta: 50
+  motivo: 'desfase entre cámaras (regla relativa, mixto): movimiento rápido (RGB borrosa); casi todas las personas se corren 28 a 66 px en la misma dirección; en la 51 coinciden'
+- carpeta_rgb: 210417_MtErie_Enterprise_VIS_0003
+  carpeta_termica: 210417_MtErie_Enterprise_IR_0004
+  desde: 53
+  hasta: 57
+  motivo: 'desfase entre cámaras (regla relativa, mixto): todas las personas se corren hacia arriba (−27 a −48 px); fondo −14 a −39 px'
+- carpeta_rgb: 210417_MtErie_Enterprise_VIS_0003
+  carpeta_termica: 210417_MtErie_Enterprise_IR_0004
+  desde: 62
+  hasta: 63
+  motivo: 'desfase entre cámaras (regla relativa, todas corridas): todas las personas (2 o más) se corren más de 1 altura: sin revisión'
+- carpeta_rgb: 210417_MtErie_Enterprise_VIS_0003
+  carpeta_termica: 210417_MtErie_Enterprise_IR_0004
+  desde: 164
+  hasta: 165
+  motivo: 'desfase entre cámaras (regla relativa, mixto): todas las personas se corren unos +30 px en vertical; fondo +19 y +24 px'
+- carpeta_rgb: 210417_MtErie_Enterprise_VIS_0003
+  carpeta_termica: 210417_MtErie_Enterprise_IR_0004
+  desde: 171
+  hasta: 172
+  motivo: 'desfase entre cámaras (regla relativa, mixto): todas las personas se corren unos −45 px; fondo −42 y −40 px'
+- carpeta_rgb: 210417_MtErie_Enterprise_VIS_0003
+  carpeta_termica: 210417_MtErie_Enterprise_IR_0004
+  desde: 200
+  hasta: 201
+  motivo: 'desfase entre cámaras (regla relativa, mixto): el grupo se corre 50 a 57 px; fondo −57 y −56 px; imagen borrosa'
+- carpeta_rgb: 210417_MtErie_Enterprise_VIS_0003
+  carpeta_termica: 210417_MtErie_Enterprise_IR_0004
+  desde: 206
+  hasta: 210
+  motivo: 'desfase entre cámaras (regla relativa, mixto): todas las personas se corren 20 a 60 px; borrosa por el giro'
+- carpeta_rgb: 210417_MtErie_Enterprise_VIS_0003
+  carpeta_termica: 210417_MtErie_Enterprise_IR_0004
+  desde: 214
+  hasta: 216
+  motivo: 'desfase entre cámaras (regla relativa, mixto): 3 de las 4 personas se corren −25 a −42 px (la cuarta solo coincide con la caja de una vecina); fondo −23 a −35 px'
+- carpeta_rgb: 210417_MtErie_Enterprise_VIS_0005
+  carpeta_termica: 210417_MtErie_Enterprise_IR_0006
+  desde: 202
+  hasta: 204
+  motivo: 'desfase entre cámaras (regla relativa, mixto): las dos personas se corren −25 a −45 px; en la 205 coinciden'
+- carpeta_rgb: 210417_MtErie_Enterprise_VIS_0005
+  carpeta_termica: 210417_MtErie_Enterprise_IR_0006
+  desde: 209
+  hasta: 211
+  motivo: 'desfase entre cámaras (regla relativa, una persona): fondo corrido (+20, −55 y −39 px); en la 212 está en su sitio'
+- carpeta_rgb: 210417_MtErie_Enterprise_VIS_0005
+  carpeta_termica: 210417_MtErie_Enterprise_IR_0006
+  desde: 220
+  hasta: 221
+  motivo: 'desfase entre cámaras (regla relativa, mixto): fondo corrido (+21 y +36 px); en la 222, +1 px'
+- carpeta_rgb: 210417_MtErie_Enterprise_VIS_0005
+  carpeta_termica: 210417_MtErie_Enterprise_IR_0006
+  desde: 226
+  hasta: 227
+  motivo: 'desfase entre cámaras (regla relativa, mixto): personas +39 a +47 px; fondo +36 y +20 px'
+- carpeta_rgb: 210417_MtErie_Enterprise_VIS_0007
+  carpeta_termica: 210417_MtErie_Enterprise_IR_0008
+  desde: 54
+  hasta: 55
+  motivo: 'desfase entre cámaras (regla relativa, una persona): paneo borroso en la 53; la persona térmica queda quieta de la 53 a la 55 y salta en la 56 (la térmica se atrasa). Sale también la 53 (solo
+    térmica)'
+- carpeta_rgb: 210417_MtErie_Enterprise_VIS_0007
+  carpeta_termica: 210417_MtErie_Enterprise_IR_0008
+  desde: 53
+  hasta: 53
+  motivo: solo térmica a 2 posiciones o menos del desfase 54-55
+- carpeta_rgb: 210924_FHL_Enterprise_VIS_0401
+  carpeta_termica: 210924_FHL_Enterprise_IR_0402
+  desde: 125
+  hasta: 126
+  motivo: 'desfase entre cámaras (regla relativa, mixto): las 4 personas se corren igual (+18 a +41 px); borrosa; en la 124 y la 127 coinciden'
+- carpeta_rgb: 210924_FHL_Enterprise_VIS_0401
+  carpeta_termica: 210924_FHL_Enterprise_IR_0402
+  desde: 140
+  hasta: 142
+  motivo: 'desfase entre cámaras (regla relativa, mixto): todas las personas se corren unos (−20, −20) px; el fondo, igual'
+- carpeta_rgb: 210924_FHL_Enterprise_VIS_0401
+  carpeta_termica: 210924_FHL_Enterprise_IR_0402
+  desde: 156
+  hasta: 160
+  motivo: 'desfase entre cámaras (regla relativa, mixto): todas las personas +25 a +35 px en vertical; fondo +24 a +30 px'
+- carpeta_rgb: 210924_FHL_Enterprise_VIS_0401
+  carpeta_termica: 210924_FHL_Enterprise_IR_0402
+  desde: 298
+  hasta: 302
+  motivo: 'desfase entre cámaras (regla relativa, mixto): todas las personas +20 a +24 px; fondo +23 y +24 px; en la 303, +6 px'
+- carpeta_rgb: 210924_FHL_Enterprise_VIS_0401
+  carpeta_termica: 210924_FHL_Enterprise_IR_0402
+  desde: 355
+  hasta: 356
+  motivo: 'desfase entre cámaras (regla relativa, mixto): todas las personas +28 a +42 px; fondo +27 y +41 px'
+- carpeta_rgb: 210924_FHL_Enterprise_VIS_0401
+  carpeta_termica: 210924_FHL_Enterprise_IR_0402
+  desde: 382
+  hasta: 383
+  motivo: 'desfase entre cámaras (regla relativa, mixto): todas las personas −30 a −39 px en horizontal; fondo −38 y −29 px; en la 384 coinciden'
+- carpeta_rgb: 210924_FHL_Enterprise_VIS_0401
+  carpeta_termica: 210924_FHL_Enterprise_IR_0402
+  desde: 508
+  hasta: 510
+  motivo: 'desfase entre cámaras (regla relativa, todas corridas): todas las personas (2 o más) se corren más de 1 altura: sin revisión'
+- carpeta_rgb: 210924_FHL_Enterprise_VIS_0401
+  carpeta_termica: 210924_FHL_Enterprise_IR_0402
+  desde: 566
+  hasta: 567
+  motivo: 'desfase entre cámaras (regla relativa, mixto): desfase leve y pasajero: las 5 personas a unos (−12, −3) px; fondo −22 a −24 px de la 565 a la 568'
+- carpeta_rgb: 210924_FHL_Enterprise_VIS_0401
+  carpeta_termica: 210924_FHL_Enterprise_IR_0402
+  desde: 574
+  hasta: 575
+  motivo: 'desfase entre cámaras (regla relativa, todas corridas): todas las personas (2 o más) se corren más de 1 altura: sin revisión'
+- carpeta_rgb: 210924_FHL_Enterprise_VIS_0401
+  carpeta_termica: 210924_FHL_Enterprise_IR_0402
+  desde: 577
+  hasta: 580
+  motivo: 'desfase entre cámaras (regla relativa, mixto): todas las personas +16 a +48 px en horizontal; fondo +22, +20, +41 y +37 px; en la 576 coinciden'
+- carpeta_rgb: 210924_FHL_Enterprise_VIS_0401
+  carpeta_termica: 210924_FHL_Enterprise_IR_0402
+  desde: 619
+  hasta: 621
+  motivo: 'desfase entre cámaras (regla relativa, una persona): la caja RGB queda siempre 23 a 26 px por encima de la térmica y el fondo se corre igual (−22, −26 y −26 px; −14 en la 618 y −8 en la 622).
+    La otra persona térmica no tiene caja RGB (tapada)'
+- carpeta_rgb: 210924_FHL_Enterprise_VIS_0401
+  carpeta_termica: 210924_FHL_Enterprise_IR_0402
+  desde: 675
+  hasta: 676
+  motivo: 'desfase entre cámaras (regla relativa, todas corridas): todas las personas (2 o más) se corren más de 1 altura: sin revisión'
+- carpeta_rgb: 210924_FHL_Enterprise_VIS_0401
+  carpeta_termica: 210924_FHL_Enterprise_IR_0402
+  desde: 678
+  hasta: 679
+  motivo: 'desfase entre cámaras (regla relativa, una persona): en la 679 las 4 personas que no cuentan (a más de 3 alturas) se corren todas unos +60 px en x; la que cuenta, 1.6 y 2.9 alturas; en la 680
+    coinciden'
+- carpeta_rgb: 210924_FHL_Enterprise_VIS_0401
+  carpeta_termica: 210924_FHL_Enterprise_IR_0402
+  desde: 687
+  hasta: 688
+  motivo: 'desfase entre cámaras (regla relativa, mixto): las 5 personas se corren igual en x (+11 a +17 px en la 687, +23 a +29 en la 688); fondo +14 y +25 px; en la 686 y la 689 coinciden'
+- carpeta_rgb: 210924_FHL_Enterprise_VIS_0401
+  carpeta_termica: 210924_FHL_Enterprise_IR_0402
+  desde: 743
+  hasta: 745
+  motivo: 'desfase entre cámaras (regla relativa, mixto): todas las personas +12 a +47 px; fondo +11, +18, +13 y +41 px; agua doble en la 745'
+- carpeta_rgb: 210924_FHL_Enterprise_VIS_0401
+  carpeta_termica: 210924_FHL_Enterprise_IR_0402
+  desde: 754
+  hasta: 767
+  motivo: 'desfase entre cámaras (regla relativa, mixto): todas las personas se corren hacia abajo, más cuanto más abajo están en la imagen (+13 a +49 px); fondo +13 a +29 px. Parece más un fallo de la
+    semejanza con la cámara inclinada que un desfase de tiempo, pero la RGB no coincide igual. Sale también la 768 (solo térmica)'
+- carpeta_rgb: 210924_FHL_Enterprise_VIS_0401
+  carpeta_termica: 210924_FHL_Enterprise_IR_0402
+  desde: 768
+  hasta: 768
+  motivo: solo térmica a 2 posiciones o menos del desfase 754-767
+- carpeta_rgb: 210924_FHL_Enterprise_VIS_0405
+  carpeta_termica: 210924_FHL_Enterprise_IR_0406
+  desde: 37
+  hasta: 39
+  motivo: 'desfase entre cámaras (regla relativa, mixto): las dos personas se corren igual hacia arriba (−16 a −26 px, una altura); en la 36 y la 40 coinciden; en el bosque el fondo no da una medida fiable'
+- carpeta_rgb: 210924_FHL_Enterprise_VIS_0405
+  carpeta_termica: 210924_FHL_Enterprise_IR_0406
+  desde: 47
+  hasta: 48
+  motivo: 'desfase entre cámaras (regla relativa, mixto): RGB borrosa por el movimiento; las dos personas se corren hacia +x (17 a 47 px); en la 46 y la 49 coinciden'
+- carpeta_rgb: 210924_FHL_Enterprise_VIS_0405
+  carpeta_termica: 210924_FHL_Enterprise_IR_0406
+  desde: 55
+  hasta: 57
+  motivo: 'desfase entre cámaras (regla relativa, mixto): todas las personas se corren hacia arriba (−18 a −35 px); en la 54 coinciden'
+- carpeta_rgb: 210924_FHL_Enterprise_VIS_0405
+  carpeta_termica: 210924_FHL_Enterprise_IR_0406
+  desde: 65
+  hasta: 67
+  motivo: 'desfase entre cámaras (regla relativa, mixto): la persona que cuenta se corre −22 a −31 px; fondo −17 a −26 px en vertical (+5 en la 64). La de arriba a la derecha está bajo el árbol y solo se
+    ve en la térmica'
+- carpeta_rgb: 220109_Baker_Enterprise_VIS_1
+  carpeta_termica: 220109_Baker_Enterprise_IR_1
+  desde: 185
+  hasta: 188
+  motivo: 'desfase entre cámaras (regla relativa, mixto): las personas se corren +86 a +140 px; fondo +88 a +115 px; en la 189 coinciden'
+- carpeta_rgb: 220109_Baker_Enterprise_VIS_1
+  carpeta_termica: 220109_Baker_Enterprise_IR_1
+  desde: 512
+  hasta: 513
+  motivo: 'desfase entre cámaras (regla relativa, mixto): las dos personas se corren +63 a +69 px en x; fondo +62 y +57 px'
+- carpeta_rgb: 220109_Baker_Enterprise_VIS_1
+  carpeta_termica: 220109_Baker_Enterprise_IR_1
+  desde: 519
+  hasta: 521
+  motivo: 'desfase entre cámaras (regla relativa, una persona): la persona tendida se corre +88 a +150 px y va en aumento; fondo +144 y +188 px'
+- carpeta_rgb: 220109_Baker_Enterprise_VIS_1
+  carpeta_termica: 220109_Baker_Enterprise_IR_1
+  desde: 618
+  hasta: 619
+  motivo: 'desfase entre cámaras (regla relativa, una persona): continúa el giro ya excluido (620 a 626): la persona RGB está en la línea de árboles y la térmica 57 a 79 px más abajo; los árboles de la
+    térmica también bajan más'
+- carpeta_rgb: 220109_Baker_Enterprise_VIS_1
+  carpeta_termica: 220109_Baker_Enterprise_IR_1
+  desde: 633
+  hasta: 634
+  motivo: 'desfase entre cámaras (regla relativa, una persona): la persona se corre −54 y −92 px en x; fondo −56 y −91 px'
+- carpeta_rgb: 220109_Baker_Enterprise_VIS_1
+  carpeta_termica: 220109_Baker_Enterprise_IR_1
+  desde: 639
+  hasta: 641
+  motivo: 'desfase entre cámaras (regla relativa, una persona): la persona se corre (+47 a +55, +34 a +44) px; el fondo, parecido'
+- carpeta_rgb: 220109_Baker_Enterprise_VIS_1
+  carpeta_termica: 220109_Baker_Enterprise_IR_1
+  desde: 652
+  hasta: 654
+  motivo: 'desfase entre cámaras (regla relativa, una persona): la persona se corre −63 a −70 px en vertical; fondo −62 a −72 px'
+- carpeta_rgb: 220109_Baker_Enterprise_VIS_1
+  carpeta_termica: 220109_Baker_Enterprise_IR_1
+  desde: 795
+  hasta: 801
+  motivo: 'desfase entre cámaras (regla relativa, una persona): la persona se corre −35 a −47 px en x y va en aumento; fondo −32 a −52 px'

@@ -14,7 +14,7 @@ import sys
 
 import pandas as pd
 
-from comun import leer_rutas, leer_yaml
+from comun import RAIZ, leer_rutas, leer_yaml
 
 COLUMNAS = ["vuelo", "sitio", "fecha", "posicion", "carpeta_rgb", "carpeta_termica", "ruta_rgb", "ruta_termica",
             "cajas_rgb", "cajas_termica", "anotado", "excluido", "motivo_exclusion"]
@@ -96,7 +96,10 @@ def main():
     pares[["cajas_rgb", "cajas_termica"]] = pares[["cajas_rgb", "cajas_termica"]].astype("Int64")
     pares["excluido"] = False
     pares["motivo_exclusion"] = ""
-    for e in cfg["exclusiones"]:
+    exclusiones = list(cfg["exclusiones"])
+    for archivo in cfg.get("exclusiones_adicionales", []):  # archivos generados, p. ej. los desfases revisados (fase 2)
+        exclusiones += leer_yaml(RAIZ / archivo)["exclusiones"]
+    for e in exclusiones:
         m = ((pares.carpeta_rgb == e["carpeta_rgb"]) & (pares.carpeta_termica == e["carpeta_termica"])
              & pares.posicion.between(e["desde"], e["hasta"]))
         pares.loc[m, ["excluido", "motivo_exclusion"]] = [True, e["motivo"]]

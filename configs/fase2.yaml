@@ -169,3 +169,22 @@ homografias_cajas:
   calidad_jpg: 88
   salida: configs/homografias_cajas.yaml            # relativo a la raíz del repositorio
   carpeta_reporte: alineacion/homografias_cajas     # dentro de reports/
+
+# Revisión de los tramos de desfase de la regla relativa (scripts/fase2_revision_desfases.py), decidida el 2026-10-31:
+# los tramos donde todas las personas (2 o más) se corren más de 1 altura en todos sus pares se excluyen sin revisión;
+# los de una sola persona, los mixtos y todos los de `vuelos_revisar_todos` se revisan a ojo (también el fondo).
+revision_desfases:
+  min_personas_todas_corridas: 2
+  vuelos_revisar_todos: [210924_FHL_Enterprise_0405, 210417_MtErie_Enterprise_0005, 210417_MtErie_Enterprise_0007]
+  max_posiciones_por_tramo: 6       # posiciones del tramo en la imagen, además del par anterior y el siguiente
+  margen_recorte_px: 40             # margen mínimo del recorte común alrededor de las personas (px térmicos)
+  fondo_sigma: 2                    # suavizado antes de los gradientes para medir el desplazamiento del fondo
+  fondo_respuesta_min: 0.10         # por debajo, la correlación de fase del fondo no es fiable
+  panel_ancho_max: 440
+  panel_alto_max: 330
+  zoom_max: 4
+  paneles_por_fila: 4
+  calidad_jpg: 85
+  carpeta: alineacion/revision_desfases                 # dentro de reports/
+  decisiones: configs/revision_desfases.yaml            # decisiones de la revisión a ojo
+  salida_exclusiones: configs/exclusiones_desfase.yaml  # lo lee configs/fase1.yaml (exclusiones_adicionales)
