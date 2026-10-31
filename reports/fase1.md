@@ -28,9 +28,13 @@ etiquetas, no imágenes.
   - Desfases entre cámaras (la térmica muestra otro instante) medidos con la distancia entre centros de las personas
     tras la alineación de la fase 2: MtErie 0005 (160 a 162) y Baker (620 a 626), en giros rápidos. El inicio de
     MtErie 0003 (0 a 11) se excluyó y se devolvió el mismo día: el desfase venía de la homografía.
-  - Desfases de la regla relativa de la fase 2 (2026-10-31): 41 tramos (133 pares) y 2 pares "solo térmica" vecinos.
-    4 tramos salen sin revisión y 37 tras revisarlos a ojo; otros 4 se revisaron y se conservan. Están en
-    `configs/exclusiones_desfase.yaml`, que se genera desde `configs/revision_desfases.yaml` y que
+  - Desfases de la fase 2 (2026-10-31), 155 pares:
+    - 135 de la regla relativa: 41 tramos (133 pares) y 2 pares "solo térmica" vecinos. 4 tramos salen sin revisión y
+      37 tras revisarlos a ojo; otros 4 se revisaron y se conservan.
+    - 2 de FHL 0401 371–372.
+    - 18 de la extensión de los tramos por el fondo corrido más de 20 px.
+
+    Están en `configs/exclusiones_desfase.yaml`, que se genera desde `configs/revision_desfases.yaml` y que
     `configs/fase1.yaml` lee en `exclusiones_adicionales` (ver `reports/fase2.md`).
 
 ## Verificación de totales
@@ -44,19 +48,18 @@ etiquetas, no imágenes.
 | Pares anotados tras excluir Carnation | 4 851 | 4 851 | 0 |
 | Pares anotados tras excluir despegues, aterrizajes y cambios de zoom (aterrizaje desde 878) | 4 806 | 4 806 | 0 |
 | Pares anotados tras adelantar el aterrizaje a 857 y excluir los desfases de los giros | 4 775 | 4 775 | 0 |
-| Pares anotados tras excluir los desfases de la regla relativa (revisados a ojo) | **4 640** | 4 640 | 0 |
+| Pares anotados tras excluir los desfases de la regla relativa (revisados a ojo) | 4 640 | 4 640 | 0 |
+| Pares anotados tras excluir FHL 0401 371–372 y la extensión por el fondo | **4 620** | 4 620 | 0 |
 | Pares con persona solo en la térmica (tras todas las exclusiones) | **471** | | |
 
 - 80 carpetas, 17 parejas de carpetas. **8 de ellas están anotadas** (4 sitios); las otras 9 tienen al menos una de
   las dos carpetas sin `.txt`, y aportan los 9 100 pares sin anotar.
-- Las exclusiones afectan a 1 099 pares:
+- Las exclusiones afectan a 1 119 pares:
   - 149 del final de Baker y 739 de Carnation;
   - 16 del despegue de Baker y 50 de FHL 0401 (11 del cambio de zoom y 39 del aterrizaje);
   - 10 de desfases en giros (MtErie 0005 3, Baker 7);
-  - 135 de la regla de desfase relativa (MtErie 0003 28, MtErie 0005 10, MtErie 0007 3, FHL 0401 57, FHL 0405 11,
-    Baker 26).
-- Pendiente en la fase 2: FHL 0401 371–372, un tramo que la regla marca tras volver a estimar la semejanza; está sin
-  aplicar (ver `reports/fase2.md`).
+  - 155 de los desfases de la fase 2 (MtErie 0003 28, MtErie 0005 11, MtErie 0007 3, FHL 0401 63, FHL 0405 13,
+    Baker 37).
 - No hay líneas de etiqueta mal formadas (5 campos, clase 0) en ninguna de las 17 parejas.
 
 ## Pares por vuelo (Tabla 9)
@@ -67,14 +70,14 @@ en la térmica y ninguna en la RGB, contado sobre los pares anotados no excluido
 | Vuelo | Sitio | Pares anotados | Excluidos | Anotados tras las exclusiones | Solo térmica |
 |---|---|---:|---:|---:|---:|
 | MtErie 0003/0004 | MtErie | 264 | 28 | 236 | 0 |
-| MtErie 0005/0006 | MtErie | 272 | 13 | 259 | 8 |
+| MtErie 0005/0006 | MtErie | 272 | 14 | 258 | 8 |
 | MtErie 0007/0008 | MtErie | 172 | 3 | 169 | 7 |
 | Carnation 0023/0024 | Carnation | 739 | **739** | 0 | 0 |
 | FHL 0134/0135 | FHL | 273 | 0 | 273 | 61 |
-| FHL 0401/0402 | FHL | 896 | 107 | 789 | 0 |
-| FHL 0405/0406 | FHL | 943 | 11 | 932 | **394** |
-| Baker VIS_1/IR_1 | Baker | 2 180 | 198 | 1 982 | 1 |
-| **Total** | | **5 739** | **1 099** | **4 640** | **471** |
+| FHL 0401/0402 | FHL | 896 | 113 | 783 | 0 |
+| FHL 0405/0406 | FHL | 943 | 13 | 930 | **394** |
+| Baker VIS_1/IR_1 | Baker | 2 180 | 209 | 1 971 | 1 |
+| **Total** | | **5 739** | **1 119** | **4 620** | **471** |
 
 En estos 8 vuelos todos los pares están anotados (pares = pares anotados). Carnation queda en la tabla con todos sus
 pares excluidos. FHL reúne 455 de los 471 pares "solo térmica" (97 %), 394 de ellos en FHL 0405/0406. Los 3 pares

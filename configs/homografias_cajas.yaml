@@ -1,11 +1,12 @@
+# Generado por scripts/fase2_homografias_cajas.py. Para congelarla (no volver a estimarla), transformacion_congelada: true en configs/fase2.yaml.
 210417_MtErie_Enterprise_0003:
   H_rgb_a_termica:
-  - - 0.2610682386396786
-    - 0.0010382761257755131
-    - -194.78443918540964
-  - - -0.0010382761257755131
-    - 0.2610682386396786
-    - -36.242557668585626
+  - - 0.2577847242283078
+    - 0.001650236131300902
+    - -188.92153528740516
+  - - -0.001650236131300902
+    - 0.2577847242283078
+    - -29.82948459865237
   - - 0.0
     - 0.0
     - 1.0
@@ -17,20 +18,26 @@
   - 640
   - 512
   metodo: centros de cajas de personas, RANSAC
-  pares_calibracion: 116
-  inliers: 372
-  error_inliers_medio_px: 3.21
-  distancia_media_evaluacion_px: 5.8
-  distancia_mediana_evaluacion_px: 3.32
-  calculada: '2026-10-31T17:59:05'
+  reparto: bloques de 20 posiciones alternados
+  pares_calibracion: 111
+  pares_evaluacion: 122
+  pares_calibracion_usados: 110
+  correspondencias: 416
+  inliers: 357
+  error_inliers_medio_px: 3.11
+  cobertura: 0.3414
+  distancia_media_evaluacion_px: 6.58
+  distancia_mediana_evaluacion_px: 3.6
+  pares_utilizables: 236
+  calculada: '2026-10-31T18:17:50'
 210417_MtErie_Enterprise_0005:
   H_rgb_a_termica:
-  - - 0.26335010006523246
-    - 0.0016878683520741144
-    - -200.90132824399893
-  - - -0.0016878683520741144
-    - 0.26335010006523246
-    - -37.09252293817531
+  - - 0.26183516402301477
+    - 0.004606287039266942
+    - -199.8609264823664
+  - - -0.004606287039266942
+    - 0.26183516402301477
+    - -30.822264988006985
   - - 0.0
     - 0.0
     - 1.0
@@ -42,20 +49,26 @@
   - 640
   - 512
   metodo: centros de cajas de personas, RANSAC
-  pares_calibracion: 126
-  inliers: 101
-  error_inliers_medio_px: 4.22
-  distancia_media_evaluacion_px: 10.59
-  distancia_mediana_evaluacion_px: 7.74
-  calculada: '2026-10-31T17:59:06'
+  reparto: bloques de 20 posiciones alternados
+  pares_calibracion: 127
+  pares_evaluacion: 124
+  pares_calibracion_usados: 117
+  correspondencias: 172
+  inliers: 92
+  error_inliers_medio_px: 3.75
+  cobertura: 0.2636
+  distancia_media_evaluacion_px: 11.58
+  distancia_mediana_evaluacion_px: 7.78
+  pares_utilizables: 259
+  calculada: '2026-10-31T18:17:51'
 210417_MtErie_Enterprise_0007:
   H_rgb_a_termica:
-  - - 0.24772318943150698
-    - -0.0034729983588741046
-    - -164.1802690163196
-  - - 0.0034729983588741046
-    - 0.24772318943150698
-    - -24.27344631224174
+  - - 0.2525667145975318
+    - 0.0013102063219281258
+    - -179.65222697109
+  - - -0.0013102063219281258
+    - 0.2525667145975318
+    - -23.538049075918483
   - - 0.0
     - 0.0
     - 1.0
@@ -67,20 +80,26 @@
   - 640
   - 512
   metodo: centros de cajas de personas, RANSAC
-  pares_calibracion: 81
-  inliers: 78
-  error_inliers_medio_px: 3.96
-  distancia_media_evaluacion_px: 8.49
-  distancia_mediana_evaluacion_px: 5.45
-  calculada: '2026-10-31T17:59:07'
+  reparto: bloques de 20 posiciones alternados
+  pares_calibracion: 86
+  pares_evaluacion: 76
+  pares_calibracion_usados: 79
+  correspondencias: 127
+  inliers: 98
+  error_inliers_medio_px: 3.51
+  cobertura: 0.0893
+  distancia_media_evaluacion_px: 9.8
+  distancia_mediana_evaluacion_px: 7.7
+  pares_utilizables: 169
+  calculada: '2026-10-31T18:17:52'
 210924_FHL_Enterprise_0134:
   H_rgb_a_termica:
-  - - 0.5187169034058267
-    - 0.0043785064754984305
-    - -188.5916023661023
-  - - -0.0043785064754984305
-    - 0.5187169034058267
-    - -28.75442409044243
+  - - 0.5109021687599073
+    - 0.0037927311536353407
+    - -180.63742919978347
+  - - -0.0037927311536353407
+    - 0.5109021687599073
+    - -24.581768528614887
   - - 0.0
     - 0.0
     - 1.0
@@ -92,20 +111,26 @@
   - 640
   - 512
   metodo: centros de cajas de personas, RANSAC
-  pares_calibracion: 38
-  inliers: 64
-  error_inliers_medio_px: 1.83
-  distancia_media_evaluacion_px: 1.78
-  distancia_mediana_evaluacion_px: 1.48
-  calculada: '2026-10-31T17:59:08'
+  reparto: bloques de 20 posiciones alternados
+  pares_calibracion: 44
+  pares_evaluacion: 31
+  pares_calibracion_usados: 41
+  correspondencias: 81
+  inliers: 81
+  error_inliers_medio_px: 1.36
+  cobertura: 0.015
+  distancia_media_evaluacion_px: 2.75
+  distancia_mediana_evaluacion_px: 2.57
+  pares_utilizables: 273
+  calculada: '2026-10-31T18:17:53'
 210924_FHL_Enterprise_0401:
   H_rgb_a_termica:
-  - - 0.5181234048703196
-    - 0.0049261281668547775
-    - -188.04093297645218
-  - - -0.0049261281668547775
-    - 0.5181234048703196
-    - -28.41735759943872
+  - - 0.5246357651003078
+    - 0.004058628447474462
+    - -193.2274529761637
+  - - -0.004058628447474462
+    - 0.5246357651003078
+    - -32.0385256321762
   - - 0.0
     - 0.0
     - 1.0
@@ -117,20 +142,26 @@
   - 640
   - 512
   metodo: centros de cajas de personas, RANSAC
-  pares_calibracion: 344
-  inliers: 965
-  error_inliers_medio_px: 3.4
+  reparto: bloques de 20 posiciones alternados
+  pares_calibracion: 347
+  pares_evaluacion: 342
+  pares_calibracion_usados: 323
+  correspondencias: 1262
+  inliers: 865
+  error_inliers_medio_px: 3.17
+  cobertura: 0.5434
   distancia_media_evaluacion_px: 8.55
-  distancia_mediana_evaluacion_px: 4.58
-  calculada: '2026-10-31T17:59:08'
+  distancia_mediana_evaluacion_px: 4.7
+  pares_utilizables: 789
+  calculada: '2026-10-31T18:17:53'
 210924_FHL_Enterprise_0405:
   H_rgb_a_termica:
-  - - 0.5135733997219797
-    - 0.007070595106796512
-    - -184.46622162892115
-  - - -0.007070595106796512
-    - 0.5135733997219797
-    - -24.548876077379685
+  - - 0.5065549448346917
+    - 0.006054430115370225
+    - -176.9285042078695
+  - - -0.006054430115370225
+    - 0.5065549448346917
+    - -20.837136412641495
   - - 0.0
     - 0.0
     - 1.0
@@ -142,20 +173,26 @@
   - 640
   - 512
   metodo: centros de cajas de personas, RANSAC
-  pares_calibracion: 194
-  inliers: 173
-  error_inliers_medio_px: 3.65
-  distancia_media_evaluacion_px: 6.21
-  distancia_mediana_evaluacion_px: 4.36
-  calculada: '2026-10-31T17:59:09'
+  reparto: bloques de 20 posiciones alternados
+  pares_calibracion: 211
+  pares_evaluacion: 178
+  pares_calibracion_usados: 201
+  correspondencias: 272
+  inliers: 199
+  error_inliers_medio_px: 3.67
+  cobertura: 0.5152
+  distancia_media_evaluacion_px: 5.93
+  distancia_mediana_evaluacion_px: 4.65
+  pares_utilizables: 932
+  calculada: '2026-10-31T18:17:54'
 220109_Baker_Enterprise_1:
   H_rgb_a_termica:
-  - - 0.5145936945411216
-    - 0.004369017273066253
-    - -184.24463989257697
-  - - -0.004369017273066253
-    - 0.5145936945411216
-    - -26.79955555161178
+  - - 0.517173299283943
+    - 0.0031339385690602427
+    - -186.1867144620815
+  - - -0.0031339385690602427
+    - 0.517173299283943
+    - -29.314003076276745
   - - 0.0
     - 0.0
     - 1.0
@@ -167,9 +204,15 @@
   - 640
   - 512
   metodo: centros de cajas de personas, RANSAC
-  pares_calibracion: 949
-  inliers: 1514
-  error_inliers_medio_px: 3.77
-  distancia_media_evaluacion_px: 7.12
-  distancia_mediana_evaluacion_px: 4.74
-  calculada: '2026-10-31T17:59:10'
+  reparto: bloques de 20 posiciones alternados
+  pares_calibracion: 946
+  pares_evaluacion: 952
+  pares_calibracion_usados: 873
+  correspondencias: 2021
+  inliers: 1418
+  error_inliers_medio_px: 3.64
+  cobertura: 0.5695
+  distancia_media_evaluacion_px: 7.0
+  distancia_mediana_evaluacion_px: 4.62
+  pares_utilizables: 1982
+  calculada: '2026-10-31T18:17:55'

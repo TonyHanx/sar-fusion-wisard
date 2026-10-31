@@ -1,10 +1,14 @@
 # Fase 2. Alineación de la RGB con la térmica (en curso)
 
-Fecha: 2026-10-31 · Estado: modelo decidido (**semejanza por vuelo**). Regla de desfase relativa **aplicada con
-revisión a ojo**: de 45 tramos se excluyen 41 (135 pares) y se conservan 4. Quedan **4 640 pares** (471 "solo
-térmica"); en FHL 0405, 932. La semejanza se volvió a estimar con esos pares. Al hacerlo apareció un tramo nuevo
-(FHL 0401 371–372) que está **sin aplicar**, a la espera de tu decisión. La validación con los puntos manuales de
-FHL 0405 está pendiente: los marcas tú. Después siguen los TIFF.
+Fecha: 2026-10-31 · Estado: **desfases cerrados**. El modelo es la **semejanza por vuelo**, estimada una vez con un
+reparto por bloques fijos de 20 posiciones y **congelada**. Salen por desfase 155 pares:
+
+- 135 de la regla relativa revisada a ojo (41 de 45 tramos);
+- 2 de FHL 0401 371–372;
+- 18 de la extensión por el fondo.
+
+Quedan **4 620 pares** (471 "solo térmica"); en FHL 0405, **930**. Lo que queda de la fase: tu validación en FHL 0405
+y los TIFF.
 
 ## Decisiones tomadas el 2026-10-31
 
@@ -22,6 +26,16 @@ FHL 0405 está pendiente: los marcas tú. Después siguen los TIFF.
   25 px. **Se aplica con la opción 2 acotada:** los tramos en que todas las personas (2 o más) se corren más de 1
   altura salen sin revisión. Los demás se revisan a ojo, mirando también si el fondo está corrido, y lo mismo todos los
   tramos de FHL 0405, MtErie 0005 y MtErie 0007 (ver "Regla de desfase").
+- **Reparto calibración / evaluación por bloques fijos de 20 posiciones**, alternados en cada vuelo (0–19 calibración,
+  20–39 evaluación...). Antes era al azar. Así el reparto no cambia al excluir pares, y los fotogramas seguidos, casi
+  iguales, no quedan en las dos mitades.
+- **La semejanza se estimó una vez con los 4 640 pares y se congeló:** no se vuelve a estimar
+  (`transformacion_congelada: true`).
+- **FHL 0401 371–372 se excluye.** Es el tramo que apareció al volver a estimar la semejanza.
+- **Extensión por el fondo:** cada tramo de desfase excluido se extiende a los pares vecinos seguidos mientras el
+  fondo esté corrido más de 20 px. Solo se extienden tramos ya detectados; no se hacen búsquedas nuevas. Las
+  extensiones de FHL 0405, MtErie 0005 y MtErie 0007 se revisan a ojo.
+- **Con esto se cierran los desfases.**
 - **MtErie 0007 se conserva e irá en la partición de validación.** Es un vuelo **bajo el dosel con la cámara de
   frente**, no hacia abajo como los demás.
 - **Validación manual:** en MtErie 0003 se descartan los puntos de inicio y final, porque se marcaron con la térmica
@@ -63,8 +77,8 @@ siguiente: la RGB completa con la franja en amarillo, la RGB recortada y la tér
 | Baker VIS_1/IR_1 | 620 a 626 | Desfase | 7 | 7 | Giro rápido: de 30 a 75 px, con todas las personas corridas en la misma dirección. En 618–619 no hay personas emparejadas; en la 627 vuelven a coincidir (2 px) |
 
 Sumadas a Carnation (739 pares) y al corte de Baker 2031–2179 (149), quedaban **4 775 pares utilizables**, de los que
-473 tenían persona solo en la térmica. Después salen los 41 tramos de la regla de desfase (135 pares, ver "Regla de
-desfase"), que están en `configs/exclusiones_desfase.yaml`. Quedan **4 640**, con 471 "solo térmica".
+473 tenían persona solo en la térmica. Después salen por desfase 155 pares más (ver "Regla de desfase"), que están en
+`configs/exclusiones_desfase.yaml`. Quedan **4 620**, con 471 "solo térmica".
 
 **MtErie 0003 0–11 (el dron sube al empezar)** se excluyó y se devolvió el mismo día. Con la homografía las personas
 quedaban separadas de 28 a 40 px. Con la semejanza están a 7–11 px en 0–9 y a 21 px en 10–11, y la franja nominal da
@@ -85,45 +99,61 @@ Script: `scripts/fase2_homografias_cajas.py`, con la configuración en `homograf
 Las transformaciones se guardan en `configs/homografias_cajas.yaml` (una matriz 3 × 3 por vuelo, de píxeles de la
 RGB original a píxeles de la térmica) y los informes en `reports/alineacion/homografias_cajas/`.
 
-Método: en cada vuelo, los pares con persona en la RGB y en la térmica se reparten al azar (seed=0) en dos mitades.
-Con la mitad de calibración se emparejan las personas de las dos imágenes (algoritmo húngaro sobre la distancia entre
+Método: en cada vuelo, los pares con persona en la RGB y en la térmica se reparten en dos mitades por **bloques fijos
+de 20 posiciones**, alternados: 0–19 calibración, 20–39 evaluación, 40–59 calibración, etc. Hasta el 2026-10-31 el
+reparto era al azar (seed=0). Con la mitad de calibración se emparejan las personas de las dos imágenes (algoritmo húngaro sobre la distancia entre
 centros, empezando por la franja nominal) y se estima la semejanza con RANSAC: umbral de 8 px y tres vueltas de
 emparejar y estimar. Con la mitad de evaluación se mide la distancia entre el centro de cada caja térmica y el de su
 caja RGB llevada a la térmica, en px térmicos (640 × 512). Se ignoran las cajas cortadas por el borde de la térmica, y
 las cajas repetidas cuentan una vez.
 
-### Resultado por vuelo (semejanza, pares de evaluación, con los 4 640 pares)
+**Transformación congelada.** La semejanza vigente en `configs/homografias_cajas.yaml` se estimó una sola vez, el
+2026-10-31:
 
-Es la semejanza vigente en `configs/homografias_cajas.yaml`, estimada de nuevo tras excluir los desfases (ver "Después
-de aplicar"). Entre paréntesis, media y mediana con los 4 775 pares de antes.
+- con los 4 640 pares que quedaban tras la revisión de desfases, todavía con FHL 0401 371–372;
+- con el reparto por bloques.
+
+Con `transformacion_congelada: true` en `configs/fase2.yaml`, el script ya no la estima: la lee y solo evalúa.
+Comprobado: al correrlo con los 4 620 pares finales, el archivo no cambia (mismo md5). Frente a la semejanza al azar
+con los mismos 4 640 pares, se mueve en promedio:
+
+- de 1.2 px (Baker) a 3.2 px (FHL 0134);
+- 6.3 px en MtErie 0007, con un máximo de 11.7.
+
+### Resultado por vuelo (semejanza congelada, pares de evaluación, con los 4 620 pares)
 
 | Vuelo | Pares con persona en ambas | Pares evaluados | Personas | Media (px) | Mediana (px) | Máximo (px) | Las personas usadas cubren | Zona de la RGB que ve la térmica |
 |---|---:|---:|---:|---:|---:|---:|---:|---|
-| MtErie 0003 | 233 | 116 | 451 | 5.8 (8.9) | 3.3 (4.3) | 34 | 36 % | x 0.19–0.83, y 0.07–0.98 |
-| MtErie 0005 | 251 | 117 | 179 | 10.6 (12.2) | 7.7 (8.2) | 105 | 29 % | x 0.20–0.83, y 0.07–0.97 |
-| MtErie 0007 | 162 | 79 | 118 | 8.5 (8.2) | 5.5 (5.7) | 149 | 9 % | x 0.18–0.85, y 0.03–0.99 |
-| FHL 0134 | 75 | 36 | 66 | 1.8 (1.8) | 1.5 (1.5) | 5 | 1 % | x 0.19–0.83, y 0.06–0.97 |
-| FHL 0401 | 689 | 342 | 1 346 | 8.5 (10.1) | 4.6 (4.8) | 168 | 64 % | x 0.19–0.83, y 0.06–0.97 |
-| FHL 0405 | 389 | 193 | 255 | 6.2 (8.0) | 4.4 (4.8) | 52 | 39 % | x 0.18–0.83, y 0.06–0.98 |
-| Baker | 1 898 | 910 | 2 155 | 7.1 (7.8) | 4.7 (4.6) | 71 | 62 % | x 0.18–0.83, y 0.06–0.98 |
+| MtErie 0003 | 233 | 122 | 486 | 6.6 | 3.6 | 64 | 34 % | x 0.19–0.84, y 0.06–0.98 |
+| MtErie 0005 | 250 | 113 | 181 | 11.6 | 7.8 | 213 | 26 % | x 0.19–0.83, y 0.07–0.98 |
+| MtErie 0007 | 162 | 75 | 104 | 9.8 | 7.7 | 151 | 9 % | x 0.18–0.84, y 0.05–0.99 |
+| FHL 0134 | 75 | 31 | 50 | 2.8 | 2.6 | 7 | 2 % | x 0.18–0.83, y 0.05–0.98 |
+| FHL 0401 | 683 | 340 | 1 319 | 8.5 | 4.7 | 246 | 54 % | x 0.19–0.82, y 0.06–0.97 |
+| FHL 0405 | 387 | 175 | 222 | 5.8 | 4.6 | 32 | 52 % | x 0.18–0.84, y 0.05–0.98 |
+| Baker | 1 887 | 926 | 2 183 | 6.9 | 4.6 | 72 | 57 % | x 0.19–0.83, y 0.06–0.97 |
 
 La mediana describe mejor la alineación que la media, que suben los pocos pares que quedan con personas corridas o mal
-emparejadas. Sin estimar nada, con la franja nominal, las medianas son 4.5, 9.5, 7.0, 3.8, 6.5, 5.5 y 5.8 px. En
+emparejadas. Sin estimar nada, con la franja nominal, las medianas son 4.6, 9.2, 8.1, 4.5, 6.1, 5.0 y 5.8 px. En
 todos los vuelos la zona que ve la térmica es casi igual a la franja nominal (x 0.18–0.84, y 0.06–0.98), como se
 espera de dos cámaras montadas juntas.
 
+Con el reparto por bloques, los pares de evaluación ya no son vecinos casi iguales de los de calibración. Por eso
+algunas distancias salen algo más altas que con el reparto al azar: por ejemplo, la mediana de MtErie 0007 pasa de 5.5
+a 7.7 px y la de FHL 0134 de 1.5 a 2.6.
+
 Avisos del script (criterios propuestos por mí, no son reglas):
 
-- En MtErie 0007 y FHL 0134 las personas usadas cubren poco de la térmica (9 % y 1 %). Con la semejanza esto pesa
+- En MtErie 0007 y FHL 0134 las personas usadas cubren poco de la térmica (9 % y 2 %). Con la semejanza esto pesa
   menos que con la homografía, porque tiene la mitad de grados de libertad y el campo de visión sale sano.
-- En MtErie 0005 la mediana es de 7.7 px, la más alta. Es un vuelo con giros y el último tercio tiene una media de
-  12.5 px.
+- En MtErie 0005 y MtErie 0007 la mediana pasa de 7 px. En MtErie 0005, un vuelo con giros, el primer y el último
+  tercio tienen medias de 14.5 y 14.8 px. En MtErie 0007, el primer tercio tiene 16.3 px.
 
 ### Por qué semejanza y no homografía
 
 Una homografía tiene 8 grados de libertad. Cuando todas las personas usadas están en una zona pequeña de la imagen,
 fuera de esa zona la transformación queda sin determinar. Comparación con la misma partición, hecha al decidir el
-modelo con los 4 775 pares (`comparacion_modelos.csv` tiene ahora la de los 4 640):
+modelo con los 4 775 pares y el reparto al azar. `comparacion_modelos.csv` tiene ahora la de los 4 620, con los
+bloques; en ella las medianas homografía / afín / semejanza siguen parecidas, de 1.6 a 8.7 px:
 
 | Vuelo | Zona que ve la térmica, homografía | Zona que ve la térmica, semejanza | Mediana homografía / afín / semejanza (px) |
 |---|---|---|---:|
@@ -147,13 +177,14 @@ MtErie 0005 con la homografía y 1.4 px con la semejanza. Con seed=0 y el mismo 
 
 | | Franja nominal | Homografía | Afín | Semejanza |
 |---|---:|---:|---:|---:|
-| Error medio (px), con los 4 640 pares | 8.9 | 11.4 | 11.4 | **11.9** |
-| Error máximo (px), con los 4 640 pares | 24.7 | 28.8 | 32.4 | 32.4 |
-| Error medio (px), con los 4 775 pares | 8.9 | 9.3 | 11.2 | 9.8 |
-| Error máximo (px), con los 4 775 pares | 24.7 | 21.3 | 31.4 | 27.6 |
+| Error medio (px), congelada (bloques) | 8.9 | 12.3 | 10.8 | **10.6** |
+| Error máximo (px), congelada (bloques) | 24.6 | 34.5 | 30.2 | 29.2 |
+| Error medio (px), al decidir el modelo (4 775 pares, al azar) | 8.9 | 9.3 | 11.2 | 9.8 |
+| Error máximo (px), al decidir el modelo (4 775 pares, al azar) | 24.7 | 21.3 | 31.4 | 27.6 |
 
-Con la semejanza reestimada el error medio sube de 9.8 a 11.9 px (ver "Después de aplicar"). El error máximo es del
-punto 8, que está en el borde inferior. Con los 4 775 pares, sin él, la semejanza daba 7.2 px de media. Estos puntos
+La semejanza congelada da 10.6 px de media. Con la semejanza al azar reestimada con los 4 640 pares daba 11.9. Las
+columnas de homografía y afín de la primera fila son las que se estiman para comparar con los bloques. El error máximo
+es del punto 8, que está en el borde inferior. Con los 4 775 pares, sin él, la semejanza daba 7.2 px de media. Estos puntos
 tienen una coherencia propia de unos 10 px: si se quita un punto, se ajusta una semejanza con los demás del mismo
 fotograma y se mide dónde cae el punto quitado, queda a entre 5 y 14 px (33 px el punto 8). Por eso la validación no
 distingue entre modelos con diferencias de pocos píxeles. Imagen: `puntos_manuales_210417_MtErie_Enterprise_0003.jpg`.
@@ -175,13 +206,13 @@ abajo: en todo el barrido (0 a 171) el dron avanza por un sendero de un bosque a
 helechos. Hay 1 o 2 personas pequeñas y lejanas, casi siempre en la parte baja o en el borde izquierdo. No hay
 despegue, aterrizaje ni cambio de zoom, y las dos cámaras muestran la misma escena.
 
-Error de alineación por separado (semejanza reestimada, pares de evaluación): media 8.5 px, mediana 5.5, máximo 149,
-79 pares (118 personas). Por tercios del vuelo: 11.0 / 8.3 / 7.1 px. Las personas cubren solo el 9 % de la térmica,
+Error de alineación por separado (semejanza congelada, pares de evaluación): media 9.8 px, mediana 7.7, máximo 151,
+75 pares (104 personas). Por tercios del vuelo: 16.3 / 9.9 / 6.8 px. Las personas cubren solo el 9 % de la térmica,
 siempre cerca de la línea del sendero. Con la homografía el tramo 23–55 parecía un desfase, pero era un error del
 modelo deformado: con la semejanza desaparece. Con la regla de desfase salieron 3 pares: 54–55, revisado a ojo (la
 térmica se atrasa tras un paneo), y la 53, "solo térmica" vecina.
 
-## Regla de desfase (aplicada el 2026-10-31, con revisión a ojo)
+## Regla de desfase (aplicada el 2026-10-31, con revisión a ojo y extensión por el fondo)
 
 ### La regla
 
@@ -293,77 +324,114 @@ Los px son térmicos (640 × 512). "Fondo" es el desplazamiento del fondo y los 
 268–272 y FHL 0401 656–657). Los 4 conservados tienen el fondo en su sitio: son personas tapadas en la RGB cuya caja
 más cercana es la de otra persona, o un cambio de la caja. Sumados los 4 tramos "todas corridas", salen **41 tramos**.
 
-### Pares que salen
+### Pares que salen con la revisión
 
-| Vuelo | Utilizables antes | Tramos excluidos | Pares de desfase | "Solo térmica" vecinos | Salen | Quedan | "Solo térmica" que quedan |
+| Vuelo | Utilizables antes | Tramos excluidos | Pares de desfase | "Solo térmica" vecinos | Salen |
+|---|---:|---:|---:|---:|---:|
+| MtErie 0003 | 264 | 8 | 28 | 0 | 28 |
+| MtErie 0005 | 269 | 4 | 10 | 0 | 10 |
+| MtErie 0007 | 172 | 1 | 2 | 1 | 3 |
+| FHL 0134 | 273 | 0 | 0 | 0 | 0 |
+| FHL 0401 | 846 | 16 | 56 | 1 | 57 |
+| FHL 0405 | 943 | 4 | 11 | 0 | 11 |
+| Baker | 2 008 | 8 | 26 | 0 | 26 |
+| **Total** | **4 775** | **41** | **133** | **2** | **135** |
+
+Aplicando la regla sin revisar habrían salido 149 pares; la revisión devuelve 14. Con eso quedaban 4 640.
+
+### Después de la revisión: reparto por bloques, semejanza congelada y FHL 0401 371–372
+
+Al volver a estimar la semejanza con los 4 640 pares cambió el reparto al azar de las dos mitades, porque el reparto
+se hacía con seed=0 sobre los pares que quedaban. Por eso la transformación se movió hasta 9 px (MtErie 0003). Además,
+la regla marcó un tramo nuevo, **FHL 0401 371–372**: en la 371 la mediana pasó de 0.99 a 1.02. Es un desfase real:
+las 4 personas y el fondo se corren juntos +15 px en la 370, +26 en la 371 y +65 en la 372. En la 369 coinciden
+(1 a 3 px), y la 373 y la 374 no tienen cajas térmicas aunque la RGB tiene 3 personas.
+
+Lo decidiste así:
+
+1. El reparto pasa a **bloques fijos de 20 posiciones alternados**, que no cambian al excluir pares.
+2. La semejanza se estima **una vez con los 4 640 pares** y se **congela** (ver "Alineación con los centros de las
+   cajas").
+3. FHL 0401 371–372 se excluye. Está en `tramos_adicionales` de `configs/revision_desfases.yaml`; no tiene pares
+   "solo térmica" cerca.
+
+### Extensión por el fondo
+
+Cada tramo de desfase excluido se extiende a los pares vecinos seguidos mientras el fondo esté corrido **más de
+20 px**. Se usa la norma de (dx, dy), medida con la correlación de fase y con la semejanza congelada. Los tramos que se
+extienden son:
+
+- los 41 de la regla revisada;
+- FHL 0401 371–372;
+- los dos desfases puestos a mano, MtErie 0005 160–162 y Baker 620–626, que se juntan con 618–619.
+
+Solo se extienden tramos ya detectados; no hay búsquedas nuevas. La extensión se corta en estos casos:
+
+- en el primer par con el fondo corrido 20 px o menos;
+- en el primer par con medida **no fiable** (respuesta menor que 0.10);
+- en un par sin anotar, en una exclusión puesta a mano o en otro tramo excluido.
+
+Las extensiones de FHL 0405, MtErie 0005 y MtErie 0007 se revisaron a ojo (imágenes `ext_*.jpg`); las demás salen sin
+revisión. Lo hace `scripts/fase2_revision_desfases.py --aplicar`. Las medidas están en `fondo_extensiones.csv`
+(también el par donde se corta cada extensión) y el resultado en `extensiones.csv`.
+
+| Vuelo | Desfase que se extiende | Pares que se agregan | Fondo (dx, dy) en px | Revisión |
+|---|---|---|---|---|
+| MtErie 0005 | 209–211, hacia atrás | 208 | (+2, +103) | **A ojo: excluir.** La única persona RGB está a +112 px de la persona térmica de arriba, el mismo corrimiento que el fondo; que coincida con la de abajo es casualidad |
+| FHL 0401 | 298–302, hacia atrás | 297 | (+1, +24) | Sin revisión |
+| FHL 0401 | 382–383, hacia atrás | 379–381 | (−26, 0), (−28, +1), (−31, +1) | Sin revisión |
+| FHL 0405 | 65–67, hacia adelante | 68–69 | (+1, −21), (+2, −23) | **A ojo: excluir.** El fondo sigue como en la 67 (−25); en la 68 la persona se corre igual (−19 px); en la 70 todo coincide |
+| Baker | 185–188, hacia atrás | 184 | (+40, −5) | Sin revisión |
+| Baker | 512–513, hacia adelante | 514–515 | (+47, +1), (+27, −1) | Sin revisión |
+| Baker | 519–521, hacia atrás | 518 | (+37, −4) | Sin revisión |
+| Baker | 633–634, hacia adelante | 635 | (−75, +1) | Sin revisión |
+| Baker | 652–654, hacia atrás | 651 | (+8, −31) | Sin revisión |
+| Baker | 652–654, hacia adelante | 655–657 | (−3, −43), (−4, −39), (−3, −27) | Sin revisión |
+| Baker | 795–801, hacia atrás | 793–794 | (−21, +1), (−30, 0) | Sin revisión |
+
+Salen **18 pares** en 11 extensiones, ninguno "solo térmica", y no hay "solo térmica" a 2 posiciones o menos de
+ellas. En MtErie 0007 no hay extensión: los vecinos 52 y 56 tienen medida no fiable. Los dos desfases puestos a mano
+tampoco se extienden: MtErie 0005 159 y 163 están a 10 y 1 px, y Baker 627 a 4 px; Baker 617 no es fiable.
+
+### Total final
+
+| Vuelo | Utilizables antes (4 775) | Regla revisada | FHL 0401 371–372 | Extensión por el fondo | Salen | Quedan | "Solo térmica" que quedan |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| MtErie 0003 | 264 | 8 | 28 | 0 | 28 | 236 | 0 |
-| MtErie 0005 | 269 | 4 | 10 | 0 | 10 | 259 | 8 de 8 |
-| MtErie 0007 | 172 | 1 | 2 | 1 | 3 | 169 | 7 de 8 |
+| MtErie 0003 | 264 | 28 | 0 | 0 | 28 | 236 | 0 |
+| MtErie 0005 | 269 | 10 | 0 | 1 | 11 | 258 | 8 de 8 |
+| MtErie 0007 | 172 | 3 | 0 | 0 | 3 | 169 | 7 de 8 |
 | FHL 0134 | 273 | 0 | 0 | 0 | 0 | 273 | 61 de 61 |
-| FHL 0401 | 846 | 16 | 56 | 1 | 57 | 789 | 0 de 1 |
-| FHL 0405 | 943 | 4 | 11 | 0 | 11 | 932 | 394 de 394 |
-| Baker | 2 008 | 8 | 26 | 0 | 26 | 1 982 | 1 de 1 |
-| **Total** | **4 775** | **41** | **133** | **2** | **135** | **4 640** | **471 de 473** |
+| FHL 0401 | 846 | 57 | 2 | 4 | 63 | 783 | 0 de 1 |
+| FHL 0405 | 943 | 11 | 0 | 2 | 13 | 930 | 394 de 394 |
+| Baker | 2 008 | 26 | 0 | 11 | 37 | 1 971 | 1 de 1 |
+| **Total** | **4 775** | **135** | **2** | **18** | **155** | **4 620** | **471 de 473** |
 
-Aplicando la regla sin revisar habrían salido 149 pares; la revisión devuelve 14.
+**FHL 0405 por separado:** salen 13 pares: los de sus 4 tramos (37–39, 47–48, 55–57 y 65–67) y la extensión 68–69.
+Ninguno es "solo térmica", así que quedan **930 pares** y se conservan los **394 "solo térmica"**. Los fotogramas de
+marcado (30, 440 y 930) no caen en ningún tramo.
 
-**FHL 0405 por separado:** salen 11 pares, los de sus 4 tramos (37–39, 47–48, 55–57 y 65–67). Los 4 son desfases
-reales: las personas se corren juntas una altura y vuelven a coincidir en los pares vecinos. Ninguno es "solo
-térmica", así que quedan **932 pares** y se conservan los **394 "solo térmica"**. Los fotogramas de marcado (30, 440 y
-930) no caen en ningún tramo.
+### Lo que queda sin excluir
 
-### Después de aplicar: la semejanza se volvió a estimar
+Con esto se cierran los desfases. Quedan dentro, a sabiendas:
 
-Con los 4 640 pares se volvió a correr `fase2_homografias_cajas.py`, para que `configs/homografias_cajas.yaml` salga
-de los mismos datos que se van a usar. Al quitar pares cambia el reparto al azar de las dos mitades (seed=0 sobre los
-pares que quedan), así que la semejanza cambia aunque el método sea el mismo. Cambio medio de la transformación sobre
-la térmica, con el máximo entre paréntesis:
+1. **Vecinos corridos que la extensión no alcanza.** La extensión se corta en una medida no fiable. Quedan, por
+   ejemplo:
+   - MtErie 0005 206–207: en la 207 el fondo mide +99 px, pero con respuesta 0.02;
+   - FHL 0401 677 (+63, no fiable) y 753 (+25, no fiable);
+   - Baker 511, 632, 636, 642 y 802 (de 26 a 72 px, no fiables).
 
-- MtErie 0003: 5.0 px (9.3).
-- MtErie 0007: 3.9 px (7.4).
-- FHL 0405: 3.1 px (6.0).
-- Baker: 1.8 px (3.0).
-- FHL 0401 y MtErie 0005: 0.9 px (1.6).
-- FHL 0134: 0.
+   También quedan vecinos corridos 20 px o menos: FHL 0401 565 y 568 (−20 y −18 px) y 139 (−16).
+2. **Tramos que la regla marcaría con la semejanza congelada.** No se revisaron ni se aplicaron, porque no se hacen
+   búsquedas nuevas. Son 6 tramos, 21 pares de desfase y 3 "solo térmica" vecinos:
+   - MtErie 0005 71–73 y 85–87: los conservados en la revisión.
+   - FHL 0134 261–269 y 271–272: las personas miden unos 10 px y la distancia máxima es de 7 px; parece el mismo
+     caso de oclusión que 268–272.
+   - FHL 0401 571–572: 36 px, entre los tramos excluidos 566–567 y 574–575.
+   - FHL 0405 160–161: 21 px.
 
-La distancia de evaluación baja en casi todos los vuelos (ver la tabla de resultados por vuelo, más arriba): por
-ejemplo, la media de MtErie 0003 pasa de 8.9 a 5.8 px y la de FHL 0405 de 8.0 a 6.2. Pero el error con los puntos
-manuales de MtErie 0003 sube de 9.8 a 11.9 px. Con 8 puntos en un solo fotograma y una coherencia propia de unos
-10 px, esa validación no distingue cambios de este tamaño. La validación con FHL 0405 lo dirá mejor.
-
-Con la semejanza nueva, la regla marca **4 tramos** (51 pares con mediana mayor que 1):
-
-- Los 3 que se conservaron en la revisión: MtErie 0005 71–73 y 85–87, y FHL 0134 268–272. FHL 0401 656–657 ya no
-  sale.
-- **Uno nuevo: FHL 0401 371–372.** En la 371 la mediana pasó de 0.99 a 1.02. Es un desfase real: las 4 personas y el
-  fondo se corren juntos +15 px en la 370, +26 en la 371 y +65 en la 372. En la 369 coinciden (1 a 3 px). La 373 y la
-  374 no tienen cajas térmicas, aunque la RGB tiene 3 personas. **No se aplicó**: lo decides tú.
-
-Medidas con la semejanza nueva: 9 676 personas térmicas en 3 640 pares; 9 359 tienen caja RGB a 3 alturas o menos.
-`ejemplos_desfase.jpg` se regeneró con los 4 640 pares. En sus 6 primeras filas, los tramos de la hoja anterior salen
-como "no lo excluye", porque sus pares ya están excluidos o no pasan el umbral. Las 4 últimas son los 4 tramos de la
-lista anterior. La hoja revisada antes de aplicar está en el commit `fe7376a`.
-
-### Lo que la revisión no cubre
-
-1. **Vecinos corridos por debajo del umbral.** Solo miré el par anterior y el siguiente de cada tramo. Varios siguen
-   corridos, y el fondo se corre en la misma dirección, pero la mediana no pasa de 1 altura, así que se quedan:
-   - FHL 0401: 297 (fondo +24 px; personas a 19–24 px, 0.9 alturas), 381 (fondo −33; personas a 16–35 px), 565 y
-     568 (fondo −22 y −20; unos 13 px, 1.0 alturas), 742 (+11; 12–14 px) y 753 (+15; 12–14 px).
-   - FHL 0405: 68 (fondo −21; 18 px, 0.8 alturas).
-   - Baker: 184 (fondo +42; 41 px), 511 (46–48 px), 514 (49–55 px), 518 (fondo +39; 39–43 px), 632 (fondo −25;
-     22 px), 642 (51 px), 651 (fondo −32; 36 px), 655 (fondo −45; 45 px) y 794 (fondo −30; 32 px).
-
-   En Baker la cámara va inclinada y las personas son grandes: una altura son de 33 a 81 px. Por eso una persona de
-   pie corrida 0.7 alturas en horizontal queda fuera de su caja térmica, y la regla no la cuenta como desfase.
-2. **Desplazamientos de más de 3 alturas.** Las personas a más de 3 alturas de toda caja RGB no cuentan (pueden estar
-   tapadas), así que un desfase muy grande se toma por oclusión.
-   - El caso más claro es **MtErie 0005 206–208**. El fondo se corre +33, +103 y +104 px, y sigue en 209–211, que sí
-     se excluyó. La persona corrida está a 4.5 alturas, así que no cuenta. La otra queda cerca de una caja RGB
-     (0.4–0.7 alturas), y el par no sale.
-   - En FHL 0401 677, dos personas están a 49 y 62 px de la caja RGB más cercana (3.8 y 4.1 alturas).
-   - Los pares sin personas que cuenten tampoco se ven, como Baker 635 y 802 (fondo −74 y −57, no fiable).
+Medidas con la semejanza congelada y los 4 620 pares: 9 634 personas térmicas en 3 621 pares, de las que 9 319 tienen
+caja RGB a 3 alturas o menos; en 53 pares la mediana pasa de 1. `ejemplos_desfase.jpg` se regenera en cada corrida; la
+hoja que se revisó antes de aplicar la regla está en el commit `fe7376a`.
 
 ### Sensibilidad al radio de "cerca" (antes de aplicar, con los 4 775 pares)
 
@@ -382,7 +450,8 @@ intervalo se aplana: es el fondo de personas cuya caja RGB más cercana es otra 
 | **Total** | **242** | **109** | **149** | **160** | **173** | **299** |
 
 Entre 3 y 5 alturas el total se estabiliza (149 a 173). Sin límite, FHL 0405 perdería 97 pares: son personas tapadas
-en la RGB cuya caja más cercana es otra persona. `sensibilidad_radio.csv` tiene ahora la de los 4 640 pares.
+en la RGB cuya caja más cercana es otra persona. `sensibilidad_radio.csv` tiene ahora la de los 4 620 pares, con la
+semejanza congelada.
 
 ### Antes de aplicar: hoja de ejemplos y revisión de 4 tramos nuevos
 
@@ -423,16 +492,13 @@ caben completas.
 ## Espacio en disco previsto
 
 Por par: RGB alineada en PNG (0.74 MB), térmica en gris en PNG (0.18 MB) y TIFF de 4 canales con deflate (0.92 MB).
-Son estimaciones hechas con muestras de cada vuelo. Con los 4 640 pares de hoy serían unos **8.0 GiB**. Libres en C:
-110 GB (medido el 2026-10-31).
+Son estimaciones hechas con muestras de cada vuelo. Con los 4 620 pares finales serían unos **7.9 GiB**. Libres en
+C: 110 GB (medido el 2026-10-31).
 
 ## Pendiente
 
-1. Decidir sobre **FHL 0401 371–372**, el tramo nuevo que sale tras reestimar la semejanza (ver "Después de
-   aplicar"). Si se agrega, conviene decidir antes cómo evitar que cada exclusión cambie el reparto de las mitades y
-   mueva la semejanza.
-2. Decidir si se hace algo con los vecinos que siguen corridos por debajo de 1 altura y con MtErie 0005 206–208 (ver
-   "Lo que la revisión no cubre").
-3. Validación con tus puntos de FHL 0405 (volver a correr `fase2_homografias_cajas.py`).
-4. Alinear y escribir los PNG y TIFF por partes, con 10 superposiciones por vuelo.
-5. Para la Fase 3: la propuesta de partición de `FASES.md` incluye Carnation 0023, que ya está excluido.
+1. **Tu validación en FHL 0405**: marcas los puntos en los fotogramas 30, 440 y 930 y se vuelve a correr
+   `fase2_homografias_cajas.py`. Con la transformación congelada, el script solo mide el error y no la reestima. Si
+   el error saliera grande, la decisión de volver a estimarla es tuya.
+2. **Generar los PNG y los TIFF** de los 4 620 pares, por partes, con 10 superposiciones por vuelo.
+3. Para la Fase 3: la propuesta de partición de `FASES.md` incluye Carnation 0023, que ya está excluido.

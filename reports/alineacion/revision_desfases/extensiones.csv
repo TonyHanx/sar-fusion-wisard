@@ -1,0 +1,12 @@
+vuelo,bloque,lado,desde,hasta,pares,revisar,decision,motivo,solo_termica_excluidos
+210417_MtErie_Enterprise_0005,209-211,antes,208,208,1,True,excluir,el fondo se corre +103 px en vertical; la única persona RGB está a +112 px de la persona térmica de arriba (el mismo corrimiento) y coincide con la de abajo por casualidad,
+210924_FHL_Enterprise_0401,298-302,antes,297,297,1,False,excluir,"fondo corrido más de 20 px (sin revisión): 297: (+1, +24)",
+210924_FHL_Enterprise_0401,382-383,antes,379,381,3,False,excluir,"fondo corrido más de 20 px (sin revisión): 379: (-26, +0), 380: (-28, +1), 381: (-31, +1)",
+210924_FHL_Enterprise_0405,65-67,después,68,69,2,True,excluir,"el fondo sigue corrido −21 y −23 px en vertical, como en la 67 (−25); en la 68 la persona se corre igual (−19 px); en la 70 todo coincide",
+220109_Baker_Enterprise_1,185-188,antes,184,184,1,False,excluir,"fondo corrido más de 20 px (sin revisión): 184: (+40, -5)",
+220109_Baker_Enterprise_1,512-513,después,514,515,2,False,excluir,"fondo corrido más de 20 px (sin revisión): 514: (+47, +1), 515: (+27, -1)",
+220109_Baker_Enterprise_1,519-521,antes,518,518,1,False,excluir,"fondo corrido más de 20 px (sin revisión): 518: (+37, -4)",
+220109_Baker_Enterprise_1,633-634,después,635,635,1,False,excluir,"fondo corrido más de 20 px (sin revisión): 635: (-75, +1)",
+220109_Baker_Enterprise_1,652-654,antes,651,651,1,False,excluir,"fondo corrido más de 20 px (sin revisión): 651: (+8, -31)",
+220109_Baker_Enterprise_1,652-654,después,655,657,3,False,excluir,"fondo corrido más de 20 px (sin revisión): 655: (-3, -43), 656: (-4, -39), 657: (-3, -27)",
+220109_Baker_Enterprise_1,795-801,antes,793,794,2,False,excluir,"fondo corrido más de 20 px (sin revisión): 793: (-21, +1), 794: (-30, +0)",

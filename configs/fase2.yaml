@@ -121,7 +121,13 @@ lado_a_lado:
 homografias_cajas:
   modelo: semejanza                 # el que se guarda: homografia (8 grados de libertad), afin (6) o semejanza (4)
   modelos_comparados: [homografia, afin, semejanza]   # además de la franja nominal, con la misma partición
-  fraccion_calibracion: 0.5
+  # Reparto calibración / evaluación por bloques fijos de posiciones, alternados por vuelo (0-19 calibración, 20-39
+  # evaluación...). Decidido el 2026-10-31: no cambia al excluir pares y los fotogramas casi iguales no quedan en las
+  # dos mitades (antes: al azar con seed, 50 %).
+  bloque_reparto_posiciones: 20
+  # Congelada: no se vuelve a estimar; el script lee configs/homografias_cajas.yaml y solo evalúa. Estimada una vez
+  # el 2026-10-31 con los 4 640 pares (bloques de 20) y congelada ese día.
+  transformacion_congelada: true
   compuerta_inicial_px: 80          # distancia máxima (px térmicos) para emparejar personas con la franja nominal
   compuerta_px: 30                  # la misma, con la transformación ya estimada
   iteraciones: 3                    # emparejar y volver a estimar
@@ -188,3 +194,12 @@ revision_desfases:
   carpeta: alineacion/revision_desfases                 # dentro de reports/
   decisiones: configs/revision_desfases.yaml            # decisiones de la revisión a ojo
   salida_exclusiones: configs/exclusiones_desfase.yaml  # lo lee configs/fase1.yaml (exclusiones_adicionales)
+  # Extensión por el fondo (decidida el 2026-10-31): cada tramo de desfase excluido se extiende a los pares vecinos
+  # seguidos mientras el fondo esté corrido más de `extension_fondo_min_px` (norma de (dx, dy), con medida fiable). Solo
+  # vecinos de tramos ya detectados. Las extensiones que caen en `vuelos_revisar_todos` se revisan a ojo.
+  extension_fondo_min_px: 20
+  config_fase1: configs/fase1.yaml   # sus `exclusiones` (las puestas a mano) cortan la extensión
+  # Desfases excluidos a mano en configs/fase1.yaml: también se extienden.
+  semillas_manuales:
+    - {vuelo: 210417_MtErie_Enterprise_0005, desde: 160, hasta: 162}
+    - {vuelo: 220109_Baker_Enterprise_1, desde: 620, hasta: 626}

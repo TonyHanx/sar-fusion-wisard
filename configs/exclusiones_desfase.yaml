@@ -1,5 +1,5 @@
-# Generado por scripts/fase2_revision_desfases.py --aplicar el 2026-10-31T17:57:13 (no editar a mano).
-# Desfases de la regla relativa: los tramos 'todas corridas' sin revisión y los revisados a ojo con decisión 'excluir' (configs/revision_desfases.yaml).
+# Generado por scripts/fase2_revision_desfases.py --aplicar el 2026-10-31T18:21:48 (no editar a mano).
+# Desfases de la regla relativa: los tramos 'todas corridas' sin revisión, los revisados a ojo con decisión 'excluir' y los tramos adicionales (configs/revision_desfases.yaml), más su extensión por el fondo.
 exclusiones:
 - carpeta_rgb: 210417_MtErie_Enterprise_VIS_0003
   carpeta_termica: 210417_MtErie_Enterprise_IR_0004
@@ -222,3 +222,66 @@ exclusiones:
   desde: 795
   hasta: 801
   motivo: 'desfase entre cámaras (regla relativa, una persona): la persona se corre −35 a −47 px en x y va en aumento; fondo −32 a −52 px'
+- carpeta_rgb: 210924_FHL_Enterprise_VIS_0401
+  carpeta_termica: 210924_FHL_Enterprise_IR_0402
+  desde: 371
+  hasta: 372
+  motivo: 'desfase entre cámaras (regla relativa, tras volver a estimar la semejanza, adicional): apareció al volver a estimar la semejanza (mediana 0.99 -> 1.02 en la 371); las 4 personas y el fondo se
+    corren juntos +15, +26 y +65 px de la 370 a la 372; en la 369 coinciden. Decidido el 2026-10-31'
+- carpeta_rgb: 210417_MtErie_Enterprise_VIS_0005
+  carpeta_termica: 210417_MtErie_Enterprise_IR_0006
+  desde: 208
+  hasta: 208
+  motivo: 'desfase entre cámaras (extensión antes del tramo 209-211 por el fondo): el fondo se corre +103 px en vertical; la única persona RGB está a +112 px de la persona térmica de arriba (el mismo corrimiento)
+    y coincide con la de abajo por casualidad'
+- carpeta_rgb: 210924_FHL_Enterprise_VIS_0401
+  carpeta_termica: 210924_FHL_Enterprise_IR_0402
+  desde: 297
+  hasta: 297
+  motivo: 'desfase entre cámaras (extensión antes del tramo 298-302 por el fondo): fondo corrido más de 20 px (sin revisión): 297: (+1, +24)'
+- carpeta_rgb: 210924_FHL_Enterprise_VIS_0401
+  carpeta_termica: 210924_FHL_Enterprise_IR_0402
+  desde: 379
+  hasta: 381
+  motivo: 'desfase entre cámaras (extensión antes del tramo 382-383 por el fondo): fondo corrido más de 20 px (sin revisión): 379: (-26, +0), 380: (-28, +1), 381: (-31, +1)'
+- carpeta_rgb: 210924_FHL_Enterprise_VIS_0405
+  carpeta_termica: 210924_FHL_Enterprise_IR_0406
+  desde: 68
+  hasta: 69
+  motivo: 'desfase entre cámaras (extensión después del tramo 65-67 por el fondo): el fondo sigue corrido −21 y −23 px en vertical, como en la 67 (−25); en la 68 la persona se corre igual (−19 px); en la
+    70 todo coincide'
+- carpeta_rgb: 220109_Baker_Enterprise_VIS_1
+  carpeta_termica: 220109_Baker_Enterprise_IR_1
+  desde: 184
+  hasta: 184
+  motivo: 'desfase entre cámaras (extensión antes del tramo 185-188 por el fondo): fondo corrido más de 20 px (sin revisión): 184: (+40, -5)'
+- carpeta_rgb: 220109_Baker_Enterprise_VIS_1
+  carpeta_termica: 220109_Baker_Enterprise_IR_1
+  desde: 514
+  hasta: 515
+  motivo: 'desfase entre cámaras (extensión después del tramo 512-513 por el fondo): fondo corrido más de 20 px (sin revisión): 514: (+47, +1), 515: (+27, -1)'
+- carpeta_rgb: 220109_Baker_Enterprise_VIS_1
+  carpeta_termica: 220109_Baker_Enterprise_IR_1
+  desde: 518
+  hasta: 518
+  motivo: 'desfase entre cámaras (extensión antes del tramo 519-521 por el fondo): fondo corrido más de 20 px (sin revisión): 518: (+37, -4)'
+- carpeta_rgb: 220109_Baker_Enterprise_VIS_1
+  carpeta_termica: 220109_Baker_Enterprise_IR_1
+  desde: 635
+  hasta: 635
+  motivo: 'desfase entre cámaras (extensión después del tramo 633-634 por el fondo): fondo corrido más de 20 px (sin revisión): 635: (-75, +1)'
+- carpeta_rgb: 220109_Baker_Enterprise_VIS_1
+  carpeta_termica: 220109_Baker_Enterprise_IR_1
+  desde: 651
+  hasta: 651
+  motivo: 'desfase entre cámaras (extensión antes del tramo 652-654 por el fondo): fondo corrido más de 20 px (sin revisión): 651: (+8, -31)'
+- carpeta_rgb: 220109_Baker_Enterprise_VIS_1
+  carpeta_termica: 220109_Baker_Enterprise_IR_1
+  desde: 655
+  hasta: 657
+  motivo: 'desfase entre cámaras (extensión después del tramo 652-654 por el fondo): fondo corrido más de 20 px (sin revisión): 655: (-3, -43), 656: (-4, -39), 657: (-3, -27)'
+- carpeta_rgb: 220109_Baker_Enterprise_VIS_1
+  carpeta_termica: 220109_Baker_Enterprise_IR_1
+  desde: 793
+  hasta: 794
+  motivo: 'desfase entre cámaras (extensión antes del tramo 795-801 por el fondo): fondo corrido más de 20 px (sin revisión): 793: (-21, +1), 794: (-30, +0)'
