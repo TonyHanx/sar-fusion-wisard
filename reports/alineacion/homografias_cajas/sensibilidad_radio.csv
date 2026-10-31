@@ -5,12 +5,12 @@ vuelo,regla,tramos,desfase,solo_termica_vecinos,salen
 210417_MtErie_Enterprise_0003,radio 4 alturas,0,0,0,0
 210417_MtErie_Enterprise_0003,radio 5 alturas,0,0,0,0
 210417_MtErie_Enterprise_0003,sin límite de radio,0,0,0,0
-210417_MtErie_Enterprise_0005,anterior (25 px),5,11,1,12
+210417_MtErie_Enterprise_0005,anterior (25 px),4,9,1,10
 210417_MtErie_Enterprise_0005,radio 2 alturas,2,5,1,6
 210417_MtErie_Enterprise_0005,radio 3 alturas,2,6,1,7
 210417_MtErie_Enterprise_0005,radio 4 alturas,2,6,1,7
-210417_MtErie_Enterprise_0005,radio 5 alturas,3,8,1,9
-210417_MtErie_Enterprise_0005,sin límite de radio,5,29,1,30
+210417_MtErie_Enterprise_0005,radio 5 alturas,2,6,1,7
+210417_MtErie_Enterprise_0005,sin límite de radio,4,27,1,28
 210417_MtErie_Enterprise_0007,anterior (25 px),1,2,0,2
 210417_MtErie_Enterprise_0007,radio 2 alturas,0,0,0,0
 210417_MtErie_Enterprise_0007,radio 3 alturas,0,0,0,0
@@ -30,11 +30,11 @@ vuelo,regla,tramos,desfase,solo_termica_vecinos,salen
 210924_FHL_Enterprise_0401,radio 5 alturas,7,16,0,16
 210924_FHL_Enterprise_0401,sin límite de radio,10,40,0,40
 210924_FHL_Enterprise_0405,anterior (25 px),1,2,0,2
-210924_FHL_Enterprise_0405,radio 2 alturas,1,2,0,2
-210924_FHL_Enterprise_0405,radio 3 alturas,1,2,0,2
-210924_FHL_Enterprise_0405,radio 4 alturas,1,2,0,2
-210924_FHL_Enterprise_0405,radio 5 alturas,1,2,0,2
-210924_FHL_Enterprise_0405,sin límite de radio,11,85,1,86
+210924_FHL_Enterprise_0405,radio 2 alturas,0,0,0,0
+210924_FHL_Enterprise_0405,radio 3 alturas,0,0,0,0
+210924_FHL_Enterprise_0405,radio 4 alturas,0,0,0,0
+210924_FHL_Enterprise_0405,radio 5 alturas,0,0,0,0
+210924_FHL_Enterprise_0405,sin límite de radio,12,83,1,84
 220109_Baker_Enterprise_1,anterior (25 px),18,78,0,78
 220109_Baker_Enterprise_1,radio 2 alturas,0,0,0,0
 220109_Baker_Enterprise_1,radio 3 alturas,0,0,0,0

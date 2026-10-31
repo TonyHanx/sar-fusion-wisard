@@ -422,7 +422,6 @@ vuelo,posicion,personas,distancia_media_px,distancia_max_px,personas_termicas,pe
 210417_MtErie_Enterprise_0005,201,1.0,9.25,9.25,1,1.0,0.27,calibración
 210417_MtErie_Enterprise_0005,205,2.0,3.46,6.55,2,2.0,0.13,calibración
 210417_MtErie_Enterprise_0005,206,2.0,30.42,34.51,2,2.0,1.22,calibración
-210417_MtErie_Enterprise_0005,207,2.0,104.03,104.34,2,1.0,0.81,calibración
 210417_MtErie_Enterprise_0005,212,2.0,5.0,6.23,3,2.0,0.22,calibración
 210417_MtErie_Enterprise_0005,213,2.0,3.7,4.23,3,2.0,0.15,calibración
 210417_MtErie_Enterprise_0005,214,2.0,5.69,7.04,3,2.0,0.22,calibración
@@ -1539,8 +1538,6 @@ vuelo,posicion,personas,distancia_media_px,distancia_max_px,personas_termicas,pe
 210924_FHL_Enterprise_0405,157,1.0,3.4,3.4,3,1.0,0.19,evaluación
 210924_FHL_Enterprise_0405,158,1.0,4.17,4.17,2,1.0,0.23,evaluación
 210924_FHL_Enterprise_0405,159,1.0,4.24,4.24,2,1.0,0.24,evaluación
-210924_FHL_Enterprise_0405,160,1.0,19.43,19.43,2,1.0,1.08,calibración
-210924_FHL_Enterprise_0405,161,1.0,20.79,20.79,2,1.0,1.16,calibración
 210924_FHL_Enterprise_0405,162,1.0,0.32,0.32,2,1.0,0.02,calibración
 210924_FHL_Enterprise_0405,163,1.0,0.91,0.91,2,1.0,0.05,calibración
 210924_FHL_Enterprise_0405,164,1.0,2.06,2.06,2,1.0,0.11,calibración

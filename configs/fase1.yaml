@@ -44,6 +44,12 @@ exclusiones:
     desde: 620
     hasta: 626
     motivo: desfase entre cámaras en un giro rápido (personas separadas de 30 a 75 px)
+  # Al cerrar los desfases (2026-10-31): vecino corrido que la extensión por el fondo no alcanza (medida no fiable).
+  - carpeta_rgb: 210417_MtErie_Enterprise_VIS_0005
+    carpeta_termica: 210417_MtErie_Enterprise_IR_0006
+    desde: 207
+    hasta: 207
+    motivo: desfase entre cámaras (fondo corrido (+4, +99) px con respuesta 0.02, no fiable), pegado a la extensión 208 (+103 px) y al tramo 209-211; excluido a mano el 2026-10-31
 
 # Exclusiones generadas por otros scripts (mismo formato). Desfases de la regla relativa revisados a ojo (fase 2,
 # 31 de octubre de 2026): los escribe scripts/fase2_revision_desfases.py --aplicar desde configs/revision_desfases.yaml.
@@ -54,7 +60,7 @@ exclusiones_adicionales:
 esperado:
   pares: 14839
   pares_anotados: 5739
-  pares_anotados_sin_excluidos: 4620   # 4 775 antes de los desfases (salen 135 + 2 de FHL 0401 371-372 + 18 de la extensión por el fondo)
+  pares_anotados_sin_excluidos: 4617   # 4 775 antes de los desfases (salen 135 + 2 de FHL 0401 371-372 + 18 de la extensión por el fondo + MtErie 0005 207 + FHL 0405 160-161)
 
 # Salidas
 pares: pares.csv                              # dentro de data/

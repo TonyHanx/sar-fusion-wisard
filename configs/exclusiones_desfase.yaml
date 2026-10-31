@@ -1,4 +1,4 @@
-# Generado por scripts/fase2_revision_desfases.py --aplicar el 2026-10-31T18:21:48 (no editar a mano).
+# Generado por scripts/fase2_revision_desfases.py --aplicar el 2026-10-31T18:38:04 (no editar a mano).
 # Desfases de la regla relativa: los tramos 'todas corridas' sin revisión, los revisados a ojo con decisión 'excluir' y los tramos adicionales (configs/revision_desfases.yaml), más su extensión por el fondo.
 exclusiones:
 - carpeta_rgb: 210417_MtErie_Enterprise_VIS_0003
@@ -228,6 +228,12 @@ exclusiones:
   hasta: 372
   motivo: 'desfase entre cámaras (regla relativa, tras volver a estimar la semejanza, adicional): apareció al volver a estimar la semejanza (mediana 0.99 -> 1.02 en la 371); las 4 personas y el fondo se
     corren juntos +15, +26 y +65 px de la 370 a la 372; en la 369 coinciden. Decidido el 2026-10-31'
+- carpeta_rgb: 210924_FHL_Enterprise_VIS_0405
+  carpeta_termica: 210924_FHL_Enterprise_IR_0406
+  desde: 160
+  hasta: 161
+  motivo: 'desfase entre cámaras (regla relativa con la semejanza congelada, revisado a ojo al cerrar los desfases, adicional): RGB borrosa por el movimiento; la persona se corre (+16, −11) y (+18, −11)
+    px y el fondo de la mitad derecha (+9, +8) y (+17, +8) px (respuesta 0.26 y 0.25), frente a (−5, −2) en la 158, 159, 162 y 163; los bordes de los árboles salen dobles. Decidido el 2026-10-31'
 - carpeta_rgb: 210417_MtErie_Enterprise_VIS_0005
   carpeta_termica: 210417_MtErie_Enterprise_IR_0006
   desde: 208

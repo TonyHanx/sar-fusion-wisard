@@ -293,6 +293,7 @@ def aplicar(cfg, c, cr, rutas, carpeta):
         adic.append({"tramo": int(tr.tramo.max()) + i + 1, "vuelo": a["vuelo"], "desde": a["desde"],
                      "hasta": a["hasta"], "pares": a["hasta"] - a["desde"] + 1, "tipo": "adicional", "revisar": True,
                      "decision": a["decision"], "motivo": a["motivo"],
+                     "origen": a.get("origen", "regla relativa, tras volver a estimar la semejanza"),
                      "posiciones_solo_termica": " ".join(map(str, vecinos_solo_termica(a["vuelo"], a["desde"],
                                                                                          a["hasta"], set())))})
     tr = pd.concat([tr, pd.DataFrame(adic)], ignore_index=True) if adic else tr
@@ -308,7 +309,7 @@ def aplicar(cfg, c, cr, rutas, carpeta):
             continue
         base = {"carpeta_rgb": carpetas.loc[t.vuelo, "carpeta_rgb"],
                 "carpeta_termica": carpetas.loc[t.vuelo, "carpeta_termica"]}
-        origen = "regla relativa" if t.tipo != "adicional" else "regla relativa, tras volver a estimar la semejanza"
+        origen = "regla relativa" if t.tipo != "adicional" else t.origen
         exclusiones.append({**base, "desde": int(t.desde), "hasta": int(t.hasta),
                             "motivo": f"desfase entre cámaras ({origen}, {t.tipo}): {t.motivo}"})
         exclusiones += [{**base, "desde": p, "hasta": p,
