@@ -1,9 +1,10 @@
 # Fase 2. Alineación de la RGB con la térmica (en curso)
 
 Fecha: 2026-10-31 · Estado: modelo decidido (**semejanza por vuelo**). Exclusiones explícitas aplicadas: quedan
-**4 763 pares**. Regla de desfase calculada y **sin aplicar**: sacaría 243 pares y quedarían 4 520. Falta que la
-confirmes después de ver la hoja de ejemplos. La validación con los puntos manuales de FHL 0405 está pendiente: los
-marcas tú. Después siguen los TIFF.
+**4 775 pares** (473 "solo térmica"). Regla de desfase relativa confirmada (radio de 3 alturas) pero **sin aplicar**:
+sacaría 149 pares y quedarían 4 626. No se aplicó porque, de los 4 tramos nuevos revisados, 2 no son desfases (ver
+"Regla de desfase"). La validación con los puntos manuales de FHL 0405 está pendiente: los marcas tú. Después siguen
+los TIFF.
 
 ## Decisiones tomadas el 2026-10-31
 
@@ -15,12 +16,10 @@ marcas tú. Después siguen los TIFF.
   descartó porque se deforma donde las personas ocupan poco espacio (ver "Por qué semejanza").
 - **El aterrizaje de FHL 0401 empieza en la 857** (antes 878). Desde ahí las personas de las dos cámaras se separan
   más de 25 px, medido con la semejanza.
-- **Desfases entre cámaras excluidos:** MtErie 0003 0–11, MtErie 0005 160–162 y Baker 620–626. Al medirlos con la
-  semejanza, el de MtErie 0003 no se sostiene: queda en 7–21 px. Los 28–40 px que reporté venían de la homografía.
-  Se excluyó como pediste, pero está **pendiente de confirmar** (ver la tabla de tramos excluidos).
-- **Regla de desfase para todo el vuelo:** se excluyen los tramos de 2 o más pares seguidos con alguna persona a más
-  de 25 px. También se excluyen los pares "solo térmica" que estén dentro de esos tramos o a 2 posiciones o menos.
-  Está calculada pero **sin aplicar**: primero tienes que ver la hoja de ejemplos.
+- **Desfases entre cámaras excluidos:** MtErie 0005 160–162 y Baker 620–626. **MtErie 0003 0–11 se devolvió**: los
+  28–40 px que reporté venían de la homografía; con la semejanza las personas están a 7–21 px.
+- **Regla de desfase relativa para todo el vuelo**, con radio de "cerca" de 3 alturas (confirmada). Reemplaza la de
+  25 px. Está **sin aplicar**: 2 de los 4 tramos nuevos de la hoja no son desfases (ver "Regla de desfase").
 - **MtErie 0007 se conserva e irá en la partición de validación.** Es un vuelo **bajo el dosel con la cámara de
   frente**, no hacia abajo como los demás.
 - **Validación manual:** en MtErie 0003 se descartan los puntos de inicio y final, porque se marcaron con la térmica
@@ -58,19 +57,22 @@ siguiente: la RGB completa con la franja en amarillo, la RGB recortada y la tér
 | Baker VIS_1/IR_1 | 0 a 15 | Despegue | 16 | 0 | 0–13: dron en el suelo (su estructura tapa la parte baja de la RGB). 14–15: despegando a ras de la nieve. 16: ya en el aire, con personas en las dos imágenes |
 | FHL 0401/0402 | 0 a 10 | Cambio de zoom | 11 | 47 | En 0–10 las personas salen cerca de 1.6 veces más grandes en la RGB recortada que en la térmica; desde la 11 coinciden |
 | FHL 0401/0402 | 857 a 895 | Aterrizaje | 39 | 70 | El dron baja hasta el pasto, con personas que caminan cerca. Desde la 857 las personas de las dos cámaras se separan más de 25 px (857: 25.3, 858: 31, de 861 a 880: de 24 a 59). En 852–856 la separación es de 7 a 15 px. El vídeo termina en la 895 sin que el dron se pose |
-| MtErie 0003/0004 | 0 a 11 | Desfase (**pendiente de confirmar**) | 12 | 48 | El dron sube al empezar. Con la homografía las personas quedaban separadas de 28 a 40 px. Con la semejanza son 7–11 px en 0–9 y 21 px en 10–11; la franja nominal da casi lo mismo (6–12 y 23 px). Desde la 12 la separación es de 4–6 px. Ninguna pasa de 25 px, así que la regla no lo excluiría |
 | MtErie 0005/0006 | 160 a 162 | Desfase | 3 | 4 | Giro rápido: 174, 51 y 37 px (159: 13; 163: 16) |
 | Baker VIS_1/IR_1 | 620 a 626 | Desfase | 7 | 7 | Giro rápido: de 30 a 75 px, con todas las personas corridas en la misma dirección. En 618–619 no hay personas emparejadas; en la 627 vuelven a coincidir (2 px) |
 
-Sumadas a Carnation (739 pares) y al corte de Baker 2031–2179 (149), quedan **4 763 pares utilizables**, de los que
-473 tienen persona solo en la térmica. Ninguno de los tramos de esta tabla tiene pares "solo térmica". La tabla por
+Sumadas a Carnation (739 pares) y al corte de Baker 2031–2179 (149), quedan **4 775 pares utilizables**, de los que
+473 tienen persona solo en la térmica.
+
+**MtErie 0003 0–11 (el dron sube al empezar)** se excluyó y se devolvió el mismo día. Con la homografía las personas
+quedaban separadas de 28 a 40 px. Con la semejanza están a 7–11 px en 0–9 y a 21 px en 10–11, y la franja nominal da
+casi lo mismo (6–12 y 23 px). Ninguno de los tramos de esta tabla tiene pares "solo térmica". La tabla por
 vuelo está en `reports/tabla_pares_por_vuelo.csv` y en `reports/fase1.md`.
 
 ## Otras cosas que se vieron en el barrido (no se excluyen)
 
 - **El dron sube o baja, pero las dos cámaras coinciden:** MtErie 0005 final y FHL 0405 final (bajan). No son
   despegues ni aterrizajes: no se ve el suelo de cerca y la alineación se mantiene. Lo mismo pasa al inicio de
-  MtErie 0003 (sube) según la semejanza (ver arriba).
+  MtErie 0003, que sube.
 - **Cámara mirando la nieve de cerca, sin personas:** Baker 525–619. Las dos cámaras coinciden; se conserva.
 - **Cámara levantada hacia el horizonte:** FHL 0134 cerca de 22–35 y FHL 0405 270–280. Coinciden; se conservan.
 
@@ -91,7 +93,7 @@ las cajas repetidas cuentan una vez.
 
 | Vuelo | Pares con persona en ambas | Pares evaluados | Personas | Media (px) | Mediana (px) | Máximo (px) | Las personas usadas cubren | Zona de la RGB que ve la térmica |
 |---|---:|---:|---:|---:|---:|---:|---:|---|
-| MtErie 0003 | 249 | 125 | 471 | 8.0 | 3.8 | 84 | 31 % | x 0.19–0.83, y 0.06–0.98 |
+| MtErie 0003 | 261 | 131 | 505 | 8.9 | 4.3 | 84 | 29 % | x 0.19–0.84, y 0.05–0.98 |
 | MtErie 0005 | 261 | 123 | 185 | 12.2 | 8.2 | 105 | 31 % | x 0.20–0.83, y 0.07–0.97 |
 | MtErie 0007 | 164 | 80 | 119 | 8.2 | 5.7 | 147 | 6 % | x 0.17–0.86, y 0.02–0.99 |
 | FHL 0134 | 75 | 36 | 66 | 1.8 | 1.5 | 5 | 1 % | x 0.19–0.83, y 0.06–0.97 |
@@ -100,7 +102,7 @@ las cajas repetidas cuentan una vez.
 | Baker | 1 924 | 920 | 2 136 | 7.8 | 4.6 | 143 | 63 % | x 0.18–0.83, y 0.06–0.98 |
 
 La media la dominan los desfases (máximos de 84 a 304 px, salvo en FHL 0134); la mediana describe mejor la alineación del resto. Sin
-estimar nada, con la franja nominal, las medianas son 4.6, 10.4, 6.3, 3.8, 6.7, 5.6 y 5.9 px. Estos números son
+estimar nada, con la franja nominal, las medianas son 4.7, 10.4, 6.3, 3.8, 6.7, 5.6 y 5.9 px. Estos números son
 **antes** de aplicar la regla de desfase. En todos los vuelos la zona que ve la térmica es casi igual a la franja
 nominal (x 0.18–0.84, y 0.06–0.98), como se espera de dos cámaras montadas juntas.
 
@@ -118,7 +120,7 @@ fuera de esa zona la transformación queda sin determinar. Comparación con la m
 
 | Vuelo | Zona que ve la térmica, homografía | Zona que ve la térmica, semejanza | Mediana homografía / afín / semejanza (px) |
 |---|---|---|---:|
-| MtErie 0003 | x 0.21–0.83, y 0.10–0.99 (trapecio) | x 0.19–0.83, y 0.06–0.98 | 3.6 / 4.1 / 3.8 |
+| MtErie 0003 | x 0.19–0.81, y 0.15–1.00 (trapecio) | x 0.19–0.84, y 0.05–0.98 | 3.7 / 3.5 / 4.3 |
 | MtErie 0005 | x 0.21–0.83, y 0.06–0.97 (trapecio) | x 0.20–0.83, y 0.07–0.97 | 7.8 / 8.3 / 8.2 |
 | MtErie 0007 | x −0.28–0.74, **y −1.22–0.95** | x 0.17–0.86, y 0.02–0.99 | 7.1 / 6.5 / 5.7 |
 | FHL 0134 | **x 0.26–1.26, y −0.57–0.99** | x 0.19–0.83, y 0.06–0.97 | 1.3 / 1.5 / 1.5 |
@@ -138,10 +140,10 @@ MtErie 0005 con la homografía y 1.4 px con la semejanza. Con seed=0 y el mismo 
 
 | | Franja nominal | Homografía | Afín | Semejanza |
 |---|---:|---:|---:|---:|
-| Error medio (px) | 8.9 | 12.5 | 11.9 | **10.9** |
-| Error máximo (px) | 24.7 | 32.1 | 34.6 | 30.4 |
+| Error medio (px) | 8.9 | 9.3 | 11.2 | **9.8** |
+| Error máximo (px) | 24.7 | 21.3 | 31.4 | 27.6 |
 
-El error máximo es del punto 8, que está en el borde inferior. Sin él, la semejanza da 8.2 px de media. Estos puntos
+El error máximo es del punto 8, que está en el borde inferior. Sin él, la semejanza da 7.2 px de media. Estos puntos
 tienen una coherencia propia de unos 10 px: si se quita un punto, se ajusta una semejanza con los demás del mismo
 fotograma y se mide dónde cae el punto quitado, queda a entre 5 y 14 px (33 px el punto 8). Por eso la validación no
 distingue entre modelos con diferencias de pocos píxeles. Imagen: `puntos_manuales_210417_MtErie_Enterprise_0003.jpg`.
@@ -169,51 +171,100 @@ cerca de la línea del sendero. Con la homografía el tramo 23–55 parecía un 
 deformado: con la semejanza desaparece. Con la regla de desfase saldrían 3 pares (2 de desfase y 1 "solo térmica"
 vecino).
 
-## Regla de desfase (calculada, sin aplicar)
+## Regla de desfase (confirmada, todavía sin aplicar)
 
-Con la semejanza de cada vuelo se midió la distancia entre centros en todos los pares con persona en las dos imágenes,
-de las dos mitades. 294 de los 3 707 pares (7.9 %) tienen alguna persona a más de 25 px. La regla toma solo los
-tramos de **2 o más posiciones seguidas** por encima de 25 px. Un par sin persona en las dos imágenes corta el tramo.
-Hay 64 tramos (`desfases.csv`) y la lista de pares que saldrían está en `exclusion_desfase_propuesta.csv`.
+### La regla
 
-| Vuelo | Utilizables hoy | Desfase | "Solo térmica" a 2 posiciones o menos | Salen | Quedarían |
-|---|---:|---:|---:|---:|---:|
-| MtErie 0003 | 252 | 32 | 0 | 32 | 220 |
-| MtErie 0005 | 269 | 15 | 0 | 15 | 254 |
-| MtErie 0007 | 172 | 2 | 1 | 3 | 169 |
-| FHL 0134 | 273 | 0 | 0 | 0 | 273 |
-| FHL 0401 | 846 | 73 | 1 | 74 | 772 |
-| FHL 0405 | 943 | 11 | 0 | 11 | 932 |
-| Baker | 2 008 | 108 | 0 | 108 | 1 900 |
-| **Total** | **4 763** | **241** | **2** | **243** | **4 520** |
+Para medir el desfase se usan todos los pares con persona en las dos imágenes (las dos mitades), con la semejanza de
+cada vuelo:
 
-Con estos 243 pares salen 698 cajas térmicas. Los "solo térmica" pasarían de 473 a 471. Ningún par "solo térmica"
-queda a 2 posiciones o menos de las exclusiones explícitas de la tabla anterior.
+1. Para cada persona térmica que no toca el borde se busca la caja RGB alineada **más cercana**. No se usa el
+   emparejamiento húngaro. La distancia entre centros se divide por la altura de la caja térmica.
+2. Las personas sin ninguna caja RGB a **3 alturas o menos** no cuentan: no son desfase y pueden estar tapadas.
+3. Un par está desfasado si la **mediana** de sus personas que cuentan es **mayor que 1**, es decir, si se corren más
+   que la altura de la persona.
+4. Se excluyen los tramos de **2 o más pares desfasados seguidos**. Un par sin personas que cuenten corta el tramo.
+   También se excluyen los pares "solo térmica" dentro de esos tramos o a **2 posiciones o menos**.
 
-Hoja de ejemplo: `ejemplos_desfase.jpg`. Tiene 6 tramos repartidos según su distancia máxima. En cada tramo se ven
-el par anterior, el peor par y el par siguiente, con la RGB alineada mezclada con la térmica:
+La primera versión (alguna persona a más de 25 px, con el emparejamiento húngaro) se descartó el 2026-10-31. No
+tenía en cuenta el tamaño de las personas, y se disparaba con personas emparejadas mal o vistas en una sola cámara.
 
-| Tramo | Distancia máxima | Lo que se ve |
-|---|---:|---|
-| FHL 0405 27–28 | 25.3 px | En el límite: la 29 está a 23 px y no entra |
-| FHL 0401 140–142 | 34 px | Desfase leve; la 139 está a 24 px |
-| MtErie 0005 31–32 | 42 px | Diferencia en la extensión de las cajas más que corrimiento de la escena |
-| Baker 1176–1178 | 49.5 px | Solo una persona corrida; las demás coinciden |
-| Baker 651–657 | 70 px | Desfase claro: la cámara se inclina y todo se corre |
-| FHL 0401 626–628 | 227 px | Distinto número de cajas en la RGB y en la térmica (3 y 4 en la 628): probablemente se emparejaron personas distintas, no es un desfase |
+Medidas: de 10 075 personas térmicas en 3 773 pares, 9 715 tienen caja RGB a 3 alturas o menos. 3 735 pares tienen
+al menos una persona que cuenta, y en 181 la mediana pasa de 1. Archivos: `personas_desfase.csv` (una fila por
+persona), `distancia_por_par.csv`, `desfases.csv` (45 tramos), `exclusion_desfase_propuesta.csv` y
+`sensibilidad_radio.csv`.
 
-**Advertencia.** La regla no solo atrapa desfases de toda la imagen. De los 241 pares de desfase:
+### Pares que saldrían
 
-- En 114, todas las personas están corridas (incluso la más cercana está a más de 25 px): es un desfase de toda la
-  imagen.
-- En 64 hay una sola persona emparejada, así que no se puede saber si es un desfase o una caja mal puesta.
-- 53 son casos intermedios.
-- En 10, las otras personas coinciden (a 10 px o menos) y solo una está lejos: es una caja o un emparejamiento, no un
-  desfase.
-- 57 de los 241 tienen distinto número de cajas en la RGB y en la térmica.
+| Vuelo | Utilizables hoy | Desfase | "Solo térmica" vecinos | Salen | Quedarían | "Solo térmica" que quedarían |
+|---|---:|---:|---:|---:|---:|---:|
+| MtErie 0003 | 264 | 28 | 0 | 28 | 236 | 0 |
+| MtErie 0005 | 269 | 16 | 1 | 17 | 252 | 7 de 8 |
+| MtErie 0007 | 172 | 2 | 1 | 3 | 169 | 7 de 8 |
+| FHL 0134 | 273 | 5 | 0 | 5 | 268 | 61 de 61 |
+| FHL 0401 | 846 | 58 | 1 | 59 | 787 | 0 de 1 |
+| FHL 0405 | 943 | 11 | 0 | 11 | 932 | 394 de 394 |
+| Baker | 2 008 | 26 | 0 | 26 | 1 982 | 1 de 1 |
+| **Total** | **4 775** | **146** | **3** | **149** | **4 626** | **470 de 473** |
 
-Algunas de esas personas que solo se ven bien en una cámara pueden ser justo casos de oclusión. La regla es simple y
-reproducible, pero saca también algunos pares que no son desfases.
+**FHL 0405 por separado:** salen 11 pares en 4 tramos: 37–39, 47–48, 55–57 y 65–67, con medianas relativas de 1.2 a
+1.4. Ninguno es "solo térmica", así que los 394 pares "solo térmica" de FHL 0405 se conservan. Los fotogramas de
+marcado (30, 440 y 930) no caen en ningún tramo.
+
+### Sensibilidad al radio de "cerca" (pares que salen)
+
+El radio de 3 alturas lo propuse yo y lo confirmaste. Se eligió porque desde unas 3 alturas el número de personas por
+intervalo se aplana: es el fondo de personas cuya caja RGB más cercana es otra persona.
+
+| Vuelo | Regla anterior (25 px) | 2 alturas | **3 alturas** | 4 alturas | 5 alturas | Sin límite |
+|---|---:|---:|---:|---:|---:|---:|
+| MtErie 0003 | 31 | 21 | **28** | 28 | 28 | 28 |
+| MtErie 0005 | 15 | 7 | **17** | 17 | 20 | 41 |
+| MtErie 0007 | 3 | 0 | **3** | 3 | 6 | 6 |
+| FHL 0134 | 0 | 0 | **5** | 5 | 5 | 5 |
+| FHL 0401 | 74 | 49 | **59** | 70 | 77 | 96 |
+| FHL 0405 | 11 | 11 | **11** | 11 | 11 | 97 |
+| Baker | 108 | 21 | **26** | 26 | 26 | 26 |
+| **Total** | **242** | **109** | **149** | **160** | **173** | **299** |
+
+Entre 3 y 5 alturas el total se estabiliza (149 a 173). Sin límite, FHL 0405 perdería 97 pares: son personas tapadas
+en la RGB cuya caja más cercana es otra persona. La regla anterior se recalculó sobre los 4 775 pares de hoy, y por
+eso da 242 y no 243.
+
+### Hoja de ejemplos y revisión
+
+`ejemplos_desfase.jpg` tiene 10 filas. Las 6 primeras son los tramos de la hoja anterior; las 4 últimas son tramos
+nuevos de la regla relativa que la anterior no tenía. Cada fila muestra el par anterior, el peor y el siguiente, con
+la RGB alineada mezclada con la térmica.
+
+| Tramo | Regla anterior | Regla relativa |
+|---|---|---|
+| FHL 0405 27–28 | Excluía | No lo excluye |
+| FHL 0401 140–142 | Excluía | Lo excluye |
+| MtErie 0005 31–32 | Excluía | No lo excluye |
+| Baker 1176–1178 | Excluía (una sola persona corrida) | No lo excluye |
+| Baker 651–657 | Excluía | Excluye 652–654 |
+| FHL 0401 626–628 | Excluía (personas mal emparejadas) | No lo excluye |
+
+Revisé a mano los 4 tramos nuevos, con la medida de cada persona y recortes ampliados de la mezcla:
+
+| Tramo nuevo | Mediana máx. | ¿Desfase real? | Lo que se ve |
+|---|---:|---|---|
+| FHL 0401 566–567 | 1.05 | **Sí, leve** | Las 5 personas se corren igual, unos (−12, −3) px. En esa parte del vuelo la mediana anda en 0.4–0.6; sube a 0.9–1.05 entre 564 y 567 y baja a 0.3 en la 570. Es un desfase pasajero, en el límite del umbral |
+| FHL 0401 656–657 | 1.32 | **No** | Una sola persona. El fondo de la mezcla coincide (sin imagen doble). La caja RGB queda cada vez más arriba que la térmica (7 px en la 654, 14 px en la 657) y desde la 658 desaparece de la RGB. Es un cambio de la caja (quizá la persona empieza a taparse), no un desfase |
+| FHL 0134 268–272 | 1.57 | **No** | La RGB tiene 1 caja y la térmica 2. La persona de la izquierda coincide (2–5 px). La de la derecha está bajo el dosel y solo se ve en la térmica: su caja RGB más cercana es la de su compañera, a unas 2–3 alturas (las personas miden ~10 px). Con 2 personas, la mediana es el promedio y pasa de 1. Es un caso de oclusión, justo lo que interesa conservar |
+| FHL 0401 743–745 | 2.58 | **Sí** | Las 5 personas se corren a la vez hacia +x (de 12 a 47 px) y en la 745 se ve el agua doble. En la 741 y la 746 coinciden (1–5 px) |
+
+Como 2 de los 4 tramos nuevos no son desfases, **la regla no se aplicó** (era la condición). Probé dos ajustes y
+ninguno sirve:
+
+- **a) Caja más cercana mutua** (cada caja RGB solo cuenta para la persona térmica que tiene más cerca). Ya no
+  excluye FHL 0134 268–272, pero tampoco los dos desfases reales. Cuando las personas están juntas y todas se corren
+  casi una distancia entre personas, la caja más cercana pasa a ser la de la vecina. Salen 131 pares.
+- **a) + b) Mutua y al menos 2 personas por par.** No excluye ninguno de los 4 tramos. Salen 77 pares.
+
+El mismo problema de FHL 0134 268–272 puede aparecer en tramos que no revisé: pares con 2 personas, una de ellas
+visible solo en la térmica y cerca de la otra.
 
 ## Herramienta de marcado de puntos
 
@@ -240,15 +291,14 @@ caben completas.
 ## Espacio en disco previsto
 
 Por par: RGB alineada en PNG (0.74 MB), térmica en gris en PNG (0.18 MB) y TIFF de 4 canales con deflate (0.92 MB).
-Son estimaciones hechas con muestras de cada vuelo. Con los 4 763 pares de hoy serían unos **8.2 GiB**, y con 4 520
-(aplicando la regla), unos **7.7 GiB**. Libres en C: 118 GB.
+Son estimaciones hechas con muestras de cada vuelo. Con los 4 775 pares de hoy serían unos **8.2 GiB**, y con 4 626
+(aplicando la regla), unos **7.9 GiB**. Libres en C: 118 GB.
 
 ## Pendiente
 
-1. Que confirmes si MtErie 0003 0–11 sigue excluido (con la semejanza no hay desfase; si se devuelve, quedan 4 775
-   pares).
-2. Que confirmes la regla de desfase. Si la confirmas, se pasa `exclusion_desfase_propuesta.csv` a las exclusiones de
-   la Fase 1, se regeneran `pares.csv` y los totales, y se vuelve a estimar la semejanza sin esos pares.
-3. Validación con tus puntos de FHL 0405 (volver a correr `fase2_homografias_cajas.py`).
-4. Alinear y escribir los PNG y TIFF por partes, con 10 superposiciones por vuelo.
-5. Para la Fase 3: la propuesta de partición de `FASES.md` incluye Carnation 0023, que ya está excluido.
+1. Decidir qué hacer con la regla de desfase, ya que 2 de los 4 tramos nuevos revisados no son desfases. Cuando se
+   aplique, `exclusion_desfase_propuesta.csv` se pasa a las exclusiones de la Fase 1, se regeneran `pares.csv` y los
+   totales, y se vuelve a estimar la semejanza sin esos pares.
+2. Validación con tus puntos de FHL 0405 (volver a correr `fase2_homografias_cajas.py`).
+3. Alinear y escribir los PNG y TIFF por partes, con 10 superposiciones por vuelo.
+4. Para la Fase 3: la propuesta de partición de `FASES.md` incluye Carnation 0023, que ya está excluido.

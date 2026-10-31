@@ -54,13 +54,17 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
 - **Exclusiones de la fase 2 (31 de octubre de 2026):** Carnation 0023/0024 completo, de los tres modelos (zoom
   variable en la RGB, que cubre cerca del 11 % de la térmica; posible desfase en la posición 470); despegue de Baker
   (0 a 15); cambio de zoom de FHL 0401 (0 a 10) y aterrizaje de FHL 0401 (857 a 895); desfases entre cámaras
-  (la térmica muestra otro instante) en MtErie 0005 (160 a 162) y Baker (620 a 626); inicio de MtErie 0003 (0 a 11;
-  con la semejanza no pasa de 21 px, pendiente de confirmar). Quedan
-  **4 763 pares anotados** en 7 parejas de vuelos de 3 sitios (MtErie, FHL, Baker); 473 de ellos con persona solo en
-  la térmica. Todas las exclusiones están en `configs/fase1.yaml`, con su motivo.
-- **Regla de desfase (propuesta, sin aplicar):** excluir los tramos de 2 o más pares seguidos con alguna persona a más
-  de 25 px entre cámaras tras la alineación, y los pares "solo térmica" a 2 posiciones o menos de ellos. Sacaría 243
-  pares (241 + 2 "solo térmica"); quedarían 4 520. Ver `reports/fase2.md`.
+  (la térmica muestra otro instante) en MtErie 0005 (160 a 162) y Baker (620 a 626). El inicio de MtErie 0003 (0 a
+  11) se excluyó y se devolvió: el desfase venía de la homografía y con la semejanza no hay. Quedan **4 775 pares
+  anotados** en 7 parejas de vuelos de 3 sitios (MtErie, FHL, Baker); 473 de ellos con persona solo en la térmica.
+  Todas las exclusiones están en `configs/fase1.yaml`, con su motivo.
+- **Regla de desfase (confirmada el 31 de octubre de 2026, todavía sin aplicar):** para cada persona térmica, la caja
+  RGB alineada más cercana; distancia entre centros dividida por la altura de la caja térmica. Solo cuentan las
+  personas con alguna caja RGB a 3 alturas o menos (las demás pueden estar tapadas). Un par está desfasado si la
+  mediana de sus personas pasa de 1. Se excluyen los tramos de 2 o más pares desfasados seguidos y los "solo térmica"
+  a 2 posiciones o menos. Sacaría 149 pares (146 + 3 "solo térmica"); quedarían 4 626, con 470 "solo térmica". No se
+  aplicó porque, de los 4 tramos nuevos revisados, 2 no son desfases (FHL 0134 268–272 y FHL 0401 656–657). Ver
+  `reports/fase2.md`.
 - La térmica ve aproximadamente la franja central de la RGB (x de 0.18 a 0.84, y de 0.06 a 0.98; cerca del 60 % del
   área), salvo en **Carnation 0023/0024**, donde la RGB tiene zoom y la relación se invierte.
 - 476 pares tienen persona en la térmica y ninguna en la RGB, casi todos de FHL (394 en FHL 0405/0406). Son los
