@@ -5,7 +5,7 @@ extensiones_imagen: [.jpg, .jpeg]
 exclusiones:
   - carpeta_rgb: 220109_Baker_Enterprise_VIS_1
     carpeta_termica: 220109_Baker_Enterprise_IR_1
-    desde: 2051
+    desde: 2031             # revisado a mano el 2026-10-30 (reports/baker_corte/); antes 2051
     hasta: 2179
     motivo: en la térmica hay personas sin caja
 
@@ -13,8 +13,20 @@ exclusiones:
 esperado:
   pares: 14839
   pares_anotados: 5739
-  pares_anotados_sin_excluidos: 5610
+  pares_anotados_sin_excluidos: 5590
 
 # Salidas
 pares: pares.csv                              # dentro de data/
 tabla_por_vuelo: tabla_pares_por_vuelo.csv    # dentro de reports/
+
+# Revisión visual del inicio del tramo excluido de Baker (scripts/fase1_baker_corte.py).
+revision_baker:
+  vuelo: 220109_Baker_Enterprise_1
+  desde: 2030
+  hasta: 2060
+  paso: 2
+  salida: baker_corte       # dentro de reports/
+  alto_panel: 512
+  fuente: arial.ttf         # fuente de Windows con tildes para los rótulos
+  # Zona aproximada que ve la térmica dentro de la RGB (CLAUDE.md); solo como referencia visual.
+  fov_termica_en_rgb: {x: [0.18, 0.84], y: [0.06, 0.98]}
