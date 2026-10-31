@@ -114,7 +114,7 @@ def main():
              .join(solo_termica.groupby("vuelo").size().rename("pares_solo_termica"), on="vuelo")
              .fillna(0).astype({"pares_anotados_sin_excluidos": int, "pares_solo_termica": int})
              .reset_index())
-    tabla = tabla[tabla.pares_anotados_sin_excluidos > 0]
+    tabla = tabla[tabla.pares_anotados > 0]
     total = tabla.select_dtypes("number").sum()
     tabla = pd.concat([tabla, pd.DataFrame([{"vuelo": "TOTAL", **total}])], ignore_index=True)
     tabla.to_csv(rutas["reports"] / cfg["tabla_por_vuelo"], index=False, encoding="utf-8")

@@ -8,12 +8,34 @@ exclusiones:
     desde: 2031             # revisado a mano el 2026-10-30 (reports/baker_corte/); antes 2051
     hasta: 2179
     motivo: en la térmica hay personas sin caja
+  - carpeta_rgb: 210529_Carnation_Enterprise_VIS_0023   # vuelo completo; decidido el 2026-10-31 (fase 2)
+    carpeta_termica: 210529_Carnation_Enterprise_IR_0024
+    desde: 0
+    hasta: 738
+    motivo: zoom variable en la RGB, que cubre cerca del 11 % de la térmica; posible desfase en la posición 470
+  # Despegues, aterrizajes y cambios de zoom: barrido visual de la fase 2 (reports/alineacion/barrido/ y
+  # bordes_tramos/), límites confirmados el 2026-10-31.
+  - carpeta_rgb: 220109_Baker_Enterprise_VIS_1
+    carpeta_termica: 220109_Baker_Enterprise_IR_1
+    desde: 0
+    hasta: 15
+    motivo: despegue (dron en el suelo hasta la 13 y despegando en la 14 y la 15)
+  - carpeta_rgb: 210924_FHL_Enterprise_VIS_0401
+    carpeta_termica: 210924_FHL_Enterprise_IR_0402
+    desde: 0
+    hasta: 10
+    motivo: cambio de zoom (la RGB tiene más zoom que en el resto del vuelo hasta la 10)
+  - carpeta_rgb: 210924_FHL_Enterprise_VIS_0401
+    carpeta_termica: 210924_FHL_Enterprise_IR_0402
+    desde: 878
+    hasta: 895
+    motivo: aterrizaje (el dron baja hasta el pasto; desde la 878 las personas se separan hasta 35 px entre cámaras)
 
-# Totales que deben salir (análisis del 28 y 29 de octubre de 2026).
+# Totales que deben salir (análisis del 28 y 29 de octubre de 2026 y exclusiones de la fase 2).
 esperado:
   pares: 14839
   pares_anotados: 5739
-  pares_anotados_sin_excluidos: 5590
+  pares_anotados_sin_excluidos: 4806
 
 # Salidas
 pares: pares.csv                              # dentro de data/

@@ -1,0 +1,101 @@
+vuelo: 210417_MtErie_Enterprise_0003
+guardado: '2026-10-31T10:10:50'
+formato_punto: '[x_rgb, y_rgb, x_termica, y_termica] en píxeles de las imágenes originales'
+tam_rgb:
+- 3840
+- 2160
+tam_termica:
+- 640
+- 512
+fotogramas:
+  inicio:
+    posicion: 0
+    ruta_rgb: 210417_MtErie_Enterprise_VIS_0003/210417_MtErie_Enterprise_VIS_0003_00000000.jpeg
+    ruta_termica: 210417_MtErie_Enterprise_IR_0004/210417_MtErie_Enterprise_IR_0004_00000001.jpeg
+    puntos:
+    - - 98.68
+      - 1757.97
+      - 125.62
+      - 481.68
+    - - 1893.2
+      - 1929.75
+      - 283.29
+      - 472.15
+    - - 720.0
+      - 632.28
+      - 83.17
+      - 129.95
+    - - 1213.4
+      - 237.56
+      - 171.53
+      - 26.86
+    - - 825.99
+      - 1158.58
+      - 36.39
+      - 266.83
+  mitad:
+    posicion: 132
+    ruta_rgb: 210417_MtErie_Enterprise_VIS_0003/210417_MtErie_Enterprise_VIS_0003_00000132.jpeg
+    ruta_termica: 210417_MtErie_Enterprise_IR_0004/210417_MtErie_Enterprise_IR_0004_00000133.jpeg
+    puntos:
+    - - 1944.37
+      - 1527.72
+      - 315.34
+      - 363.86
+    - - 1440.0
+      - 1852.99
+      - 194.92
+      - 443.56
+    - - 1476.55
+      - 1027.01
+      - 208.79
+      - 230.44
+    - - 1860.3
+      - 1249.95
+      - 291.09
+      - 290.22
+    - - 2178.27
+      - 1238.98
+      - 379.45
+      - 296.28
+    - - 1692.18
+      - 1268.22
+      - 252.97
+      - 293.69
+    - - 2214.82
+      - 1359.59
+      - 386.38
+      - 327.47
+    - - 1271.88
+      - 2112.49
+      - 169.8
+      - 502.47
+  final:
+    posicion: 263
+    ruta_rgb: 210417_MtErie_Enterprise_VIS_0003/210417_MtErie_Enterprise_VIS_0003_00000263.jpeg
+    ruta_termica: 210417_MtErie_Enterprise_IR_0004/210417_MtErie_Enterprise_IR_0004_00000264.jpeg
+    puntos:
+    - - 1308.43
+      - 2064.97
+      - 189.73
+      - 483.41
+    - - 1081.83
+      - 592.08
+      - 144.68
+      - 136.88
+    - - 2185.58
+      - 1027.01
+      - 326.61
+      - 234.77
+    - - 2353.71
+      - 1776.24
+      - 393.31
+      - 436.63
+    - - 2094.21
+      - 1502.13
+      - 363.86
+      - 363.86
+    - - 1301.12
+      - 1418.07
+      - 143.81
+      - 336.14

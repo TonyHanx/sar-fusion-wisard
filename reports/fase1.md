@@ -1,6 +1,6 @@
 # Fase 1. Pares RGB-térmicos
 
-Fecha: 2026-10-30, actualizado el 2026-10-31 (corte de Baker en 2031) · Dataset: `C:\Users\User\Downloads\WiSARDv1` (solo lectura; no se modificó nada).
+Fecha: 2026-10-30, actualizado el 2026-10-31 (corte de Baker en 2031 y exclusiones de la fase 2) · Dataset: `C:\Users\User\Downloads\WiSARDv1` (solo lectura; no se modificó nada).
 
 Para regenerar:
 
@@ -18,8 +18,13 @@ etiquetas, no imágenes.
 - **Fotogramas:** por posición en orden natural, hasta la longitud mínima de las dos carpetas.
 - **Etiquetas:** un `.txt` vacío es 0 cajas; una imagen sin `.txt` no está anotada. Las cajas se cuentan por líneas no
   vacías (los `.txt` de WiSARD no terminan en salto de línea, así que `wc -l` cuenta una caja de menos).
-- **Exclusión:** Baker VIS_1/IR_1, posiciones 2031 a 2179 (en la térmica hay personas sin caja; ver la revisión
-  más abajo). Configurada en `configs/fase1.yaml`.
+- **Exclusiones** (en `configs/fase1.yaml`, con su motivo):
+  - Baker VIS_1/IR_1, posiciones 2031 a 2179: en la térmica hay personas sin caja (ver la revisión más abajo).
+  - Carnation 0023/0024 completo (posiciones 0 a 738), decidido el 2026-10-31 al empezar la fase 2: la RGB tiene
+    zoom variable y cubre cerca del 11 % de la térmica, con un posible desfase en la posición 470. Se excluye de los
+    tres modelos (ver `reports/fase2.md`).
+  - Despegue de Baker (0 a 15), cambio de zoom de FHL 0401 (0 a 10) y aterrizaje de FHL 0401 (878 a 895),
+    encontrados con el barrido visual de la fase 2 y confirmados el 2026-10-31 (ver `reports/fase2.md`).
 
 ## Verificación de totales
 
@@ -27,12 +32,16 @@ etiquetas, no imágenes.
 |---|---:|---:|---:|
 | Pares (todas las parejas de carpetas) | 14 839 | 14 839 | 0 |
 | Pares con las dos imágenes anotadas | 5 739 | 5 739 | 0 |
-| Pares anotados tras la exclusión | **5 590** | 5 590 | 0 |
-| Pares con persona solo en la térmica | 476 | 476 | 0 |
+| Pares anotados tras la exclusión de Baker | 5 590 | 5 590 | 0 |
+| Pares con persona solo en la térmica (tras Baker) | 476 | 476 | 0 |
+| Pares anotados tras excluir Carnation | 4 851 | 4 851 | 0 |
+| Pares anotados tras excluir despegues, aterrizajes y cambios de zoom | **4 806** | 4 806 | 0 |
+| Pares con persona solo en la térmica (tras todas las exclusiones) | **473** | | |
 
 - 80 carpetas, 17 parejas de carpetas. **8 de ellas están anotadas** (4 sitios); las otras 9 tienen al menos una de
   las dos carpetas sin `.txt`, y aportan los 9 100 pares sin anotar.
-- La exclusión de Baker afecta a 149 pares.
+- Las exclusiones afectan a 933 pares: 149 del final de Baker, 739 de Carnation, 16 del despegue de Baker y 29 de
+  FHL 0401 (11 del cambio de zoom y 18 del aterrizaje).
 - No hay líneas de etiqueta mal formadas (5 campos, clase 0) en ninguna de las 17 parejas.
 
 ## Pares por vuelo (Tabla 9)
@@ -40,20 +49,21 @@ etiquetas, no imágenes.
 Archivo: `reports/tabla_pares_por_vuelo.csv`. Solo los vuelos con pares anotados. "Solo térmica" = al menos una caja
 en la térmica y ninguna en la RGB, contado sobre los pares anotados no excluidos.
 
-| Vuelo | Sitio | Pares anotados | Excluidos | Anotados tras la exclusión | Solo térmica |
+| Vuelo | Sitio | Pares anotados | Excluidos | Anotados tras las exclusiones | Solo térmica |
 |---|---|---:|---:|---:|---:|
 | MtErie 0003/0004 | MtErie | 264 | 0 | 264 | 0 |
 | MtErie 0005/0006 | MtErie | 272 | 0 | 272 | 8 |
 | MtErie 0007/0008 | MtErie | 172 | 0 | 172 | 8 |
-| Carnation 0023/0024 | Carnation | 739 | 0 | 739 | 3 |
+| Carnation 0023/0024 | Carnation | 739 | **739** | 0 | 0 |
 | FHL 0134/0135 | FHL | 273 | 0 | 273 | 61 |
-| FHL 0401/0402 | FHL | 896 | 0 | 896 | 1 |
+| FHL 0401/0402 | FHL | 896 | 29 | 867 | 1 |
 | FHL 0405/0406 | FHL | 943 | 0 | 943 | **394** |
-| Baker VIS_1/IR_1 | Baker | 2 180 | 149 | 2 031 | 1 |
-| **Total** | | **5 739** | **149** | **5 590** | **476** |
+| Baker VIS_1/IR_1 | Baker | 2 180 | 165 | 2 015 | 1 |
+| **Total** | | **5 739** | **933** | **4 806** | **473** |
 
-En estos 8 vuelos todos los pares están anotados (pares = pares anotados). FHL reúne 456 de los 476 pares "solo
-térmica" (96 %), 394 de ellos en FHL 0405/0406.
+En estos 8 vuelos todos los pares están anotados (pares = pares anotados). Carnation queda en la tabla con todos sus
+pares excluidos. FHL reúne 456 de los 473 pares "solo térmica" (96 %), 394 de ellos en FHL 0405/0406. Los 3 pares
+"solo térmica" de Carnation salieron con su exclusión.
 
 ## Comprobaciones adicionales
 
@@ -76,7 +86,7 @@ Una fila por par (14 839 filas). No va a GitHub.
 | `ruta_rgb`, `ruta_termica` | Ruta relativa a la raíz del dataset (`configs/rutas.yaml`) |
 | `cajas_rgb`, `cajas_termica` | Número de cajas; vacío si la imagen no tiene `.txt` |
 | `anotado` | `True` si las dos imágenes tienen `.txt` |
-| `excluido`, `motivo_exclusion` | Tramo de Baker |
+| `excluido`, `motivo_exclusion` | Tramos excluidos y su motivo (`configs/fase1.yaml`) |
 
 ## Revisión del corte de Baker
 
@@ -103,5 +113,5 @@ alineación de la fase 2 debe corregirlo.
 
 ## Observaciones
 
-- En Carnation 0023/0024 la RGB tiene zoom: sus 3 pares "solo térmica" son probablemente personas fuera del encuadre
-  RGB, no ocultas.
+- En Carnation 0023/0024 la RGB tiene zoom: sus 3 pares "solo térmica" eran probablemente personas fuera del encuadre
+  RGB, no ocultas. El vuelo quedó excluido en la fase 2.
