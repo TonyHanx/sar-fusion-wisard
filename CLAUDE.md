@@ -48,8 +48,9 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
   (en `220109_Baker` el número sale del nombre de archivo: DJI_0582 con DJI_0583). Dentro de cada pareja, los
   fotogramas se emparejan **por posición** en orden natural, hasta la longitud mínima.
 - Resultado esperado: 14 839 pares en total; 5 739 con las dos imágenes anotadas.
-- **Exclusión:** Baker VIS_1/IR_1, posiciones 2051 a 2179 (en la térmica hay personas sin caja). Tras excluirlas
-  quedan **5 610 pares anotados** en 8 parejas de vuelos de 4 sitios (MtErie, Carnation, FHL, Baker).
+- **Exclusión:** Baker VIS_1/IR_1, posiciones 2031 a 2179 (en la térmica hay personas sin caja desde la 2031;
+  revisado a mano el 30 de octubre de 2026, ver `reports/baker_corte/`; antes el corte era 2051). Tras excluirlas
+  quedan **5 590 pares anotados** en 8 parejas de vuelos de 4 sitios (MtErie, Carnation, FHL, Baker).
 - La térmica ve aproximadamente la franja central de la RGB (x de 0.18 a 0.84, y de 0.06 a 0.98; cerca del 60 % del
   área), salvo en **Carnation 0023/0024**, donde la RGB tiene zoom y la relación se invierte.
 - 476 pares tienen persona en la térmica y ninguna en la RGB, casi todos de FHL (394 en FHL 0405/0406). Son los

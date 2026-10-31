@@ -1,6 +1,6 @@
 # Fase 1. Pares RGB-térmicos
 
-Fecha: 2026-10-30 · Dataset: `C:\Users\User\Downloads\WiSARDv1` (solo lectura; no se modificó nada).
+Fecha: 2026-10-30, actualizado el 2026-10-31 (corte de Baker en 2031) · Dataset: `C:\Users\User\Downloads\WiSARDv1` (solo lectura; no se modificó nada).
 
 Para regenerar:
 
@@ -18,8 +18,8 @@ etiquetas, no imágenes.
 - **Fotogramas:** por posición en orden natural, hasta la longitud mínima de las dos carpetas.
 - **Etiquetas:** un `.txt` vacío es 0 cajas; una imagen sin `.txt` no está anotada. Las cajas se cuentan por líneas no
   vacías (los `.txt` de WiSARD no terminan en salto de línea, así que `wc -l` cuenta una caja de menos).
-- **Exclusión:** Baker VIS_1/IR_1, posiciones 2051 a 2179 (en la térmica hay personas sin caja). Configurada en
-  `configs/fase1.yaml`.
+- **Exclusión:** Baker VIS_1/IR_1, posiciones 2031 a 2179 (en la térmica hay personas sin caja; ver la revisión
+  más abajo). Configurada en `configs/fase1.yaml`.
 
 ## Verificación de totales
 
@@ -27,12 +27,12 @@ etiquetas, no imágenes.
 |---|---:|---:|---:|
 | Pares (todas las parejas de carpetas) | 14 839 | 14 839 | 0 |
 | Pares con las dos imágenes anotadas | 5 739 | 5 739 | 0 |
-| Pares anotados tras la exclusión | **5 610** | 5 610 | 0 |
+| Pares anotados tras la exclusión | **5 590** | 5 590 | 0 |
 | Pares con persona solo en la térmica | 476 | 476 | 0 |
 
 - 80 carpetas, 17 parejas de carpetas. **8 de ellas están anotadas** (4 sitios); las otras 9 tienen al menos una de
   las dos carpetas sin `.txt`, y aportan los 9 100 pares sin anotar.
-- La exclusión de Baker afecta a 129 pares.
+- La exclusión de Baker afecta a 149 pares.
 - No hay líneas de etiqueta mal formadas (5 campos, clase 0) en ninguna de las 17 parejas.
 
 ## Pares por vuelo (Tabla 9)
@@ -49,8 +49,8 @@ en la térmica y ninguna en la RGB, contado sobre los pares anotados no excluido
 | FHL 0134/0135 | FHL | 273 | 0 | 273 | 61 |
 | FHL 0401/0402 | FHL | 896 | 0 | 896 | 1 |
 | FHL 0405/0406 | FHL | 943 | 0 | 943 | **394** |
-| Baker VIS_1/IR_1 | Baker | 2 180 | 129 | 2 051 | 1 |
-| **Total** | | **5 739** | **129** | **5 610** | **476** |
+| Baker VIS_1/IR_1 | Baker | 2 180 | 149 | 2 031 | 1 |
+| **Total** | | **5 739** | **149** | **5 590** | **476** |
 
 En estos 8 vuelos todos los pares están anotados (pares = pares anotados). FHL reúne 456 de los 476 pares "solo
 térmica" (96 %), 394 de ellos en FHL 0405/0406.
@@ -78,9 +78,30 @@ Una fila por par (14 839 filas). No va a GitHub.
 | `anotado` | `True` si las dos imágenes tienen `.txt` |
 | `excluido`, `motivo_exclusion` | Tramo de Baker |
 
+## Revisión del corte de Baker
+
+El análisis anterior excluía desde la posición 2051, donde la térmica pasa a 0 cajas. Revisé a mano las posiciones
+2030 a 2060 (imágenes lado a lado en `reports/baker_corte/`, generadas con `scripts/fase1_baker_corte.py`; las
+impares 2031 a 2039 se revisaron aparte):
+
+| Posición | Térmica | ¿Persona visible sin caja? |
+|---|---|---|
+| 2030 | 2 cajas (persona de azul y persona sentada junto al trineo) | No |
+| **2031** | 1 caja (solo la de azul) | **Sí**: la persona sentada se ve claramente (gorro, mascarilla, torso) |
+| 2032 a 2037 | 1 caja | Dudoso: la persona sentada está en el borde derecho, solo se ven fragmentos |
+| 2038 a 2050 | 1 caja | Sí; en 2044 está de cuerpo entero dentro del encuadre |
+| 2051 en adelante | 0 cajas | Sí, las dos personas |
+
+Las anotaciones térmicas se van perdiendo antes del final del vídeo: la caja de la persona sentada desaparece entre
+2030 y 2031 y no vuelve, y la de la persona de azul dura hasta 2050. **El corte se adelantó a 2031** (confirmado el
+2026-10-31): se excluyen 149 pares en vez de 129 y quedan 5 590 en vez de 5 610. Los 20 pares que salen tienen 2 o 3
+cajas en la RGB y 1 en la térmica, así que la categoría "solo térmica" no cambia (476).
+
+La zona amarilla de las imágenes (lo que ve la térmica según el ajuste de etiquetas, x de 0.18 a 0.84) se queda corta
+por la derecha en Baker: la persona sentada está a la derecha de 0.84 en la RGB y aun así aparece en la térmica. La
+alineación de la fase 2 debe corregirlo.
+
 ## Observaciones
 
-- La posición 2050 de Baker (la última que se conserva) tiene 3 cajas en la RGB y 1 en la térmica. El corte en 2051
-  viene del análisis anterior; no lo cambié.
 - En Carnation 0023/0024 la RGB tiene zoom: sus 3 pares "solo térmica" son probablemente personas fuera del encuadre
   RGB, no ocultas.
