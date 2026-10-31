@@ -50,7 +50,12 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
 - Resultado esperado: 14 839 pares en total; 5 739 con las dos imágenes anotadas.
 - **Exclusión:** Baker VIS_1/IR_1, posiciones 2031 a 2179 (en la térmica hay personas sin caja desde la 2031;
   revisado a mano el 30 de octubre de 2026, ver `reports/baker_corte/`; antes el corte era 2051). Tras excluirlas
-  quedan **5 590 pares anotados** en 8 parejas de vuelos de 4 sitios (MtErie, Carnation, FHL, Baker).
+  quedan 5 590 pares anotados en 8 parejas de vuelos de 4 sitios (MtErie, Carnation, FHL, Baker).
+- **Exclusiones de la fase 2 (31 de octubre de 2026):** Carnation 0023/0024 completo, de los tres modelos (zoom
+  variable en la RGB, que cubre cerca del 11 % de la térmica; posible desfase en la posición 470); despegue de Baker
+  (0 a 15); cambio de zoom de FHL 0401 (0 a 10) y aterrizaje de FHL 0401 (878 a 895). Quedan **4 806 pares
+  anotados** en 7 parejas de vuelos de 3 sitios (MtErie, FHL, Baker); 473 de ellos con persona solo en la térmica.
+  Todas las exclusiones están en `configs/fase1.yaml`, con su motivo.
 - La térmica ve aproximadamente la franja central de la RGB (x de 0.18 a 0.84, y de 0.06 a 0.98; cerca del 60 % del
   área), salvo en **Carnation 0023/0024**, donde la RGB tiene zoom y la relación se invierte.
 - 476 pares tienen persona en la térmica y ninguna en la RGB, casi todos de FHL (394 en FHL 0405/0406). Son los
