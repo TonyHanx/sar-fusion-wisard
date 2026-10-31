@@ -1,8 +1,8 @@
 vuelo,modelo,estimada,pares_evaluados,personas_evaluadas,distancia_media_px,distancia_mediana_px,distancia_p95_px,distancia_max_px,vision_x,vision_y,deformacion_vision,error_manual_medio_px,error_manual_max_px,error_manual_mitad_px,pares_calibracion_usados,correspondencias,inliers,error_inliers_medio_px,cobertura
-210417_MtErie_Enterprise_0003,franja,True,125,471,8.616,4.575,33.039,110.501,0.18 a 0.84,0.06 a 0.98,0.0,8.931,24.646,8.931,,,,,
-210417_MtErie_Enterprise_0003,homografia,True,125,471,8.13,3.556,33.666,63.022,0.21 a 0.83,0.10 a 0.99,0.121,12.451,32.086,12.451,109.0,417.0,349.0,2.55,0.248
-210417_MtErie_Enterprise_0003,afin,True,125,471,8.382,4.076,33.137,81.638,0.19 a 0.83,0.05 a 0.98,0.035,11.894,34.629,11.894,113.0,425.0,314.0,2.724,0.239
-210417_MtErie_Enterprise_0003,semejanza,True,125,471,7.979,3.786,33.683,83.871,0.19 a 0.83,0.06 a 0.98,0.028,10.948,30.425,10.948,113.0,425.0,316.0,2.664,0.315
+210417_MtErie_Enterprise_0003,franja,True,131,505,9.138,4.738,33.846,110.501,0.18 a 0.84,0.06 a 0.98,0.0,8.931,24.646,8.931,,,,,
+210417_MtErie_Enterprise_0003,homografia,True,127,494,10.416,3.663,39.093,87.198,0.19 a 0.81,0.15 a 1.00,0.194,9.26,21.272,9.26,119.0,454.0,337.0,2.657,0.258
+210417_MtErie_Enterprise_0003,afin,True,131,505,8.405,3.544,34.476,84.155,0.19 a 0.84,0.07 a 0.97,0.055,11.171,31.358,11.171,118.0,445.0,350.0,2.868,0.294
+210417_MtErie_Enterprise_0003,semejanza,True,131,505,8.898,4.306,33.041,84.38,0.19 a 0.84,0.05 a 0.98,0.015,9.795,27.607,9.795,118.0,449.0,314.0,2.735,0.294
 210417_MtErie_Enterprise_0005,franja,True,124,193,15.454,10.394,36.732,396.068,0.18 a 0.84,0.06 a 0.98,0.0,,,,,,,,
 210417_MtErie_Enterprise_0005,homografia,True,124,185,14.278,7.826,38.63,397.454,0.21 a 0.83,0.06 a 0.97,0.071,,,,118.0,176.0,107.0,4.212,0.301
 210417_MtErie_Enterprise_0005,afin,True,123,185,12.203,8.338,37.625,106.682,0.20 a 0.82,0.06 a 0.98,0.102,,,,118.0,180.0,99.0,4.267,0.284

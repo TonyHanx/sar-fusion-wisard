@@ -135,13 +135,28 @@ homografias_cajas:
   deformacion_maxima: 0.10          # cuánto se aleja de un rectángulo el campo de visión implicado (unidades de la RGB)
   distancia_mediana_maxima_px: 5    # la media la dominan los desfases de giros rápidos; la mediana no
   error_puntos_manuales_max_px: 3.0 # el mismo umbral que umbral_variacion_px del marcado a mano
-  # Regla de desfase (decidida el 2026-10-31): se excluyen los tramos de `desfase_min_pares` o más posiciones seguidas
-  # con alguna persona a más de `umbral_desfase_px` (todas medidas: un par sin persona en las dos imágenes corta el
-  # tramo), y los pares "solo térmica" dentro de esos tramos o a `vecindad_solo_termica` posiciones o menos.
-  umbral_desfase_px: 25
+  # Regla de desfase (segunda versión, 2026-10-31; propuesta, sin aplicar). Para cada persona térmica (que no toca el
+  # borde) se toma la caja RGB alineada más cercana (no el emparejamiento húngaro) y la distancia entre centros se
+  # divide por la altura de la caja térmica. Las personas sin ninguna caja RGB a `radio_cerca_alturas` alturas o menos
+  # no cuentan: no son desfase, pueden estar tapadas. Un par está desfasado si la mediana de sus personas que cuentan
+  # pasa de `umbral_desfase_relativo` (se corre más que la altura de la persona). Se excluyen los tramos de
+  # `desfase_min_pares` o más pares desfasados seguidos (un par sin personas que cuenten corta el tramo) y los pares
+  # "solo térmica" dentro de esos tramos o a `vecindad_solo_termica` posiciones o menos.
+  umbral_desfase_relativo: 1.0
+  radio_cerca_alturas: 3            # propuesto por Claude: desde unas 3 alturas el número de personas por intervalo
+                                    # se aplana (el fondo de personas cuya caja RGB más cercana es otra persona)
+  radios_comparados_alturas: [2, 3, 4, 5, null]   # sensibilidad al radio (null = sin límite)
   desfase_min_pares: 2
   vecindad_solo_termica: 2
-  ejemplos_desfase: 6               # tramos en la hoja de ejemplo, repartidos según su distancia máxima
+  umbral_desfase_px: 25             # regla anterior (alguna persona a más de 25 px, húngaro), solo para comparar
+  ejemplos_desfase_anteriores:      # los 6 tramos de la primera hoja (regla de 25 px), para verlos con la regla nueva
+    - {vuelo: 210924_FHL_Enterprise_0405, desde: 27, hasta: 28}
+    - {vuelo: 210924_FHL_Enterprise_0401, desde: 140, hasta: 142}
+    - {vuelo: 210417_MtErie_Enterprise_0005, desde: 31, hasta: 32}
+    - {vuelo: 220109_Baker_Enterprise_1, desde: 1176, hasta: 1178}
+    - {vuelo: 220109_Baker_Enterprise_1, desde: 651, hasta: 657}
+    - {vuelo: 210924_FHL_Enterprise_0401, desde: 626, hasta: 628}
+  ejemplos_desfase_nuevos: 4        # tramos de la regla nueva que la anterior no tenía, repartidos según su mediana
   alto_panel_ejemplos: 240
   # Validación con puntos marcados a mano: vuelo -> fotogramas que se usan. En MtErie 0003 se descartan inicio y final
   # (marcados con la térmica cortada; decidido el 2026-10-31).

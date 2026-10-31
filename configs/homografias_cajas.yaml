@@ -1,11 +1,11 @@
 210417_MtErie_Enterprise_0003:
   H_rgb_a_termica:
-  - - 0.2588979281575059
-    - 0.002164958879753032
-    - -192.11498854622113
-  - - -0.002164958879753032
-    - 0.2588979281575059
-    - -29.922397895745124
+  - - 0.2559163828798016
+    - 0.0011635206441514955
+    - -184.16607344699182
+  - - -0.0011635206441514955
+    - 0.2559163828798016
+    - -27.427290273839425
   - - 0.0
     - 0.0
     - 1.0
@@ -17,12 +17,12 @@
   - 640
   - 512
   metodo: centros de cajas de personas, RANSAC
-  pares_calibracion: 124
-  inliers: 316
-  error_inliers_medio_px: 2.66
-  distancia_media_evaluacion_px: 7.98
-  distancia_mediana_evaluacion_px: 3.79
-  calculada: '2026-10-31T11:20:09'
+  pares_calibracion: 130
+  inliers: 314
+  error_inliers_medio_px: 2.73
+  distancia_media_evaluacion_px: 8.9
+  distancia_mediana_evaluacion_px: 4.31
+  calculada: '2026-10-31T11:41:53'
 210417_MtErie_Enterprise_0005:
   H_rgb_a_termica:
   - - 0.26262288621219027
@@ -47,7 +47,7 @@
   error_inliers_medio_px: 4.29
   distancia_media_evaluacion_px: 12.21
   distancia_mediana_evaluacion_px: 8.15
-  calculada: '2026-10-31T11:20:10'
+  calculada: '2026-10-31T11:41:54'
 210417_MtErie_Enterprise_0007:
   H_rgb_a_termica:
   - - 0.2438414121233046
@@ -72,7 +72,7 @@
   error_inliers_medio_px: 4.16
   distancia_media_evaluacion_px: 8.16
   distancia_mediana_evaluacion_px: 5.71
-  calculada: '2026-10-31T11:20:11'
+  calculada: '2026-10-31T11:41:56'
 210924_FHL_Enterprise_0134:
   H_rgb_a_termica:
   - - 0.5187169034058267
@@ -97,7 +97,7 @@
   error_inliers_medio_px: 1.83
   distancia_media_evaluacion_px: 1.78
   distancia_mediana_evaluacion_px: 1.48
-  calculada: '2026-10-31T11:20:12'
+  calculada: '2026-10-31T11:41:57'
 210924_FHL_Enterprise_0401:
   H_rgb_a_termica:
   - - 0.5161368884036446
@@ -122,7 +122,7 @@
   error_inliers_medio_px: 3.51
   distancia_media_evaluacion_px: 10.14
   distancia_mediana_evaluacion_px: 4.82
-  calculada: '2026-10-31T11:20:13'
+  calculada: '2026-10-31T11:41:59'
 210924_FHL_Enterprise_0405:
   H_rgb_a_termica:
   - - 0.5068223408712308
@@ -147,7 +147,7 @@
   error_inliers_medio_px: 3.86
   distancia_media_evaluacion_px: 7.95
   distancia_mediana_evaluacion_px: 4.79
-  calculada: '2026-10-31T11:20:14'
+  calculada: '2026-10-31T11:42:00'
 220109_Baker_Enterprise_1:
   H_rgb_a_termica:
   - - 0.5166748835182607
@@ -172,4 +172,4 @@
   error_inliers_medio_px: 3.5
   distancia_media_evaluacion_px: 7.82
   distancia_mediana_evaluacion_px: 4.55
-  calculada: '2026-10-31T11:20:15'
+  calculada: '2026-10-31T11:42:02'

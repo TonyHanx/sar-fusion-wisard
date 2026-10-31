@@ -32,13 +32,8 @@ exclusiones:
     motivo: aterrizaje (el dron baja hasta el pasto; desde la 857 las personas de las dos cámaras se separan más de 25 px)
   # Desfases entre cámaras (la térmica muestra otro instante), medidos con la distancia entre centros de las personas
   # tras la alineación con la semejanza de cada vuelo (reports/fase2.md); decididos el 2026-10-31.
-  - carpeta_rgb: 210417_MtErie_Enterprise_VIS_0003
-    carpeta_termica: 210417_MtErie_Enterprise_IR_0004
-    desde: 0
-    hasta: 11
-    motivo: >-
-      el dron sube al empezar; excluido por un desfase de 28 a 40 px medido con la homografía, pero con la semejanza
-      la separación es de 7 a 21 px (pendiente de confirmar)
+  # MtErie 0003 0-11 se excluyó y se devolvió el mismo día: el desfase venía de la homografía; con la semejanza las
+  # personas están a 7-21 px.
   - carpeta_rgb: 210417_MtErie_Enterprise_VIS_0005
     carpeta_termica: 210417_MtErie_Enterprise_IR_0006
     desde: 160
@@ -54,7 +49,7 @@ exclusiones:
 esperado:
   pares: 14839
   pares_anotados: 5739
-  pares_anotados_sin_excluidos: 4763
+  pares_anotados_sin_excluidos: 4775
 
 # Salidas
 pares: pares.csv                              # dentro de data/
