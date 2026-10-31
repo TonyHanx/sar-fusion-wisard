@@ -24,8 +24,9 @@ personas que cuentan pasa de `umbral_desfase_relativo`. Un tramo de desfase son 
 desfasados seguidos (un par sin personas que cuenten corta el tramo). Se proponen para excluir los pares de esos tramos
 y los pares "solo térmica" dentro de ellos o a `vecindad_solo_termica` posiciones o menos. Para comparar se calcula
 también la regla anterior (alguna persona a más de `umbral_desfase_px` con el emparejamiento húngaro) y la regla nueva
-con otros radios. El script solo propone (exclusion_desfase_propuesta.csv) y hace una hoja de ejemplos; la exclusión
-se aplica en configs/fase1.yaml.
+con otros radios. El script solo propone (exclusion_desfase_propuesta.csv) y hace una hoja de ejemplos. Los tramos se
+revisan y se excluyen con scripts/fase2_revision_desfases.py, que escribe configs/exclusiones_desfase.yaml (lo lee
+configs/fase1.yaml).
 
 Salidas: configs/homografias_cajas.yaml y, en reports/alineacion/homografias_cajas/: resumen.csv,
 comparacion_modelos.csv, distancias.csv, distancia_por_par.csv, personas_desfase.csv, desfases.csv,

@@ -55,16 +55,24 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
   variable en la RGB, que cubre cerca del 11 % de la térmica; posible desfase en la posición 470); despegue de Baker
   (0 a 15); cambio de zoom de FHL 0401 (0 a 10) y aterrizaje de FHL 0401 (857 a 895); desfases entre cámaras
   (la térmica muestra otro instante) en MtErie 0005 (160 a 162) y Baker (620 a 626). El inicio de MtErie 0003 (0 a
-  11) se excluyó y se devolvió: el desfase venía de la homografía y con la semejanza no hay. Quedan **4 775 pares
-  anotados** en 7 parejas de vuelos de 3 sitios (MtErie, FHL, Baker); 473 de ellos con persona solo en la térmica.
-  Todas las exclusiones están en `configs/fase1.yaml`, con su motivo.
-- **Regla de desfase (confirmada el 31 de octubre de 2026, todavía sin aplicar):** para cada persona térmica, la caja
-  RGB alineada más cercana; distancia entre centros dividida por la altura de la caja térmica. Solo cuentan las
-  personas con alguna caja RGB a 3 alturas o menos (las demás pueden estar tapadas). Un par está desfasado si la
-  mediana de sus personas pasa de 1. Se excluyen los tramos de 2 o más pares desfasados seguidos y los "solo térmica"
-  a 2 posiciones o menos. Sacaría 149 pares (146 + 3 "solo térmica"); quedarían 4 626, con 470 "solo térmica". No se
-  aplicó porque, de los 4 tramos nuevos revisados, 2 no son desfases (FHL 0134 268–272 y FHL 0401 656–657). Ver
-  `reports/fase2.md`.
+  11) se excluyó y se devolvió: el desfase venía de la homografía y con la semejanza no hay. Con eso quedaban 4 775
+  pares anotados. Todas estas exclusiones están en `configs/fase1.yaml`, con su motivo.
+- **Regla de desfase (confirmada y aplicada el 31 de octubre de 2026, con revisión a ojo):** para cada persona
+  térmica, la caja RGB alineada más cercana; distancia entre centros dividida por la altura de la caja térmica. Solo
+  cuentan las personas con alguna caja RGB a 3 alturas o menos (las demás pueden estar tapadas). Un par está desfasado
+  si la mediana de sus personas pasa de 1. Un tramo son 2 o más pares desfasados seguidos; con él salen los "solo
+  térmica" a 2 posiciones o menos.
+  - Se aplicó con la **opción 2 acotada**. Los tramos en que todas las personas (2 o más) pasan de 1 altura salen sin
+    revisión. Los demás se revisaron a ojo, mirando también si el fondo se corre, y lo mismo todos los de FHL 0405,
+    MtErie 0005 y MtErie 0007.
+  - De 45 tramos salen 41 (133 pares + 2 "solo térmica" = 135). Se conservan 4, porque son oclusión o un cambio de la
+    caja y no desfase: MtErie 0005 71–73 y 85–87, FHL 0134 268–272 y FHL 0401 656–657.
+  - Decisiones en `configs/revision_desfases.yaml`; las exclusiones generadas, en `configs/exclusiones_desfase.yaml`
+    (`exclusiones_adicionales` de `configs/fase1.yaml`).
+  - **Quedan 4 640 pares anotados** en 7 parejas de vuelos de 3 sitios (MtErie, FHL, Baker); 471 de ellos con
+    persona solo en la térmica. FHL 0405: 932 (salen 11), con sus 394 "solo térmica".
+  - Tras reestimar la semejanza aparece un tramo nuevo, **FHL 0401 371–372** (desfase real). Está **sin aplicar**,
+    pendiente de decisión. Ver `reports/fase2.md`.
 - La térmica ve aproximadamente la franja central de la RGB (x de 0.18 a 0.84, y de 0.06 a 0.98; cerca del 60 % del
   área), salvo en **Carnation 0023/0024**, donde la RGB tiene zoom y la relación se invierte.
 - 476 pares tienen persona en la térmica y ninguna en la RGB, casi todos de FHL (394 en FHL 0405/0406). Son los

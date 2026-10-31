@@ -1,11 +1,11 @@
 210417_MtErie_Enterprise_0003:
   H_rgb_a_termica:
-  - - 0.2559163828798016
-    - 0.0011635206441514955
-    - -184.16607344699182
-  - - -0.0011635206441514955
-    - 0.2559163828798016
-    - -27.427290273839425
+  - - 0.2610682386396786
+    - 0.0010382761257755131
+    - -194.78443918540964
+  - - -0.0010382761257755131
+    - 0.2610682386396786
+    - -36.242557668585626
   - - 0.0
     - 0.0
     - 1.0
@@ -17,20 +17,20 @@
   - 640
   - 512
   metodo: centros de cajas de personas, RANSAC
-  pares_calibracion: 130
-  inliers: 314
-  error_inliers_medio_px: 2.73
-  distancia_media_evaluacion_px: 8.9
-  distancia_mediana_evaluacion_px: 4.31
-  calculada: '2026-10-31T11:41:53'
+  pares_calibracion: 116
+  inliers: 372
+  error_inliers_medio_px: 3.21
+  distancia_media_evaluacion_px: 5.8
+  distancia_mediana_evaluacion_px: 3.32
+  calculada: '2026-10-31T17:59:05'
 210417_MtErie_Enterprise_0005:
   H_rgb_a_termica:
-  - - 0.26262288621219027
-    - 0.0018985367245583072
-    - -199.7339548743696
-  - - -0.0018985367245583072
-    - 0.26262288621219027
-    - -35.212064899380586
+  - - 0.26335010006523246
+    - 0.0016878683520741144
+    - -200.90132824399893
+  - - -0.0016878683520741144
+    - 0.26335010006523246
+    - -37.09252293817531
   - - 0.0
     - 0.0
     - 1.0
@@ -42,20 +42,20 @@
   - 640
   - 512
   metodo: centros de cajas de personas, RANSAC
-  pares_calibracion: 130
-  inliers: 103
-  error_inliers_medio_px: 4.29
-  distancia_media_evaluacion_px: 12.21
-  distancia_mediana_evaluacion_px: 8.15
-  calculada: '2026-10-31T11:41:54'
+  pares_calibracion: 126
+  inliers: 101
+  error_inliers_medio_px: 4.22
+  distancia_media_evaluacion_px: 10.59
+  distancia_mediana_evaluacion_px: 7.74
+  calculada: '2026-10-31T17:59:06'
 210417_MtErie_Enterprise_0007:
   H_rgb_a_termica:
-  - - 0.2438414121233046
-    - -0.005196279314209595
-    - -155.69746874970033
-  - - 0.005196279314209595
-    - 0.2438414121233046
-    - -21.478931976425397
+  - - 0.24772318943150698
+    - -0.0034729983588741046
+    - -164.1802690163196
+  - - 0.0034729983588741046
+    - 0.24772318943150698
+    - -24.27344631224174
   - - 0.0
     - 0.0
     - 1.0
@@ -67,12 +67,12 @@
   - 640
   - 512
   metodo: centros de cajas de personas, RANSAC
-  pares_calibracion: 82
-  inliers: 76
-  error_inliers_medio_px: 4.16
-  distancia_media_evaluacion_px: 8.16
-  distancia_mediana_evaluacion_px: 5.71
-  calculada: '2026-10-31T11:41:56'
+  pares_calibracion: 81
+  inliers: 78
+  error_inliers_medio_px: 3.96
+  distancia_media_evaluacion_px: 8.49
+  distancia_mediana_evaluacion_px: 5.45
+  calculada: '2026-10-31T17:59:07'
 210924_FHL_Enterprise_0134:
   H_rgb_a_termica:
   - - 0.5187169034058267
@@ -97,15 +97,15 @@
   error_inliers_medio_px: 1.83
   distancia_media_evaluacion_px: 1.78
   distancia_mediana_evaluacion_px: 1.48
-  calculada: '2026-10-31T11:41:57'
+  calculada: '2026-10-31T17:59:08'
 210924_FHL_Enterprise_0401:
   H_rgb_a_termica:
-  - - 0.5161368884036446
-    - 0.0039000118717877996
-    - -185.71504716271113
-  - - -0.0039000118717877996
-    - 0.5161368884036446
-    - -28.14479598486583
+  - - 0.5181234048703196
+    - 0.0049261281668547775
+    - -188.04093297645218
+  - - -0.0049261281668547775
+    - 0.5181234048703196
+    - -28.41735759943872
   - - 0.0
     - 0.0
     - 1.0
@@ -117,20 +117,20 @@
   - 640
   - 512
   metodo: centros de cajas de personas, RANSAC
-  pares_calibracion: 372
-  inliers: 935
-  error_inliers_medio_px: 3.51
-  distancia_media_evaluacion_px: 10.14
-  distancia_mediana_evaluacion_px: 4.82
-  calculada: '2026-10-31T11:41:59'
+  pares_calibracion: 344
+  inliers: 965
+  error_inliers_medio_px: 3.4
+  distancia_media_evaluacion_px: 8.55
+  distancia_mediana_evaluacion_px: 4.58
+  calculada: '2026-10-31T17:59:08'
 210924_FHL_Enterprise_0405:
   H_rgb_a_termica:
-  - - 0.5068223408712308
-    - 0.007190553942201436
-    - -179.6497767830179
-  - - -0.007190553942201436
-    - 0.5068223408712308
-    - -19.92519297215643
+  - - 0.5135733997219797
+    - 0.007070595106796512
+    - -184.46622162892115
+  - - -0.007070595106796512
+    - 0.5135733997219797
+    - -24.548876077379685
   - - 0.0
     - 0.0
     - 1.0
@@ -142,20 +142,20 @@
   - 640
   - 512
   metodo: centros de cajas de personas, RANSAC
-  pares_calibracion: 200
-  inliers: 174
-  error_inliers_medio_px: 3.86
-  distancia_media_evaluacion_px: 7.95
-  distancia_mediana_evaluacion_px: 4.79
-  calculada: '2026-10-31T11:42:00'
+  pares_calibracion: 194
+  inliers: 173
+  error_inliers_medio_px: 3.65
+  distancia_media_evaluacion_px: 6.21
+  distancia_mediana_evaluacion_px: 4.36
+  calculada: '2026-10-31T17:59:09'
 220109_Baker_Enterprise_1:
   H_rgb_a_termica:
-  - - 0.5166748835182607
-    - 0.0043608301083893405
-    - -184.87339752234433
-  - - -0.0043608301083893405
-    - 0.5166748835182607
-    - -28.871537375266907
+  - - 0.5145936945411216
+    - 0.004369017273066253
+    - -184.24463989257697
+  - - -0.004369017273066253
+    - 0.5145936945411216
+    - -26.79955555161178
   - - 0.0
     - 0.0
     - 1.0
@@ -167,9 +167,9 @@
   - 640
   - 512
   metodo: centros de cajas de personas, RANSAC
-  pares_calibracion: 962
-  inliers: 1429
-  error_inliers_medio_px: 3.5
-  distancia_media_evaluacion_px: 7.82
-  distancia_mediana_evaluacion_px: 4.55
-  calculada: '2026-10-31T11:42:02'
+  pares_calibracion: 949
+  inliers: 1514
+  error_inliers_medio_px: 3.77
+  distancia_media_evaluacion_px: 7.12
+  distancia_mediana_evaluacion_px: 4.74
+  calculada: '2026-10-31T17:59:10'

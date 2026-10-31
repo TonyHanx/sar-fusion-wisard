@@ -1,0 +1,95 @@
+# Fase 2: decisiones de la revisión a ojo de los tramos de desfase de la regla relativa (2026-10-31).
+# Escrito a mano tras mirar las imágenes de reports/alineacion/revision_desfases/ (una por tramo) con la medida de cada
+# persona (personas_tramos.csv) y el desplazamiento del fondo (fondo_tramos.csv). Los px son de la térmica (640 × 512).
+# Los tramos "todas corridas" (2 o más personas, todas a más de 1 altura) no están aquí: se excluyen sin revisión.
+# Lo lee scripts/fase2_revision_desfases.py --aplicar, que escribe configs/exclusiones_desfase.yaml.
+tramos:
+  # MtErie 0003
+  - {vuelo: 210417_MtErie_Enterprise_0003, desde: 44, hasta: 50, decision: excluir,
+     motivo: "movimiento rápido (RGB borrosa); casi todas las personas se corren 28 a 66 px en la misma dirección; en la 51 coinciden"}
+  - {vuelo: 210417_MtErie_Enterprise_0003, desde: 53, hasta: 57, decision: excluir,
+     motivo: "todas las personas se corren hacia arriba (−27 a −48 px); fondo −14 a −39 px"}
+  - {vuelo: 210417_MtErie_Enterprise_0003, desde: 164, hasta: 165, decision: excluir,
+     motivo: "todas las personas se corren unos +30 px en vertical; fondo +19 y +24 px"}
+  - {vuelo: 210417_MtErie_Enterprise_0003, desde: 171, hasta: 172, decision: excluir,
+     motivo: "todas las personas se corren unos −45 px; fondo −42 y −40 px"}
+  - {vuelo: 210417_MtErie_Enterprise_0003, desde: 200, hasta: 201, decision: excluir,
+     motivo: "el grupo se corre 50 a 57 px; fondo −57 y −56 px; imagen borrosa"}
+  - {vuelo: 210417_MtErie_Enterprise_0003, desde: 206, hasta: 210, decision: excluir,
+     motivo: "todas las personas se corren 20 a 60 px; borrosa por el giro"}
+  - {vuelo: 210417_MtErie_Enterprise_0003, desde: 214, hasta: 216, decision: excluir,
+     motivo: "3 de las 4 personas se corren −25 a −42 px (la cuarta solo coincide con la caja de una vecina); fondo −23 a −35 px"}
+  # MtErie 0005
+  - {vuelo: 210417_MtErie_Enterprise_0005, desde: 71, hasta: 73, decision: conservar,
+     motivo: "una persona coincide (0.04 a 0.14 alturas); la otra está detrás de los árboles y solo se ve en la térmica: oclusión, no desfase"}
+  - {vuelo: 210417_MtErie_Enterprise_0005, desde: 85, hasta: 87, decision: conservar,
+     motivo: "una persona coincide, tapada en parte por helechos; la otra solo se ve en la térmica; fondo en su sitio (−2 a +1 px). Se conserva también la 88 (solo térmica)"}
+  - {vuelo: 210417_MtErie_Enterprise_0005, desde: 202, hasta: 204, decision: excluir,
+     motivo: "las dos personas se corren −25 a −45 px; en la 205 coinciden"}
+  - {vuelo: 210417_MtErie_Enterprise_0005, desde: 209, hasta: 211, decision: excluir,
+     motivo: "fondo corrido (+20, −55 y −39 px); en la 212 está en su sitio"}
+  - {vuelo: 210417_MtErie_Enterprise_0005, desde: 220, hasta: 221, decision: excluir,
+     motivo: "fondo corrido (+21 y +36 px); en la 222, +1 px"}
+  - {vuelo: 210417_MtErie_Enterprise_0005, desde: 226, hasta: 227, decision: excluir,
+     motivo: "personas +39 a +47 px; fondo +36 y +20 px"}
+  # MtErie 0007
+  - {vuelo: 210417_MtErie_Enterprise_0007, desde: 54, hasta: 55, decision: excluir,
+     motivo: "paneo borroso en la 53; la persona térmica queda quieta de la 53 a la 55 y salta en la 56 (la térmica se atrasa). Sale también la 53 (solo térmica)"}
+  # FHL 0134
+  - {vuelo: 210924_FHL_Enterprise_0134, desde: 268, hasta: 272, decision: conservar,
+     motivo: "una persona coincide (2 a 5 px); la otra está bajo el dosel y solo se ve en la térmica; el fondo (−10 px) es el mismo en la 267: oclusión, no desfase"}
+  # FHL 0401
+  - {vuelo: 210924_FHL_Enterprise_0401, desde: 125, hasta: 126, decision: excluir,
+     motivo: "las 4 personas se corren igual (+18 a +41 px); borrosa; en la 124 y la 127 coinciden"}
+  - {vuelo: 210924_FHL_Enterprise_0401, desde: 140, hasta: 142, decision: excluir,
+     motivo: "todas las personas se corren unos (−20, −20) px; el fondo, igual"}
+  - {vuelo: 210924_FHL_Enterprise_0401, desde: 156, hasta: 160, decision: excluir,
+     motivo: "todas las personas +25 a +35 px en vertical; fondo +24 a +30 px"}
+  - {vuelo: 210924_FHL_Enterprise_0401, desde: 298, hasta: 302, decision: excluir,
+     motivo: "todas las personas +20 a +24 px; fondo +23 y +24 px; en la 303, +6 px"}
+  - {vuelo: 210924_FHL_Enterprise_0401, desde: 355, hasta: 356, decision: excluir,
+     motivo: "todas las personas +28 a +42 px; fondo +27 y +41 px"}
+  - {vuelo: 210924_FHL_Enterprise_0401, desde: 382, hasta: 383, decision: excluir,
+     motivo: "todas las personas −30 a −39 px en horizontal; fondo −38 y −29 px; en la 384 coinciden"}
+  - {vuelo: 210924_FHL_Enterprise_0401, desde: 566, hasta: 567, decision: excluir,
+     motivo: "desfase leve y pasajero: las 5 personas a unos (−12, −3) px; fondo −22 a −24 px de la 565 a la 568"}
+  - {vuelo: 210924_FHL_Enterprise_0401, desde: 577, hasta: 580, decision: excluir,
+     motivo: "todas las personas +16 a +48 px en horizontal; fondo +22, +20, +41 y +37 px; en la 576 coinciden"}
+  - {vuelo: 210924_FHL_Enterprise_0401, desde: 619, hasta: 621, decision: excluir,
+     motivo: "la caja RGB queda siempre 23 a 26 px por encima de la térmica y el fondo se corre igual (−22, −26 y −26 px; −14 en la 618 y −8 en la 622). La otra persona térmica no tiene caja RGB (tapada)"}
+  - {vuelo: 210924_FHL_Enterprise_0401, desde: 656, hasta: 657, decision: conservar,
+     motivo: "el fondo está en su sitio (−2, +1 px), igual que en los vecinos; la caja RGB sube poco a poco y desaparece en la 658: cambio de la caja u oclusión, no desfase"}
+  - {vuelo: 210924_FHL_Enterprise_0401, desde: 678, hasta: 679, decision: excluir,
+     motivo: "en la 679 las 4 personas que no cuentan (a más de 3 alturas) se corren todas unos +60 px en x; la que cuenta, 1.6 y 2.9 alturas; en la 680 coinciden"}
+  - {vuelo: 210924_FHL_Enterprise_0401, desde: 687, hasta: 688, decision: excluir,
+     motivo: "las 5 personas se corren igual en x (+11 a +17 px en la 687, +23 a +29 en la 688); fondo +14 y +25 px; en la 686 y la 689 coinciden"}
+  - {vuelo: 210924_FHL_Enterprise_0401, desde: 743, hasta: 745, decision: excluir,
+     motivo: "todas las personas +12 a +47 px; fondo +11, +18, +13 y +41 px; agua doble en la 745"}
+  - {vuelo: 210924_FHL_Enterprise_0401, desde: 754, hasta: 767, decision: excluir,
+     motivo: "todas las personas se corren hacia abajo, más cuanto más abajo están en la imagen (+13 a +49 px); fondo +13 a +29 px. Parece más un fallo de la semejanza con la cámara inclinada que un desfase de tiempo, pero la RGB no coincide igual. Sale también la 768 (solo térmica)"}
+  # FHL 0405
+  - {vuelo: 210924_FHL_Enterprise_0405, desde: 37, hasta: 39, decision: excluir,
+     motivo: "las dos personas se corren igual hacia arriba (−16 a −26 px, una altura); en la 36 y la 40 coinciden; en el bosque el fondo no da una medida fiable"}
+  - {vuelo: 210924_FHL_Enterprise_0405, desde: 47, hasta: 48, decision: excluir,
+     motivo: "RGB borrosa por el movimiento; las dos personas se corren hacia +x (17 a 47 px); en la 46 y la 49 coinciden"}
+  - {vuelo: 210924_FHL_Enterprise_0405, desde: 55, hasta: 57, decision: excluir,
+     motivo: "todas las personas se corren hacia arriba (−18 a −35 px); en la 54 coinciden"}
+  - {vuelo: 210924_FHL_Enterprise_0405, desde: 65, hasta: 67, decision: excluir,
+     motivo: "la persona que cuenta se corre −22 a −31 px; fondo −17 a −26 px en vertical (+5 en la 64). La de arriba a la derecha está bajo el árbol y solo se ve en la térmica"}
+  # Baker
+  - {vuelo: 220109_Baker_Enterprise_1, desde: 185, hasta: 188, decision: excluir,
+     motivo: "las personas se corren +86 a +140 px; fondo +88 a +115 px; en la 189 coinciden"}
+  - {vuelo: 220109_Baker_Enterprise_1, desde: 512, hasta: 513, decision: excluir,
+     motivo: "las dos personas se corren +63 a +69 px en x; fondo +62 y +57 px"}
+  - {vuelo: 220109_Baker_Enterprise_1, desde: 519, hasta: 521, decision: excluir,
+     motivo: "la persona tendida se corre +88 a +150 px y va en aumento; fondo +144 y +188 px"}
+  - {vuelo: 220109_Baker_Enterprise_1, desde: 618, hasta: 619, decision: excluir,
+     motivo: "continúa el giro ya excluido (620 a 626): la persona RGB está en la línea de árboles y la térmica 57 a 79 px más abajo; los árboles de la térmica también bajan más"}
+  - {vuelo: 220109_Baker_Enterprise_1, desde: 633, hasta: 634, decision: excluir,
+     motivo: "la persona se corre −54 y −92 px en x; fondo −56 y −91 px"}
+  - {vuelo: 220109_Baker_Enterprise_1, desde: 639, hasta: 641, decision: excluir,
+     motivo: "la persona se corre (+47 a +55, +34 a +44) px; el fondo, parecido"}
+  - {vuelo: 220109_Baker_Enterprise_1, desde: 652, hasta: 654, decision: excluir,
+     motivo: "la persona se corre −63 a −70 px en vertical; fondo −62 a −72 px"}
+  - {vuelo: 220109_Baker_Enterprise_1, desde: 795, hasta: 801, decision: excluir,
+     motivo: "la persona se corre −35 a −47 px en x y va en aumento; fondo −32 a −52 px"}

@@ -45,11 +45,16 @@ exclusiones:
     hasta: 626
     motivo: desfase entre cámaras en un giro rápido (personas separadas de 30 a 75 px)
 
+# Exclusiones generadas por otros scripts (mismo formato). Desfases de la regla relativa revisados a ojo (fase 2,
+# 31 de octubre de 2026): los escribe scripts/fase2_revision_desfases.py --aplicar desde configs/revision_desfases.yaml.
+exclusiones_adicionales:
+  - configs/exclusiones_desfase.yaml
+
 # Totales que deben salir (análisis del 28 y 29 de octubre de 2026 y exclusiones de la fase 2).
 esperado:
   pares: 14839
   pares_anotados: 5739
-  pares_anotados_sin_excluidos: 4775
+  pares_anotados_sin_excluidos: 4640   # 4 775 antes de los desfases de la regla relativa (salen 135)
 
 # Salidas
 pares: pares.csv                              # dentro de data/
