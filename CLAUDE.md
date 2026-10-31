@@ -16,13 +16,19 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
 - Si algo no está claro o los datos no son como dice este archivo, **muéstrame ejemplos y pregúntame** antes de suponer.
 - Ejecuta Python con el entorno virtual del proyecto (`.venv`).
 - La memoria es limitada (16 GB de RAM y 8 GB en la GPU): procesa las imágenes por partes, nunca todas en memoria.
+- Todos los entrenamientos se hacen con la laptop **enchufada**, en modo **Rendimiento** de Armoury Crate y con el
+  plan de energía **Performance** de Windows. Antes de entrenar, verifica con `nvidia-smi` que el límite aplicado
+  bajo carga (`enforced.power.limit`) sea de al menos 90 W; si no, detente y avísame.
 
 ## Equipo
 
 - Laptop con Windows 11, Intel Core i7-13620H (10 núcleos, 16 hilos), 16 GB de RAM.
-- GPU NVIDIA GeForce RTX 4070 Laptop GPU, 8 GB, límite de 55 W.
+- GPU NVIDIA GeForce RTX 4070 Laptop GPU, 8 GB. Límite de potencia medido el 30 de octubre de 2026 con `nvidia-smi`
+  (enchufada, modo Rendimiento): **hasta 100 W bajo carga** (80 W por defecto + hasta 20 W de Dynamic Boost; máximo
+  configurable 120 W). El límite aplicado varía entre corridas (medianas de 92 a 100 W) según la temperatura y la
+  carga de la CPU. Los 55 W anotados antes eran una lectura en modo de bajo consumo.
 - Todos los entrenamientos que se reporten corren en esta misma laptop.
-- El controlador NVIDIA era el 555.97 (CUDA 12.5): hay que actualizarlo antes de instalar PyTorch.
+- Controlador NVIDIA 617.42 (CUDA 13.4), actualizado el 30 de octubre de 2026 (antes 555.97).
 
 ## Rutas
 

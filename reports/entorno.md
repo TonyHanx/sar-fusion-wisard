@@ -8,7 +8,8 @@ Generado el 2026-10-30 con `scripts/fase0_entorno.py`. Todos los entrenamientos 
 | CPU | 13th Gen Intel(R) Core(TM) i7-13620H (10 núcleos, 16 hilos) |
 | RAM | 15.6 GiB |
 | GPU | NVIDIA GeForce RTX 4070 Laptop GPU, 8188 MiB, capacidad de cómputo 8.9 |
-| Límite de potencia de la GPU | aplicado 85.30 W al generar este archivo (por defecto 80.00 W, máximo 120.00 W); varía con el modo de energía de la laptop |
+| Límite de potencia de la GPU | aplicado bajo carga: mediana 98 W (rango 97 a 99 W; consumo 98 W) en 30 s de carga; por defecto 80.00 W, máximo 120.00 W; techo de 100 W con Dynamic Boost |
+| Modo de energía | enchufada: sí; Armoury Crate: Rendimiento; plan de Windows: Performance |
 | Controlador NVIDIA | 617.42 |
 | Python | 3.12.10 |
 | PyTorch | 2.15.0+cu134 |
