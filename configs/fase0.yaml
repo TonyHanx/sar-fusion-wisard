@@ -9,3 +9,5 @@ conf: 0.25
 clases: [0]
 salida: fase0_prueba        # carpeta dentro de runs/
 entorno: entorno.md         # archivo dentro de reports/
+modo_armoury_crate: Rendimiento   # no se puede leer desde Python; se declara aquí
+segundos_carga: 30          # duración de la medición de potencia con la GPU a plena carga
