@@ -23,8 +23,11 @@ etiquetas, no imágenes.
   - Carnation 0023/0024 completo (posiciones 0 a 738), decidido el 2026-10-31 al empezar la fase 2: la RGB tiene
     zoom variable y cubre cerca del 11 % de la térmica, con un posible desfase en la posición 470. Se excluye de los
     tres modelos (ver `reports/fase2.md`).
-  - Despegue de Baker (0 a 15), cambio de zoom de FHL 0401 (0 a 10) y aterrizaje de FHL 0401 (878 a 895),
+  - Despegue de Baker (0 a 15), cambio de zoom de FHL 0401 (0 a 10) y aterrizaje de FHL 0401 (857 a 895),
     encontrados con el barrido visual de la fase 2 y confirmados el 2026-10-31 (ver `reports/fase2.md`).
+  - Desfases entre cámaras (la térmica muestra otro instante) medidos con la distancia entre centros de las personas
+    tras la alineación de la fase 2: MtErie 0005 (160 a 162) y Baker (620 a 626), en giros rápidos; inicio de
+    MtErie 0003 (0 a 11), pendiente de confirmar porque con la semejanza no pasa de 21 px.
 
 ## Verificación de totales
 
@@ -35,13 +38,15 @@ etiquetas, no imágenes.
 | Pares anotados tras la exclusión de Baker | 5 590 | 5 590 | 0 |
 | Pares con persona solo en la térmica (tras Baker) | 476 | 476 | 0 |
 | Pares anotados tras excluir Carnation | 4 851 | 4 851 | 0 |
-| Pares anotados tras excluir despegues, aterrizajes y cambios de zoom | **4 806** | 4 806 | 0 |
+| Pares anotados tras excluir despegues, aterrizajes y cambios de zoom (aterrizaje desde 878) | 4 806 | 4 806 | 0 |
+| Pares anotados tras adelantar el aterrizaje a 857 y excluir los desfases | **4 763** | 4 763 | 0 |
 | Pares con persona solo en la térmica (tras todas las exclusiones) | **473** | | |
 
 - 80 carpetas, 17 parejas de carpetas. **8 de ellas están anotadas** (4 sitios); las otras 9 tienen al menos una de
   las dos carpetas sin `.txt`, y aportan los 9 100 pares sin anotar.
-- Las exclusiones afectan a 933 pares: 149 del final de Baker, 739 de Carnation, 16 del despegue de Baker y 29 de
-  FHL 0401 (11 del cambio de zoom y 18 del aterrizaje).
+- Las exclusiones afectan a 976 pares: 149 del final de Baker, 739 de Carnation, 16 del despegue de Baker, 50 de
+  FHL 0401 (11 del cambio de zoom y 39 del aterrizaje) y 22 de desfases (MtErie 0003 12, MtErie 0005 3, Baker 7).
+- Pendiente en la fase 2: una regla de desfase para todo el vuelo que sacaría 243 pares más (quedarían 4 520).
 - No hay líneas de etiqueta mal formadas (5 campos, clase 0) en ninguna de las 17 parejas.
 
 ## Pares por vuelo (Tabla 9)
@@ -51,15 +56,15 @@ en la térmica y ninguna en la RGB, contado sobre los pares anotados no excluido
 
 | Vuelo | Sitio | Pares anotados | Excluidos | Anotados tras las exclusiones | Solo térmica |
 |---|---|---:|---:|---:|---:|
-| MtErie 0003/0004 | MtErie | 264 | 0 | 264 | 0 |
-| MtErie 0005/0006 | MtErie | 272 | 0 | 272 | 8 |
+| MtErie 0003/0004 | MtErie | 264 | 12 | 252 | 0 |
+| MtErie 0005/0006 | MtErie | 272 | 3 | 269 | 8 |
 | MtErie 0007/0008 | MtErie | 172 | 0 | 172 | 8 |
 | Carnation 0023/0024 | Carnation | 739 | **739** | 0 | 0 |
 | FHL 0134/0135 | FHL | 273 | 0 | 273 | 61 |
-| FHL 0401/0402 | FHL | 896 | 29 | 867 | 1 |
+| FHL 0401/0402 | FHL | 896 | 50 | 846 | 1 |
 | FHL 0405/0406 | FHL | 943 | 0 | 943 | **394** |
-| Baker VIS_1/IR_1 | Baker | 2 180 | 165 | 2 015 | 1 |
-| **Total** | | **5 739** | **933** | **4 806** | **473** |
+| Baker VIS_1/IR_1 | Baker | 2 180 | 172 | 2 008 | 1 |
+| **Total** | | **5 739** | **976** | **4 763** | **473** |
 
 En estos 8 vuelos todos los pares están anotados (pares = pares anotados). Carnation queda en la tabla con todos sus
 pares excluidos. FHL reúne 456 de los 473 pares "solo térmica" (96 %), 394 de ellos en FHL 0405/0406. Los 3 pares

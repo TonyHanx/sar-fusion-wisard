@@ -1,4 +1,5 @@
-# Fase 2: alineación de la RGB con la térmica (homografía por vuelo con puntos de control marcados a mano).
+# Fase 2: alineación de la RGB con la térmica (semejanza por vuelo estimada con los centros de las cajas de personas,
+# validada con puntos de control marcados a mano).
 seed: 0
 pares: pares.csv                    # dentro de data/; se usan solo los anotados y no excluidos
 tam_termica: [640, 512]
@@ -14,8 +15,13 @@ vuelos_invertidos: [210529_Carnation_Enterprise_0023]
 marcado:
   carpeta_puntos: configs/puntos_control   # un yaml por vuelo, relativo a la raíz del repositorio
   puntos_minimos: 6                        # por fotograma
-  ancho_ventana: 1800                      # px de pantalla para RGB + térmica
+  # Tamaño máximo del lienzo principal (RGB + térmica), en px físicos de pantalla. La herramienta es consciente del
+  # DPI (la escala de Windows al 125 % ya no agranda la ventana) y además lo recorta para que quepan en el área de
+  # trabajo la ventana principal y la lupa debajo (en 1920 x 1140 queda de unos 1800 x 620).
+  ancho_ventana: 1800
   alto_ventana: 820
+  margen_pantalla_px: 10                   # separación de las ventanas con el borde izquierdo y derecho
+  reserva_titulo_px: 45                    # alto que se reserva para la barra de título de cada ventana
   lado_lupa: 400                           # px de la ventana de lupa
   zoom_lupa: 4                             # aumento de la lupa respecto de la ventana principal
   paso_mover: 5                            # posiciones que avanza o retrocede el fotograma con j/l
@@ -24,7 +30,7 @@ marcado:
     210417_MtErie_Enterprise_0005: {inicio: 30, mitad: 130, final: 260}
     210417_MtErie_Enterprise_0007: {inicio: 10, mitad: 90, final: 160}
     210924_FHL_Enterprise_0134: {inicio: 10, mitad: 150, final: 262}
-    210924_FHL_Enterprise_0401: {inicio: 20, mitad: 450, final: 860}
+    210924_FHL_Enterprise_0401: {inicio: 20, mitad: 450, final: 840}   # final 860 -> 840: el aterrizaje empieza en 857
     210924_FHL_Enterprise_0405: {inicio: 30, mitad: 440, final: 930}
     220109_Baker_Enterprise_1: {inicio: 80, mitad: 1040, final: 1990}
 
@@ -95,10 +101,10 @@ bordes_tramos:
       tipo: cambio de zoom
       nota: la RGB tiene más zoom que en el resto del vuelo; cambia entre 10 y 11
     - vuelo: 210924_FHL_Enterprise_0401
-      desde: 878
+      desde: 857
       hasta: 895
       tipo: aterrizaje
-      nota: el dron baja hasta el pasto; desde la 878 las personas se separan hasta 35 px entre cámaras (propuesto 885)
+      nota: el dron baja hasta el pasto; desde la 857 las personas de las dos cámaras se separan más de 25 px (semejanza)
 
 # Pares lado a lado para revisar antes de alinear (scripts/fase2_lado_a_lado.py).
 lado_a_lado:
@@ -108,15 +114,16 @@ lado_a_lado:
   alto_panel: 512
   salida: alineacion/lado_a_lado    # dentro de reports/
 
-# Homografía automática RGB -> térmica de cada vuelo con los centros de las cajas de personas
+# Alineación RGB -> térmica de cada vuelo con los centros de las cajas de personas
 # (scripts/fase2_homografias_cajas.py). Solo pares con persona en las dos imágenes; la mitad (al azar, seed) estima
-# la homografía y la otra mitad mide la distancia entre centros. Decidido el 2026-10-31 en lugar del marcado a mano.
+# la transformación y la otra mitad mide la distancia entre centros. Decidido el 2026-10-31 en lugar del marcado a
+# mano; modelo: semejanza (la homografía completa se deformaba en FHL 0134 y MtErie 0007).
 homografias_cajas:
-  modelo: homografia                # el que se guarda: homografia (8 grados de libertad), afin (6) o semejanza (4)
+  modelo: semejanza                 # el que se guarda: homografia (8 grados de libertad), afin (6) o semejanza (4)
   modelos_comparados: [homografia, afin, semejanza]   # además de la franja nominal, con la misma partición
   fraccion_calibracion: 0.5
   compuerta_inicial_px: 80          # distancia máxima (px térmicos) para emparejar personas con la franja nominal
-  compuerta_px: 30                  # la misma, con la homografía ya estimada
+  compuerta_px: 30                  # la misma, con la transformación ya estimada
   iteraciones: 3                    # emparejar y volver a estimar
   umbral_ransac_px: 8.0
   max_iter_ransac: 5000
@@ -128,14 +135,19 @@ homografias_cajas:
   deformacion_maxima: 0.10          # cuánto se aleja de un rectángulo el campo de visión implicado (unidades de la RGB)
   distancia_mediana_maxima_px: 5    # la media la dominan los desfases de giros rápidos; la mediana no
   error_puntos_manuales_max_px: 3.0 # el mismo umbral que umbral_variacion_px del marcado a mano
-  # Tramos de desfase: pares seguidos con persona en las dos imágenes muy separadas tras la alineación
+  # Regla de desfase (decidida el 2026-10-31): se excluyen los tramos de `desfase_min_pares` o más posiciones seguidas
+  # con alguna persona a más de `umbral_desfase_px` (todas medidas: un par sin persona en las dos imágenes corta el
+  # tramo), y los pares "solo térmica" dentro de esos tramos o a `vecindad_solo_termica` posiciones o menos.
   umbral_desfase_px: 25
   desfase_min_pares: 2
-  desfase_hueco_max: 1
-  validacion_manual: [210417_MtErie_Enterprise_0003]   # vuelos con puntos marcados a mano
-  revisar:                          # tramos a revisar con la distancia entre centros (giros rápidos)
-    210417_MtErie_Enterprise_0005: [158, 163]
-    220109_Baker_Enterprise_1: [618, 627]
+  vecindad_solo_termica: 2
+  ejemplos_desfase: 6               # tramos en la hoja de ejemplo, repartidos según su distancia máxima
+  alto_panel_ejemplos: 240
+  # Validación con puntos marcados a mano: vuelo -> fotogramas que se usan. En MtErie 0003 se descartan inicio y final
+  # (marcados con la térmica cortada; decidido el 2026-10-31).
+  validacion_manual:
+    210417_MtErie_Enterprise_0003: [mitad]
+    210924_FHL_Enterprise_0405: [inicio, mitad, final]
   peores_por_vuelo: 3               # superposiciones de los pares de evaluación con mayor distancia
   superposiciones_por_vuelo: 10     # pares repartidos a lo largo del vuelo, para revisar la alineación a ojo
   alto_panel: 384

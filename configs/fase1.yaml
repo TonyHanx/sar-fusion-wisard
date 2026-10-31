@@ -27,15 +27,34 @@ exclusiones:
     motivo: cambio de zoom (la RGB tiene más zoom que en el resto del vuelo hasta la 10)
   - carpeta_rgb: 210924_FHL_Enterprise_VIS_0401
     carpeta_termica: 210924_FHL_Enterprise_IR_0402
-    desde: 878
+    desde: 857             # adelantado de 878 a 857 el 2026-10-31 con la distancia entre centros (semejanza)
     hasta: 895
-    motivo: aterrizaje (el dron baja hasta el pasto; desde la 878 las personas se separan hasta 35 px entre cámaras)
+    motivo: aterrizaje (el dron baja hasta el pasto; desde la 857 las personas de las dos cámaras se separan más de 25 px)
+  # Desfases entre cámaras (la térmica muestra otro instante), medidos con la distancia entre centros de las personas
+  # tras la alineación con la semejanza de cada vuelo (reports/fase2.md); decididos el 2026-10-31.
+  - carpeta_rgb: 210417_MtErie_Enterprise_VIS_0003
+    carpeta_termica: 210417_MtErie_Enterprise_IR_0004
+    desde: 0
+    hasta: 11
+    motivo: >-
+      el dron sube al empezar; excluido por un desfase de 28 a 40 px medido con la homografía, pero con la semejanza
+      la separación es de 7 a 21 px (pendiente de confirmar)
+  - carpeta_rgb: 210417_MtErie_Enterprise_VIS_0005
+    carpeta_termica: 210417_MtErie_Enterprise_IR_0006
+    desde: 160
+    hasta: 162
+    motivo: desfase entre cámaras en un giro rápido (personas separadas de 37 a 174 px)
+  - carpeta_rgb: 220109_Baker_Enterprise_VIS_1
+    carpeta_termica: 220109_Baker_Enterprise_IR_1
+    desde: 620
+    hasta: 626
+    motivo: desfase entre cámaras en un giro rápido (personas separadas de 30 a 75 px)
 
 # Totales que deben salir (análisis del 28 y 29 de octubre de 2026 y exclusiones de la fase 2).
 esperado:
   pares: 14839
   pares_anotados: 5739
-  pares_anotados_sin_excluidos: 4806
+  pares_anotados_sin_excluidos: 4763
 
 # Salidas
 pares: pares.csv                              # dentro de data/

@@ -16,8 +16,14 @@ Teclas:
 
 Los puntos se guardan en configs/puntos_control/<vuelo>.yaml, en píxeles de las imágenes originales. Si el archivo
 ya existe, se retoma.
+
+Pantalla: en Windows el proceso se declara consciente del DPI, así la escala de pantalla (125 %) no agranda la ventana
+y un píxel de la imagen es un píxel de la pantalla. Las ventanas se ajustan al área de trabajo (sin la barra de
+tareas): la principal arriba a la izquierda y la lupa debajo.
 """
 import argparse
+import ctypes
+import sys
 from datetime import datetime
 
 import cv2
@@ -37,9 +43,41 @@ def aplicar(H, x, y):
     return p[0] / p[2], p[1] / p[2]
 
 
+def preparar_pantalla():
+    """Declara el proceso consciente del DPI (antes de crear ventanas) y devuelve el área de trabajo de la pantalla
+    principal en píxeles físicos: (x0, y0, ancho, alto). Fuera de Windows devuelve None."""
+    if sys.platform != "win32":
+        return None
+    try:
+        ctypes.windll.shcore.SetProcessDpiAwareness(2)  # PROCESS_PER_MONITOR_DPI_AWARE
+    except (AttributeError, OSError):
+        ctypes.windll.user32.SetProcessDPIAware()
+    rect = (ctypes.c_long * 4)()
+    ctypes.windll.user32.SystemParametersInfoW(0x30, 0, ctypes.byref(rect), 0)  # SPI_GETWORKAREA
+    return rect[0], rect[1], rect[2] - rect[0], rect[3] - rect[1]
+
+
+def borde_inferior(nombre):
+    """Borde inferior (px de pantalla) de la ventana de OpenCV con ese título, con su barra de título incluida."""
+    hwnd = ctypes.windll.user32.FindWindowW(None, nombre)
+    if not hwnd:
+        return None
+    rect = (ctypes.c_long * 4)()
+    ctypes.windll.user32.GetWindowRect(hwnd, ctypes.byref(rect))
+    return rect[3]
+
+
 class Marcador:
-    def __init__(self, cfg, rutas, vuelo):
+    def __init__(self, cfg, rutas, vuelo, area=None):
         self.cfg, self.m = cfg, cfg["marcado"]
+        self.area = area
+        # tamaño máximo del lienzo principal: el del config, recortado para que quepan en el área de trabajo la
+        # ventana principal y, debajo, la lupa (cada una con su barra de título)
+        self.ancho_max, self.alto_max = self.m["ancho_ventana"], self.m["alto_ventana"]
+        if area is not None:
+            margen, titulo = self.m["margen_pantalla_px"], self.m["reserva_titulo_px"]
+            self.ancho_max = min(self.ancho_max, area[2] - 2 * margen)
+            self.alto_max = min(self.alto_max, area[3] - self.m["lado_lupa"] - 2 * titulo - margen)
         self.dataset = rutas["dataset"]
         self.vuelo = vuelo
         pares = pares_utilizables(rutas["data"] / cfg["pares"])
@@ -105,7 +143,7 @@ class Marcador:
         self.tam_rgb = (self.rgb.shape[1], self.rgb.shape[0])
         # escala común: las dos imágenes con el mismo alto en pantalla
         aspecto = self.tam_rgb[0] / self.tam_rgb[1] + self.tam_termica[0] / self.tam_termica[1]
-        self.alto = int(min(self.m["alto_ventana"] - BARRA, (self.m["ancho_ventana"] - SEPARACION) / aspecto))
+        self.alto = int(min(self.alto_max - BARRA, (self.ancho_max - SEPARACION) / aspecto))
         self.esc = {"rgb": self.alto / self.tam_rgb[1], "ter": self.alto / self.tam_termica[1]}
         self.x_ter = round(self.tam_rgb[0] * self.esc["rgb"]) + SEPARACION
         self.disp = {"rgb": cv2.resize(self.rgb, None, fx=self.esc["rgb"], fy=self.esc["rgb"], interpolation=cv2.INTER_AREA),
@@ -279,14 +317,29 @@ class Marcador:
                 return False
         return True
 
+    def colocar_ventanas(self):
+        """Principal arriba a la izquierda del área de trabajo y lupa justo debajo."""
+        if self.area is None:
+            return
+        x0, y0 = self.area[0] + self.m["margen_pantalla_px"], self.area[1]
+        cv2.moveWindow(VENTANA, x0, y0)
+        cv2.waitKey(1)
+        abajo = borde_inferior(VENTANA)
+        cv2.moveWindow(LUPA, x0, abajo if abajo is not None else y0 + self.alto + BARRA + self.m["reserva_titulo_px"])
+
     def ejecutar(self):
         cv2.namedWindow(VENTANA, cv2.WINDOW_AUTOSIZE)
         cv2.namedWindow(LUPA, cv2.WINDOW_AUTOSIZE)
         cv2.setMouseCallback(VENTANA, self.raton)
         cv2.setMouseCallback(LUPA, self.raton_lupa)
+        tam_lienzo = None
         while True:
-            cv2.imshow(VENTANA, self.dibujar())
+            lienzo = self.dibujar()
+            cv2.imshow(VENTANA, lienzo)
             cv2.imshow(LUPA, self.dibujar_lupa())
+            if lienzo.shape[:2] != tam_lienzo:  # al abrir, o si otro fotograma tiene otro tamaño de RGB
+                tam_lienzo = lienzo.shape[:2]
+                self.colocar_ventanas()
             k = cv2.waitKey(30) & 0xFF
             if k != 255 and not self.tecla(k):
                 break
@@ -320,7 +373,8 @@ def main():
                 estado = ", ".join(f"{n} {len(fot[n]['puntos'])}" for n in NOMBRES)
             print(f"{vuelo:34s} {estado}")
         return
-    Marcador(cfg, rutas, args.vuelo).ejecutar()
+    area = preparar_pantalla()  # antes de crear cualquier ventana
+    Marcador(cfg, rutas, args.vuelo, area).ejecutar()
 
 
 if __name__ == "__main__":

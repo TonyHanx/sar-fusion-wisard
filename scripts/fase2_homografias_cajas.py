@@ -16,12 +16,16 @@ Se ignoran las cajas térmicas que tocan el borde de la imagen y las cajas RGB q
 ella (personas cortadas o fuera de la vista de la térmica). Las cajas repetidas dentro de un mismo .txt cuentan una
 vez (no se modifica ningún archivo).
 
-Desfases: con el modelo guardado se mide la distancia en todos los pares con persona en las dos imágenes (de las dos
-mitades) y se listan los tramos de al menos `desfase_min_pares` pares seguidos por encima de `umbral_desfase_px`.
+Regla de desfase: con el modelo guardado se mide la distancia en todos los pares con persona en las dos imágenes (de
+las dos mitades). Un tramo de desfase son `desfase_min_pares` o más posiciones seguidas con alguna persona a más de
+`umbral_desfase_px` (un par sin persona en las dos imágenes corta el tramo). Se proponen para excluir los pares de
+esos tramos y los pares "solo térmica" dentro de ellos o a `vecindad_solo_termica` posiciones o menos. El script solo
+los lista (exclusion_desfase_propuesta.csv) y hace una hoja de ejemplo; la exclusión se aplica en configs/fase1.yaml.
 
 Salidas: configs/homografias_cajas.yaml y, en reports/alineacion/homografias_cajas/: resumen.csv,
-comparacion_modelos.csv, distancias.csv, distancia_por_par.csv, desfases.csv, validacion_manual.csv, revisar.csv y
-las imágenes (superposiciones, peores pares, tramos a revisar y puntos manuales). Agrega una fila a la bitácora.
+comparacion_modelos.csv, distancias.csv, distancia_por_par.csv, desfases.csv, exclusion_desfase_propuesta.csv,
+validacion_manual.csv y las imágenes (superposiciones, peores pares, ejemplos de desfase y puntos manuales). Agrega
+una fila a la bitácora.
 
 Uso: python scripts/fase2_homografias_cajas.py --config configs/fase2.yaml --rutas configs/rutas.yaml
 """
@@ -157,6 +161,11 @@ def tramos(posiciones, hueco_max):
 # ---------------------------------------------------------------------------------------------- superposiciones
 def superposicion(dataset, par, H, tam_rgb, tam_ter, alto, fuente, titulo):
     """RGB llevada a la térmica | térmica | mezcla, con cajas térmicas en rojo y RGB llevadas en verde."""
+    paneles = paneles_superposicion(dataset, par, H, tam_rgb, tam_ter, alto)
+    return lado_a_lado(paneles, [titulo, "térmica (rojo: cajas térmicas)", "mezcla 50 % (verde: cajas RGB)"], fuente)
+
+
+def paneles_superposicion(dataset, par, H, tam_rgb, tam_ter, alto):
     rgb = cv2.imread(str(dataset / par.ruta_rgb))
     al = Image.fromarray(cv2.cvtColor(cv2.warpPerspective(rgb, H, tuple(tam_ter)), cv2.COLOR_BGR2RGB))
     ter = Image.open(dataset / par.ruta_termica).convert("RGB")
@@ -172,7 +181,33 @@ def superposicion(dataset, par, H, tam_rgb, tam_ter, alto, fuente, titulo):
         for b in crl:
             d.rectangle(list(b), outline=VERDE, width=2)
         paneles.append(img.resize((round(alto * tam_ter[0] / tam_ter[1]), alto)))
-    return lado_a_lado(paneles, [titulo, "térmica (rojo: cajas térmicas)", "mezcla 50 % (verde: cajas RGB)"], fuente)
+    return paneles
+
+
+def hoja_ejemplos(dataset, ejemplos, alto, fuente, tam_ter):
+    """Una fila por tramo: título y tres mezclas (par antes del tramo, el peor del tramo, par después)."""
+    ancho = round(alto * tam_ter[0] / tam_ter[1])
+    filas = []
+    for e in ejemplos:
+        celdas = []
+        for nombre, p in (("antes", e["desde"] - 1), ("peor", e["peor"]), ("después", e["hasta"] + 1)):
+            if p in e["g"].index:
+                img = paneles_superposicion(dataset, e["g"].loc[p], e["H"], e["tam_rgb"], tam_ter, alto)[2]
+                d = e["distancias"].get(p)
+                estado = (f"{d:.0f} px" if d is not None else "sin persona en ambas")
+                if p in e["solo_termica"]:
+                    estado += ", solo térmica: se excluye"
+                elif e["desde"] <= p <= e["hasta"]:
+                    estado += ", se excluye"
+            else:
+                img = Image.new("RGB", (ancho, alto), (235, 235, 235))
+                estado = "ya excluido o fuera del vuelo"
+            celdas.append((img, f"{nombre}: pos {p}, {estado}"))
+        fila = lado_a_lado([c[0] for c in celdas], [c[1] for c in celdas], fuente)
+        cab = Image.new("RGB", (fila.width, 26), (255, 255, 255))
+        ImageDraw.Draw(cab).text((6, 4), e["titulo"], fill=(0, 0, 0), font=fuente)
+        filas.append(apilar([cab, fila], sep=0))
+    return apilar(filas, sep=14)
 
 
 def figura_puntos(dataset, fotogramas, H, alto, fuente):
@@ -232,7 +267,8 @@ def main():
     reporte.mkdir(parents=True, exist_ok=True)
     fuente = ImageFont.truetype(cfg["fuente"], 15)
 
-    resumen, comparacion, todas, por_par, desfases, validacion, revisar, salida_h = [], [], [], [], [], [], [], {}
+    resumen, comparacion, todas, por_par, desfases, excluir, validacion, salida_h = [], [], [], [], [], [], [], {}
+    contexto = {}
     for vuelo, g in pares.groupby("vuelo"):
         g = g.sort_values("posicion").set_index("posicion", drop=False)
         tam_rgb = Image.open(D / g.ruta_rgb.iloc[0]).size
@@ -250,8 +286,12 @@ def main():
         archivo = RAIZ / cfg["marcado"]["carpeta_puntos"] / f"{vuelo}.yaml"
         manual = None
         if vuelo in c["validacion_manual"] and archivo.exists():
-            manual = yaml.safe_load(archivo.read_text(encoding="utf-8"))["fotogramas"]
-            P_manual = np.array([q for f in manual.values() for q in f["puntos"]], np.float64)
+            fot = yaml.safe_load(archivo.read_text(encoding="utf-8"))["fotogramas"]
+            manual = {n: fot[n] for n in c["validacion_manual"][vuelo] if fot.get(n, {}).get("puntos")}
+            if manual:
+                P_manual = np.array([q for f in manual.values() for q in f["puntos"]], np.float64)
+            else:
+                manual = None
 
         # comparación de modelos con la misma partición
         modelos = {}
@@ -337,33 +377,23 @@ def main():
         pp.insert(0, "vuelo", vuelo)
         pp["mitad"] = pp.posicion.map(mitad)
         por_par.append(pp)
+        # regla de desfase: posiciones seguidas (sin huecos) por encima del umbral, y "solo térmica" cercanos
         altos = pp.posicion[pp.distancia_max_px > c["umbral_desfase_px"]].to_numpy()
-        for a, b in tramos(altos, c["desfase_hueco_max"]):
+        solo_ter = set(g.posicion[(g.cajas_termica > 0) & (g.cajas_rgb == 0)].astype(int))
+        dist_par = dict(zip(pp.posicion, pp.distancia_max_px))
+        v = c["vecindad_solo_termica"]
+        for a, b in tramos(altos, 0):
+            if b - a + 1 < c["desfase_min_pares"]:
+                continue
             s = pp[pp.posicion.between(a, b)]
-            if (s.distancia_max_px > c["umbral_desfase_px"]).sum() >= c["desfase_min_pares"]:
-                desfases.append({"vuelo": vuelo, "desde": a, "hasta": b, "pares_con_persona": len(s),
-                                 "pares_sobre_umbral": int((s.distancia_max_px > c["umbral_desfase_px"]).sum()),
-                                 "distancia_max_px": s.distancia_max_px.max()})
-
-        # tramos a revisar (giros rápidos): todos sus pares, de cualquier mitad
-        if vuelo in c["revisar"]:
-            a, b = c["revisar"][vuelo]
-            filas_img = []
-            for p in range(a, b + 1):
-                if p not in g.index:
-                    continue
-                par = g.loc[p]
-                cr = cajas_px((D / par.ruta_rgb).with_suffix(".txt"), tam_rgb)
-                ct = cajas_px((D / par.ruta_termica).with_suffix(".txt"), tam_ter)
-                dp = distancias([(p, cr, ct)], H, c, tam_ter)
-                revisar.append({"vuelo": vuelo, "posicion": p, "mitad": mitad.get(p, "sin persona en ambas"),
-                                "personas_emparejadas": len(dp),
-                                "distancia_media_px": dp.distancia_px.mean() if len(dp) else np.nan,
-                                "distancia_max_px": dp.distancia_px.max() if len(dp) else np.nan})
-                dist = f"{dp.distancia_px.max():.1f} px" if len(dp) else "sin personas emparejadas"
-                filas_img.append(superposicion(D, par, H, tam_rgb, tam_ter, c["alto_panel"] * 2 // 3, fuente,
-                                               f"pos {p} | RGB alineada | distancia máx. {dist}"))
-            apilar(filas_img).save(reporte / f"revisar_{vuelo}_{a:04d}-{b:04d}.jpg", quality=c["calidad_jpg"])
+            vecinos = sorted(p for p in solo_ter if a - v <= p <= b + v)
+            desfases.append({"vuelo": vuelo, "desde": int(a), "hasta": int(b), "pares": int(b - a + 1),
+                             "distancia_max_px": s.distancia_max_px.max(),
+                             "peor": int(s.posicion[s.distancia_max_px.idxmax()]),
+                             "solo_termica_cerca": len(vecinos), "posiciones_solo_termica": " ".join(map(str, vecinos))})
+            excluir += [{"vuelo": vuelo, "posicion": int(p), "motivo": "desfase"} for p in range(a, b + 1)]
+            excluir += [{"vuelo": vuelo, "posicion": p, "motivo": "solo térmica junto a un desfase"} for p in vecinos]
+        contexto[vuelo] = {"g": g, "H": H, "tam_rgb": tam_rgb, "distancias": dist_par, "solo_termica": solo_ter}
 
         # peores pares de evaluación
         peores = d.groupby("posicion").distancia_px.max().nlargest(c["peores_por_vuelo"])
@@ -398,20 +428,44 @@ def main():
     comp.to_csv(reporte / "comparacion_modelos.csv", index=False, encoding="utf-8")
     pd.concat(todas).round(2).to_csv(reporte / "distancias.csv", index=False, encoding="utf-8")
     pd.concat(por_par).round(2).to_csv(reporte / "distancia_por_par.csv", index=False, encoding="utf-8")
-    des = pd.DataFrame(desfases, columns=["vuelo", "desde", "hasta", "pares_con_persona", "pares_sobre_umbral",
-                                          "distancia_max_px"]).round(1)
+    des = pd.DataFrame(desfases, columns=["vuelo", "desde", "hasta", "pares", "distancia_max_px", "peor",
+                                          "solo_termica_cerca", "posiciones_solo_termica"]).round(1)
     des.to_csv(reporte / "desfases.csv", index=False, encoding="utf-8")
+    exc = pd.DataFrame(excluir, columns=["vuelo", "posicion", "motivo"]).drop_duplicates(["vuelo", "posicion"])
+    exc.to_csv(reporte / "exclusion_desfase_propuesta.csv", index=False, encoding="utf-8")
     pd.DataFrame(validacion).round(2).to_csv(reporte / "validacion_manual.csv", index=False, encoding="utf-8")
-    pd.DataFrame(revisar).round(2).to_csv(reporte / "revisar.csv", index=False, encoding="utf-8")
 
     pd.set_option("display.width", 250)
     print("\nComparación de modelos (pares de evaluación):")
     print(comp[["vuelo", "modelo", "pares_evaluados", "distancia_media_px", "distancia_mediana_px", "distancia_max_px",
                 "vision_x", "vision_y", "deformacion_vision"]].round(2).to_string(index=False))
-    if revisar:
-        print("\nTramos a revisar:\n" + pd.DataFrame(revisar).round(1).to_string(index=False))
-    print(f"\nTramos de desfase (>= {c['desfase_min_pares']} pares sobre {c['umbral_desfase_px']} px): {len(des)}")
-    print(des.to_string(index=False))
+
+    # resumen de la regla de desfase
+    print(f"\nRegla de desfase ({c['desfase_min_pares']} o más posiciones seguidas con alguna persona a más de "
+          f"{c['umbral_desfase_px']} px; 'solo térmica' a {c['vecindad_solo_termica']} posiciones o menos): "
+          f"{len(des)} tramos")
+    cuenta = pares.groupby("vuelo").size().rename("pares_utilizables").to_frame().join(
+        exc.groupby(["vuelo", "motivo"]).size().unstack()).fillna(0).astype(int)
+    cuenta["total"] = cuenta.drop(columns="pares_utilizables").sum(axis=1)
+    cuenta["quedarian"] = cuenta.pares_utilizables - cuenta.total
+    cuenta.loc["TOTAL"] = cuenta.sum()
+    print(cuenta.to_string())
+    for vuelo, f in cfg["marcado"].get("fotogramas", {}).items():
+        dentro = [n for n, p in f.items() if ((exc.vuelo == vuelo) & (exc.posicion == p)).any()]
+        if dentro:
+            print(f"AVISO: fotogramas de marcado de {vuelo} dentro de la exclusión propuesta: {dentro}")
+
+    # hoja de ejemplo: tramos repartidos según su distancia máxima
+    if len(des):
+        orden = des.sort_values(["distancia_max_px", "vuelo", "desde"]).reset_index(drop=True)
+        elegidos = orden.iloc[sorted(set(np.linspace(0, len(orden) - 1, c["ejemplos_desfase"]).round().astype(int)))]
+        ejemplos = [{**contexto[t.vuelo], "desde": t.desde, "hasta": t.hasta, "peor": t.peor,
+                     "titulo": f"{t.vuelo}: tramo {t.desde}-{t.hasta} ({t.pares} pares, distancia máx. "
+                               f"{t.distancia_max_px:.0f} px; solo térmica cerca: {t.solo_termica_cerca})"}
+                    for t in elegidos.itertuples()]
+        hoja_ejemplos(D, ejemplos, c["alto_panel_ejemplos"], fuente, tam_ter).save(
+            reporte / "ejemplos_desfase.jpg", quality=c["calidad_jpg"])
+        print("\nEjemplos en la hoja:\n" + elegidos.drop(columns="posiciones_solo_termica").to_string(index=False))
 
     r = pd.DataFrame(resumen)
     agregar_a_bitacora(rutas["bitacora"], 2, f"transformación RGB->térmica por centros de cajas ({c['modelo']})",
