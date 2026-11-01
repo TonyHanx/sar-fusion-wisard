@@ -28,8 +28,10 @@ Tres usos:
               muestra, con la RGB alineada y la térmica y solo la caja térmica de WiSARD de la persona (verde) y las
               demás cajas térmicas de WiSARD del fotograma (gris). Se responde con una tecla: 1 se ve en la RGB, 2 no se
               ve en la RGB, 3 no es persona (x borra la respuesta); tras responder pasa a la siguiente sin responder.
-              No se dibujan cajas, no hay precarga y no lee el archivo del primer anotador. Guarda en
-              data/<anotaciones_segundo_simple>.
+              No se dibujan cajas, no hay precarga y no lee el archivo del primer anotador. Una ronda por archivo:
+              guarda en el de data/<segundo_simple.rondas[ronda_actual]> y no lee los de otras rondas. Muestra en
+              pantalla la regla aclarada el 2026-11-01 ("se ve" = se reconoce una parte del cuerpo con el brillo
+              normal; si hay duda, no se ve) y el realce (e) está desactivado.
   --persona N abre en la persona N (desde 1); si no, en la primera sin terminar.
 
 Uso:
@@ -56,7 +58,7 @@ Ratón y teclas:
   f       fuera de cuadro          p   no es persona          u   deshacer
   n / b   persona siguiente / anterior          espacio   siguiente sin terminar
   rueda, + / -   zoom          flechas   mover la vista          0   vista inicial
-  e   realce de contraste      i   píxeles sin suavizar           h   ocultar las cajas
+  e   realce de contraste (no en --segundo-simple)      i   píxeles sin suavizar      h   ocultar las cajas
   q   salir (también con la X). Esc cancela un arrastre.
 Redibujar la completa en una imagen cambia su tamaño en las dos; en la otra se conserva el centro.
 
@@ -931,6 +933,10 @@ COLUMNAS_SIMPLE = ["id", "vuelo", "posicion", "indice_caja", "anotador", "respue
 CAJA_WISARD = (0, 255, 0)
 COLUMNAS_WISARD = (["id", "vuelo", "posicion", "indice_caja", "cajas_en_fotograma", "imagen_rgb", "imagen_termica"]
                    + [f"ter_{c}" for c in CAJA])
+# Regla aclarada el 2026-11-01 (docs/reglas_anotacion.md), en pantalla en el modo simple (cv2 solo dibuja ASCII).
+REGLA_SIMPLE = ["REGLA: SE VE = reconoces una parte del cuerpo (ropa, cabeza, brazos o piernas) en la RGB con el brillo "
+                "normal, sin realce.",
+                "Una mancha oscura, una sombra o una rama NO cuentan. Si dudas: NO SE VE."]
 
 
 class AnotadorSimple(Anotador):
@@ -938,10 +944,11 @@ class AnotadorSimple(Anotador):
     la térmica con la caja térmica de WiSARD de la persona (verde; en la RGB, donde la pone la semejanza) y las demás
     cajas térmicas de WiSARD del fotograma (gris). Se responde con una tecla: 1 se ve en la RGB, 2 no se ve en la RGB,
     3 no es persona. No se dibujan cajas, no hay precarga (de la lista de personas solo se usan las columnas de WiSARD
-    de la térmica y las imágenes) y no se lee el archivo del primer anotador."""
+    de la térmica y las imágenes) y no se lee el archivo del primer anotador ni los de otras rondas. La regla aclarada
+    (REGLA_SIMPLE) se muestra en pantalla y el realce (e) está desactivado: "se ve" es con el brillo normal."""
 
-    def __init__(self, o, personas, ids, alineados, salida, tam_ter, area=None, inicio=None):
-        self.o, self.modo, self.salida = o, "segundo_simple", Path(salida)
+    def __init__(self, o, personas, ids, alineados, salida, tam_ter, area=None, inicio=None, ronda=None):
+        self.o, self.modo, self.salida, self.ronda = o, "segundo_simple", Path(salida), ronda
         self.primero, self.muestra, self.nombre_lista = False, False, None
         self.alineados = Path(alineados)
         self.tw, self.th = tam_ter
@@ -1051,25 +1058,28 @@ class AnotadorSimple(Anotador):
         p = self.p
         x = 2 * (self.gw + self.sep) + self.sep
         y = self.y_general + 16
-        self.texto(L, f"SEGUNDO ANOTADOR (modo simple) | persona {self.i + 1} de {len(self.ids)} | respondidas "
+        ronda = "" if self.ronda is None else f", ronda {self.ronda}"
+        self.texto(L, f"SEGUNDO ANOTADOR (modo simple{ronda}) | persona {self.i + 1} de {len(self.ids)} | respondidas "
                       f"{self.n_terminadas()} de {len(self.ids)} | fotograma {p.posicion}, caja {p.indice_caja + 1} de "
                       f"{p.cajas_en_fotograma}", x, y, BLANCO, 0.55)
         self.texto(L, "Se ve esta persona en la RGB? Verde: su caja termica de WiSARD (en la RGB, donde la pone la "
                       "alineacion: puede correrse unos px).", x, y + 22)
         self.texto(L, "Gris: otras personas de WiSARD en el fotograma. Los triangulos amarillos senalan a la persona.",
                    x, y + 44)
+        for k, linea in enumerate(REGLA_SIMPLE):
+            self.texto(L, linea, x, y + 70 + 22 * k, BLANCO, 0.55)
         r = self.resp[self.id]["respuesta"]
-        self.texto(L, "respuesta: " + (TEXTO_RESPUESTA[r] if r else "SIN RESPONDER"), x, y + 76, BIEN if r else MARCA,
+        self.texto(L, "respuesta: " + (TEXTO_RESPUESTA[r] if r else "SIN RESPONDER"), x, y + 122, BIEN if r else MARCA,
                    0.65)
         if self.aviso_guardado or self.mensaje:
-            self.texto(L, self.aviso_guardado or self.mensaje, x, y + 104, AVISO if self.aviso_guardado else MARCA)
+            self.texto(L, self.aviso_guardado or self.mensaje, x, y + 148, AVISO if self.aviso_guardado else MARCA)
         yb = self.y_barra + 17
         self.texto(L, "1: SE VE en la RGB | 2: NO SE VE en la RGB | 3: NO ES PERSONA (en la caja termica no hay una "
                       "persona) | x: borrar la respuesta", 8, yb, BLANCO, 0.5)
         self.texto(L, "n / b: siguiente / anterior | espacio: siguiente sin responder | rueda o + / -: zoom | flechas: "
                       "mover la vista | 0: vista inicial", 8, yb + 23)
-        self.texto(L, "e: contraste | i: pixeles | h: ocultar las cajas | q: salir (se guarda despues de cada respuesta)",
-                   8, yb + 46)
+        self.texto(L, "i: pixeles | h: ocultar las cajas | q: salir (se guarda despues de cada respuesta) | sin realce: "
+                      "la regla es con el brillo normal", 8, yb + 46)
         return L
 
     # ------------------------------------------------------------------ eventos
@@ -1106,9 +1116,8 @@ class AnotadorSimple(Anotador):
             self.zoom(1 / self.o["zoom_paso"], self.raton_pos)
         elif c == "0":
             self.vista = self.vista_inicial()
-        elif c == "e":
-            self.realce = not self.realce
-            self.preparar_imagenes()
+        elif c == "e":  # desactivado: "se ve" es con el brillo normal (regla del 2026-11-01)
+            self.mensaje = "el realce esta desactivado en este modo: la regla es con el brillo normal"
         elif c == "i":
             self.pixeles = not self.pixeles
         elif c == "h":
@@ -1123,7 +1132,8 @@ def crear_anotador(cfg, rutas, segundo, salida=None, area=None, inicio=None, mue
     """Anotador del primer o del segundo anotador. `salida` permite escribir en otro archivo (para pruebas). Con
     `muestra`, el primer anotador (con precarga) anota solo las personas de la muestra; con `ajuste`, solo las de la
     lista de ajuste de la visible RGB, en su orden. Con `simple`, el segundo anotador en modo simple (una tecla por
-    persona de la muestra; no lee el archivo del primer anotador)."""
+    persona de la muestra; escribe en el archivo de `segundo_simple.ronda_actual` y no lee el del primer anotador ni
+    los de otras rondas)."""
     if segundo and (muestra or ajuste):
         raise SystemExit("--muestra y --ajuste son para el primer anotador")
     if muestra and ajuste:
@@ -1137,8 +1147,10 @@ def crear_anotador(cfg, rutas, segundo, salida=None, area=None, inicio=None, mue
     personas = pd.read_csv(ruta_personas, dtype={"id": str})
     if simple:
         ids = pd.read_csv(data / o["muestra_segundo"], dtype={"id": str}).sort_values("orden").id
+        ronda = o["segundo_simple"]["ronda_actual"]
         return AnotadorSimple(o, personas, ids, data / cfg["datasets"]["alineados"],
-                              salida or data / o["anotaciones_segundo_simple"], tuple(cfg["tam_termica"]), area, inicio)
+                              salida or data / o["segundo_simple"]["rondas"][ronda]["archivo"], tuple(cfg["tam_termica"]),
+                              area, inicio, ronda)
     if segundo or muestra:
         ids = pd.read_csv(data / o["muestra_segundo"], dtype={"id": str}).id
     if ajuste:

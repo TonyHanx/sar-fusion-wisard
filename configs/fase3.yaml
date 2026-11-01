@@ -34,8 +34,14 @@ oclusion:
   muestra_segundo: oclusion_muestra_segundo.csv   # dentro de data/
   anotaciones_segundo: oclusion_segundo.csv       # dentro de data/
   # Segundo anotador, modo simple (--segundo-simple, decidido el 2026-11-01): una tecla por persona de la muestra
-  # (se ve en la RGB / no se ve en la RGB / no es persona).
-  anotaciones_segundo_simple: oclusion_segundo_simple.csv   # dentro de data/
+  # (se ve en la RGB / no se ve en la RGB / no es persona). Una ronda por archivo (dentro de data/); la herramienta
+  # escribe en `ronda_actual` y no lee las demás. Ronda 1: "se ve" sin definir (kappa 0.507, no se acepta). Ronda 2:
+  # regla aclarada el 2026-11-01 (docs/reglas_anotacion.md), que la herramienta muestra en pantalla; sin realce (e).
+  segundo_simple:
+    ronda_actual: 2
+    rondas:
+      1: {archivo: oclusion_segundo_simple_ronda1.csv, regla: ambigua}
+      2: {archivo: oclusion_segundo_simple_ronda2.csv, regla: aclarada}
   correcciones: configs/correcciones_oclusion.yaml   # correcciones a ojo de la muestra (scripts/corregir_oclusion.py)
   respaldos: respaldos                     # dentro de data/: copia de las anotaciones antes de cada corrección
   lista_ajuste: oclusion_ajuste_visibles.csv      # dentro de data/: personas para ajustar la visible RGB (--ajuste)

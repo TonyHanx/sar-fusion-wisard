@@ -15,7 +15,8 @@ Fase 3b, 1 de noviembre de 2026. Estas reglas valen para los dos anotadores.
   - El nivel sale de un λ RGB automático (`scripts/oclusion_auto.py`).
   - Para validarlo, el primer anotador anota a mano solo esas mismas 75 personas, con la herramienta en modo
     `--muestra`.
-  - Si el kappa de Cohen entre los dos es menor que 0.61, se vuelve a anotar a mano las 498.
+  - Si el kappa de Cohen entre el nivel automático y el manual (dos clases) es menor que 0.61, se vuelve a anotar a
+    mano las 498. Dio 0.940: se usa el automático.
   - Las reglas de abajo no cambian.
 
 ## Cajas
@@ -43,6 +44,41 @@ El nivel de oclusión sale de λ en la RGB:
 | Severa | más de 70 % |
 
 El nivel se calcula en la Fase 4; la herramienta no lo muestra.
+
+Desde el 1 de noviembre de 2026 el nivel tiene **dos clases**: **severa** si la persona no se ve en la RGB y **baja**
+si se ve (en la muestra no hubo ninguna moderada). La tabla de arriba solo se usa para reportar la comparación.
+
+## Segundo anotador, modo simple
+
+Herramienta: `scripts/anotar_oclusion.py --segundo-simple`. Decidido el 1 de noviembre de 2026.
+
+- Para cada una de las 75 personas de la muestra se ven la RGB alineada y la térmica, con la caja térmica de WiSARD de
+  la persona en verde y las de las demás personas del fotograma en gris.
+- No se dibujan cajas, no hay precarga y no se ven las respuestas del primer anotador.
+- Se responde con una tecla: **1** se ve en la RGB, **2** no se ve en la RGB, **3** no es persona.
+
+### Regla: cuándo "se ve en la RGB"
+
+Aclarada el 1 de noviembre de 2026, después de la ronda 1. La herramienta la muestra en pantalla.
+
+- **"Se ve"** = reconoces **una parte del cuerpo** (ropa, cabeza, brazos o piernas) en la RGB **con el brillo
+  normal, sin realce**.
+- **Una mancha oscura, una sombra o una rama no cuentan.**
+- **Si dudas, "no se ve".**
+- El realce de contraste (**e**) está desactivado en este modo. El zoom (rueda, **+** / **−**) y los píxeles sin
+  suavizar (**i**) sí se pueden usar.
+
+### Rondas
+
+| Ronda | Regla | Archivo |
+|---|---|---|
+| 1 | ambigua: "se ve" sin definir; el realce estaba disponible | `data/oclusion_segundo_simple_ronda1.csv` |
+| 2 | aclarada (la de arriba); sin realce | `data/oclusion_segundo_simple_ronda2.csv` |
+
+- La ronda 2 son **las 75 personas completas**, desde cero. La herramienta escribe en el archivo de
+  `segundo_simple.ronda_actual` (`configs/fase3.yaml`) y no lee los de otras rondas.
+- La ronda 1 (kappa 0.507 entre anotadores) se conserva y se reporta junto a la ronda 2 en
+  `reports/fase4_validacion_auto.md`.
 
 ## Cómo se aplican en la herramienta
 
@@ -94,7 +130,7 @@ La herramienta es `scripts/anotar_oclusion.py`.
 | Rueda, **+** / **−** | Zoom. |
 | Flechas | Mover la vista. |
 | **0** | Volver a la vista inicial. |
-| **e** | Realce de contraste. |
+| **e** | Realce de contraste. Desactivado en el modo simple. |
 | **i** | Ver los píxeles sin suavizar. |
 | **h** | Ocultar las cajas. |
 | **q** o la X | Salir. |
@@ -104,6 +140,8 @@ La herramienta es `scripts/anotar_oclusion.py`.
 - **Primer anotador:** guarda en `data/oclusion.csv`, también con `--muestra`. Las personas que ya están en ese archivo
   y no son de la muestra (la persona 1) se conservan sin cambios.
 - **Segundo anotador:** guarda en `data/oclusion_segundo.csv`.
+- **Segundo anotador, modo simple:** guarda en el archivo de la ronda actual (`data/oclusion_segundo_simple_ronda2.csv`),
+  solo las personas respondidas, después de cada respuesta. Al abrir de nuevo, sigue en la primera sin responder.
 - Se guarda después de cada cambio y al pasar de persona. Al abrir de nuevo, la herramienta sigue en la primera persona
   sin terminar.
 - **No abras el CSV en Excel mientras anotas.** Excel bloquea el archivo y la herramienta no puede guardar. Si pasa,
@@ -119,6 +157,7 @@ La herramienta es `scripts/anotar_oclusion.py`.
 .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --persona 1
 .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --muestra
 .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --segundo
+.venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --segundo-simple
 ```
 
 - **Con `--ajuste`:** primer anotador.
@@ -129,5 +168,6 @@ La herramienta es `scripts/anotar_oclusion.py`.
 - **Con `--muestra`:** primer anotador, con la precarga, solo las 75 personas de la muestra. "Persona N de 75" cuenta
   dentro de la muestra; `--persona N` también.
 
+- **Con `--segundo-simple`:** segundo anotador, modo simple, en la ronda actual (ver arriba).
 - **Sin opciones:** abre en la primera persona sin terminar.
 - **Con `--persona N`:** abre en la persona N.

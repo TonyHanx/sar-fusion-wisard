@@ -193,28 +193,45 @@ Imagen en `reports/fase4_validacion_auto/fondo_0058-0064.jpg` (mezclas RGB aline
   - `3`: no es persona.
   - Tras responder pasa a la siguiente sin responder.
   - `x` borra la respuesta, y `n` / `b` pasan a la siguiente o a la anterior.
-  - Rueda o `+` / `-` para el zoom, flechas para mover la vista, `e` contraste, `h` oculta las cajas y `q` sale.
-- **Guarda** en `data/oclusion_segundo_simple.csv` después de cada respuesta. Columnas: `id`, `respuesta` (`se_ve_rgb`,
-  `no_se_ve_rgb`, `no_es_persona`), `tiempo_s` y `guardado`. Al abrir de nuevo se retoma.
-- **Prueba:** `scripts/probar_anotar_oclusion.py` pasa de 59 a 71 comprobaciones, todas correctas. Las capturas de los
-  modos anteriores salieron idénticas.
-- **Captura:** `reports/oclusion/herramienta_segundo_simple.jpg`.
+  - Rueda o `+` / `-` para el zoom, flechas para mover la vista, `h` oculta las cajas y `q` sale.
+  - `e` (realce de contraste) solo estuvo en la ronda 1. Desde la ronda 2 está desactivado.
+- **Guarda** en el archivo de la ronda (ver la sección siguiente), después de cada respuesta. Columnas: `id`,
+  `respuesta` (`se_ve_rgb`, `no_se_ve_rgb`, `no_es_persona`), `tiempo_s` y `guardado`. Al abrir de nuevo se retoma.
+- **Prueba:** `scripts/probar_anotar_oclusion.py` pasó de 59 a 71 comprobaciones con este modo, y a 73 con la ronda 2.
+  Todas correctas. Las capturas de los modos anteriores salieron idénticas.
+- **Captura:** `reports/oclusion/herramienta_segundo_simple.jpg` (ya con la regla de la ronda 2 en pantalla).
 - Sus respuestas se comparan con las del primer anotador en dos niveles: "se ve" = baja, "no se ve" = severa, y
   "no es persona" aparte. El resultado está en la sección siguiente.
 
 ## Concordancia entre anotadores (dos clases)
 
-Pedida el 1 de noviembre de 2026, cuando el segundo anotador terminó las 75 en modo simple.
+Dos rondas del segundo anotador sobre las mismas 75 personas. El primer anotador no cambia.
 
-```
-.venv\Scripts\python.exe scripts\fase4_validacion_auto.py --config configs\fase3.yaml --rutas configs\rutas.yaml --partes entre_anotadores
-```
+| Ronda | Regla de "se ve en la RGB" | Archivo del segundo | Kappa (IC 95 %) | Acuerdo | Desacuerdos |
+|---|---|---|---|---:|---:|
+| 1 | ambigua: sin definir; el realce (`e`) estaba disponible | `data/oclusion_segundo_simple_ronda1.csv` | 0.507 (0.312 a 0.701) | 74.6 % | 16 de 63 |
+| 2 | aclarada: con el brillo normal, sin realce; si dudas, "no se ve" | `data/oclusion_segundo_simple_ronda2.csv` | pendiente | | |
 
-- **Segundo anotador** (`data/oclusion_segundo_simple.csv`): 42 "se ve", 24 "no se ve" y 9 "no es persona".
 - **Primer anotador:** "se ve" si tiene visible RGB; "no se ve" si la visible RGB es "no visible".
-- **Aparte:** las "no es persona" de cualquiera de los dos. Son 12 personas, y no hay ninguna "fuera de cuadro".
-- **Salidas:** tablas en `reports/fase4_validacion_auto/entre_anotadores/` (`respuestas.csv`, `kappa.csv`,
-  `matriz.csv`, `tabla_completa.csv` y `desacuerdos.csv`). Hay una fila en la bitácora.
+- **Aparte:** las "no es persona" de cualquiera de los dos (y las "fuera de cuadro" del primero).
+- **Salidas** de cada ronda en `reports/fase4_validacion_auto/entre_anotadores/ronda<N>/`: `respuestas.csv`,
+  `kappa.csv`, `matriz.csv`, `tabla_completa.csv`, `desacuerdos.csv` e `imagenes/`. Cada ronda agrega una fila a la
+  bitácora.
+
+### Ronda 1 (regla ambigua)
+
+Pedida el 1 de noviembre de 2026, cuando el segundo anotador terminó las 75 en modo simple. "Se ve en la RGB" no tenía
+definición y el realce de contraste (`e`) estaba disponible.
+
+```
+.venv\Scripts\python.exe scripts\fase4_validacion_auto.py --config configs\fase3.yaml --rutas configs\rutas.yaml --partes entre_anotadores --ronda 1
+```
+
+- **Segundo anotador** (`data/oclusion_segundo_simple_ronda1.csv`, antes `data/oclusion_segundo_simple.csv`, sin
+  cambios): 42 "se ve", 24 "no se ve" y 9 "no es persona".
+- **Aparte:** 12 personas, y no hay ninguna "fuera de cuadro".
+- **Salidas** en `reports/fase4_validacion_auto/entre_anotadores/ronda1/` (antes en `entre_anotadores/`; se volvieron a
+  generar en una carpeta temporal y salieron idénticas).
 
 | Comparación (63 personas) | Kappa (IC 95 %) | Acuerdo | Desacuerdos |
 |---|---|---:|---:|
@@ -247,9 +264,9 @@ Pedida el 1 de noviembre de 2026, cuando el segundo anotador terminó las 75 en 
 | no se ve | 14 | 21 | 4 |
 | no es persona | 2 | 1 | 4 |
 
-### Los desacuerdos
+#### Los desacuerdos de la ronda 1
 
-**Imágenes**, en `reports/fase4_validacion_auto/entre_anotadores/imagenes/`:
+**Imágenes**, en `reports/fase4_validacion_auto/entre_anotadores/ronda1/imagenes/`:
 - Por persona, la vista de la herramienta con las cajas del primer anotador y, debajo, los paneles sin cajas (RGB,
   térmica y RGB con realce). El encabezado dice qué respondió cada uno.
 - `mosaico.jpg` las junta.
@@ -277,13 +294,57 @@ Pedida el 1 de noviembre de 2026, cuando el segundo anotador terminó las 75 en 
   del kappa, por ser pares "solo térmica".
 - **72 y 75:** con el brillo normal solo se ve un punto blanco en el borde de la caja. Al estirar el brillo aparece una
   persona con ropa blanca y azul. WiSARD tiene caja RGB en las dos.
-- **En resumen:** casi todos los desacuerdos dependen de si se aclara la imagen. La regla de anotación no dice si "se
-  ve" es con el brillo normal o aclarando (tecla `e`, zoom).
+- **En resumen:** casi todos los desacuerdos dependen de si se aclara la imagen. La regla de anotación no decía si "se
+  ve" es con el brillo normal o aclarando (tecla `e`, zoom). Por eso el 0.507 no se acepta tal cual y se aclara la
+  regla para la ronda 2.
 
 **Tiempo del segundo anotador:**
 - Las 75 respuestas se guardaron entre las 15:02:51 y las 15:06:11.
 - Mediana de 1.9 s por persona; el 75 % en 3.5 s o menos.
-- Una en 0.0 s: la 47, marcada "no es persona" apenas apareció en pantalla. Puede ser una tecla de más.
+- Una en 0.0 s: la 47, marcada "no es persona" apenas apareció en pantalla. Puede ser una tecla de más. En la ronda 2
+  la vuelve a responder.
+
+### Ronda 2 (regla aclarada)
+
+**Pendiente:** el segundo anotador todavía no la hace.
+
+**Regla aclarada el 1 de noviembre de 2026** (en `docs/reglas_anotacion.md`, y en pantalla en el modo simple):
+
+- **"Se ve"** = reconoces una parte del cuerpo (ropa, cabeza, brazos o piernas) en la RGB con el brillo normal, sin
+  realce.
+- Una mancha oscura, una sombra o una rama no cuentan.
+- Si dudas, "no se ve".
+
+**Cómo se hace:**
+
+- Las **75 personas completas**, desde cero, en un archivo nuevo: `data/oclusion_segundo_simple_ronda2.csv`
+  (`oclusion.segundo_simple.ronda_actual: 2` en `configs/fase3.yaml`). La herramienta no lee el archivo de la ronda 1.
+- El realce (`e`) está desactivado: si se pulsa, la herramienta avisa y no cambia la imagen. El zoom y `i` (píxeles sin
+  suavizar) siguen disponibles.
+- Comando del segundo anotador (el mismo de la ronda 1):
+
+```
+.venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --segundo-simple
+```
+
+**Al terminar**, el kappa de la ronda 2:
+
+```
+.venv\Scripts\python.exe scripts\fase4_validacion_auto.py --config configs\fase3.yaml --rutas configs\rutas.yaml --partes entre_anotadores --ronda 2
+```
+
+- Da lo mismo que la ronda 1 (kappa, matriz, tabla completa, desacuerdos con imágenes) en `entre_anotadores/ronda2/`.
+- Además:
+  - `entre_anotadores/rondas.csv`: el kappa de las dos rondas;
+  - `ronda2/cambios.csv`: las respuestas del segundo que cambian respecto de la ronda 1, y si con el cambio pasan a
+    coincidir con el primero o dejan de coincidir;
+  - el kappa del segundo contra sí mismo entre las dos rondas, solo informativo.
+- Si al archivo le falta alguna de las 75, el script se detiene y dice cuántas faltan.
+- La regla se probó con un archivo de ronda 2 simulado, en una carpeta temporal: la bitácora y `data/` no se tocaron.
+
+**Ojo, asimetría:** la regla aclarada es para el segundo anotador. Las respuestas del primero no cambian, y él anotó con
+el realce disponible. La 72 y la 75 (el primero las ve; con el brillo normal solo se ve un punto blanco en el borde de
+la caja) son las que más dependen de eso.
 
 ## Cambios en el código
 
@@ -292,16 +353,20 @@ Pedida el 1 de noviembre de 2026, cuando el segundo anotador terminó las 75 en 
   - imágenes de los desacuerdos;
   - mosaico de las "no es persona";
   - revisión del fondo;
-  - concordancia entre anotadores (`--partes entre_anotadores`).
+  - concordancia entre anotadores (`--partes entre_anotadores`), por ronda (`--ronda N`, por omisión la ronda
+    actual), con las salidas en `entre_anotadores/ronda<N>/` y, desde la ronda 2, la comparación con la anterior.
 - `scripts/oclusion_auto.py`:
   - Sale `--comparar` (3 niveles): la comparación ahora está en el script nuevo.
   - `--revisar` acepta otra carpeta de salida y otro motivo (uno para todas o uno por persona), para las imágenes de
     los desacuerdos.
 - `scripts/anotar_oclusion.py`: modo `--segundo-simple`. Las piezas comunes del panel (fondo, triángulos, cursor,
   rótulo), la carga de imágenes y la escritura atómica quedaron en métodos aparte, sin cambiar la herramienta.
+  - Para la ronda 2: la regla aclarada en pantalla, el número de ronda en el encabezado, `e` desactivado y escritura en
+    el archivo de `segundo_simple.ronda_actual`.
 - `configs/fase3.yaml`:
   - Sección `validacion_auto` (niveles, kappa mínimo, mosaico, revisión del fondo y `entre_anotadores`).
-  - `oclusion.anotaciones_segundo_simple`.
+  - `oclusion.segundo_simple`: `ronda_actual` y el archivo y la regla de cada ronda (antes,
+    `oclusion.anotaciones_segundo_simple`).
   - Salen `kappa_minimo` y `comparacion` de `oclusion_auto`.
 
 ## Pendiente de decidir
@@ -313,6 +378,8 @@ Pedida el 1 de noviembre de 2026, cuando el segundo anotador terminó las 75 en 
 4. **Dónde se evalúa por nivel:** el nivel automático existe para las 1 501 personas. ¿Las métricas por nivel siguen
    sobre los 310 fotogramas anotados o pasan a los 928? CLAUDE.md todavía dice los 310.
 5. **FASES.md:** el mensaje de la fase 4 sigue hablando de λ y de tres niveles.
-6. **Concordancia entre anotadores: 0.507**, por debajo de 0.61. ¿Qué se hace con este resultado? Y para eso:
-   ¿"se ve en la RGB" es con el brillo normal o aclarando la imagen? Casi todos los desacuerdos dependen de eso.
-7. **La 47:** el segundo anotador la respondió en 0.0 s ("no es persona"). ¿Se le pide que la revise?
+6. **Concordancia entre anotadores:** la ronda 1 (0.507) no se acepta tal cual; la regla está aclarada ("se ve" = con
+   el brillo normal). Falta la ronda 2. Después: ¿qué se hace si la ronda 2 queda por debajo de 0.61?
+7. **La 47** (0.0 s en la ronda 1): se vuelve a responder en la ronda 2.
+8. **Asimetría de la regla:** ¿el primer anotador revisa sus "se ve" (sobre todo la 72 y la 75) con la regla aclarada,
+   o sus respuestas quedan como están?

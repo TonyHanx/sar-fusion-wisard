@@ -19,8 +19,9 @@ los mismos métodos que usa la ventana (raton y tecla) y comprueba:
 7. --muestra (primer anotador, solo la muestra, con precarga): las personas ya anotadas fuera de la muestra (la persona
    1 del archivo real) se conservan idénticas al guardar, y el modo completo sigue leyendo el archivo;
 8. --ajuste: la lista de ajuste en su orden;
-9. --segundo-simple: solo la muestra, sin leer los archivos de anotaciones ni usar la precarga RGB, solo la caja
-   térmica de WiSARD dibujada (h la oculta), arrastrar no hace nada, teclas 1 / 2 / 3, b y x, CSV con solo las
+9. --segundo-simple: solo la muestra, sin leer los archivos de anotaciones (del primer anotador ni de otras rondas)
+   ni usar la precarga RGB, escribe por defecto en el archivo de la ronda actual, solo la caja térmica de WiSARD
+   dibujada (h la oculta), e no activa el realce, arrastrar no hace nada, teclas 1 / 2 / 3, b y x, CSV con solo las
    respondidas, retomar, y con todas respondidas se queda en la persona.
 No toca los archivos de anotaciones de data/. Guarda capturas del lienzo de los modos en reports/oclusion/.
 
@@ -108,8 +109,10 @@ def main():
     o = cfg["oclusion"]
     capturas = rutas["reports"] / "oclusion"
     capturas.mkdir(parents=True, exist_ok=True)
-    reales = [rutas["data"] / o["anotaciones"], rutas["data"] / o["anotaciones_segundo"],
-              rutas["data"] / o["anotaciones_segundo_simple"]]
+    rondas = o["segundo_simple"]["rondas"]
+    ronda_actual = o["segundo_simple"]["ronda_actual"]
+    reales = ([rutas["data"] / o["anotaciones"], rutas["data"] / o["anotaciones_segundo"]]
+              + [rutas["data"] / r["archivo"] for r in rondas.values()])
     antes = {r: r.read_bytes() if r.exists() else None for r in reales}
     area = preparar_pantalla()
 
@@ -407,9 +410,17 @@ def main():
             pd.read_csv = leer_csv
         comprobar(list(ss.ids) == list(muestra) and ss.i == 0 and not ss.primero,
                   f"simple: las {len(ss.ids)} personas de la muestra, abre en la primera")
+        otras = [r["archivo"] for k, r in rondas.items() if k != ronda_actual]
         comprobar(o["anotaciones"] not in leidos and o["anotaciones_segundo"] not in leidos
+                  and not any(f in leidos for f in otras)
                   and not any(c.startswith("rgb_") for c in ss.todas.columns),
-                  f"simple: no lee los archivos de anotaciones (lee {sorted(set(leidos))}) ni usa la precarga RGB")
+                  f"simple: no lee los archivos de anotaciones ni los de otras rondas (lee {sorted(set(leidos))}) ni "
+                  "usa la precarga RGB")
+        s_def = crear_anotador(cfg, rutas, segundo=False, area=area, simple=True)  # sin responder: no escribe nada
+        comprobar(s_def.salida == rutas["data"] / rondas[ronda_actual]["archivo"] and s_def.ronda == ronda_actual,
+                  f"simple: por defecto escribe en el archivo de la ronda {ronda_actual} "
+                  f"({rondas[ronda_actual]['archivo']})")
+        del s_def
         comprobar(pixeles_de(ss, COMPLETA) == 0 and pixeles_de(ss, COMPLETA_OTRA) == 0,
                   "simple: no se dibuja ninguna completa")
         con_caja = pixeles_de(ss, CAJA_WISARD)
@@ -417,6 +428,11 @@ def main():
         comprobar(con_caja > 0 and pixeles_de(ss, CAJA_WISARD) == 0,
                   "simple: la caja térmica de WiSARD (verde) se ve en los dos paneles y h la oculta")
         tecla(ss, "h")
+        sin_e = ss.dibujar()[:ss.ph]
+        tecla(ss, "e")
+        comprobar(not ss.realce and "desactivado" in ss.mensaje and np.array_equal(ss.dibujar()[:ss.ph], sin_e),
+                  "simple: e no activa el realce (avisa que está desactivado)")
+        ss.mensaje = ""
         ss.raton(cv2.EVENT_MOUSEMOVE, ss.x_panel["rgb"] + ss.pw // 2 + 40, ss.ph // 2 - 30, 0)
         cv2.imwrite(str(capturas / "herramienta_segundo_simple.jpg"), ss.dibujar(), [cv2.IMWRITE_JPEG_QUALITY, 90])
         ss.raton(cv2.EVENT_LBUTTONDOWN, ss.x_panel["ter"] + 100, 100, 0)
