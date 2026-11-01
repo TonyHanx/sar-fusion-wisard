@@ -156,7 +156,8 @@ El primer comando es para ti; el segundo, para el segundo anotador.
 > Fase 5a.
 >
 > 1. Escribe `scripts/entrenar.py`, que lea un yaml de `configs/`, entrene YOLO26s desde `yolo26s.pt` y registre la
->    corrida en la bitácora.
+>    corrida en la bitácora. Usa `hsv_h=0`, `hsv_s=0` y `hsv_v=0` en los tres modelos: Ultralytics no aplica el aumento
+>    HSV a 4 canales, y así los tres entrenan igual (decidido el 1 de noviembre de 2026).
 > 2. Con el modelo de fusión, entrena 2 épocas con lote 16 y mide la memoria de la GPU y el tiempo por época.
 >    Si no entra, prueba lote 8.
 > 3. Compara dos formas de iniciar el cuarto canal: al azar (lo que hace Ultralytics) y con el promedio de los pesos
@@ -182,8 +183,10 @@ El primer comando es para ti; el segundo, para el segundo anotador.
 > Fase 6.
 >
 > 1. Escribe `scripts/evaluar.py`: para cada modelo, predice sobre la partición de prueba y calcula recall, precisión
->    (umbral de confianza 0.5), F2 y mAP@0.5 con pycocotools, global y por nivel de oclusión. Al evaluar un nivel, las
->    personas de los otros niveles van como `iscrowd=1`.
+>    (umbral de confianza 0.5), F2 y mAP@0.5 con pycocotools.
+>    - Métricas globales sobre los 928 fotogramas de prueba y también sobre los 310 anotados.
+>    - Métricas por nivel de oclusión sobre los 310 anotados. Al evaluar un nivel, las personas de los otros niveles van
+>      como `iscrowd=1`.
 > 2. Para cada nivel, aplica McNemar entre los modelos sobre si cada persona fue detectada, con corrección de Bonferroni.
 > 3. Calcula intervalos de confianza con bootstrap por episodio. Se remuestrean episodios completos (tramos seguidos
 >    con persona), no fotogramas, con seed=0. Hazlo para las métricas de cada modelo y para las diferencias entre

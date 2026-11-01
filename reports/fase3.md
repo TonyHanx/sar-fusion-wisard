@@ -83,8 +83,9 @@ de 3 canales (`RandomHSV`: `if img.shape[-1] != 3: return`).
 - **termico:** solo le cambia el brillo, porque con los 3 canales iguales la saturación es 0.
 - **fusion:** no recibe ninguno.
 
-Así, el modelo de fusión entrena con menos aumento que los otros dos. Hay que decidirlo antes de entrenar:
-desactivarlo en los tres (`hsv_h=hsv_s=hsv_v=0`) o dejarlo y anotarlo como limitación.
+Así, el modelo de fusión entrenaría con menos aumento que los otros dos. **Decidido (1 de noviembre de 2026):
+`hsv_h=0`, `hsv_s=0`, `hsv_v=0` en los tres modelos**, para que entrenen igual. Está anotado en CLAUDE.md para la
+Fase 5.
 
 ## 3b. Anotación de oclusión
 
@@ -109,31 +110,59 @@ FHL 0405, fotogramas con posición múltiplo de 3: 310 fotogramas y **498 person
 
 - **Archivos:** `scripts/anotar_oclusion.py`; las reglas y las teclas están en `docs/reglas_anotacion.md`.
 - **Ventana:** se ajusta al área de trabajo, consciente del DPI. En esta pantalla (1920 × 1140 sin la barra de
-  tareas, escala 125 %) mide 1 800 × 1 085, con dos paneles de 895 × 821.
-- **Capturas:** `reports/oclusion/herramienta_primero.jpg` y `herramienta_segundo.jpg`.
+  tareas, escala 125 %) el lienzo mide 1 800 × 1 085, con dos paneles de 895 × 821.
+- **Colocación de la ventana:** en la primera versión, la ventana quedaba pegada al borde izquierdo del monitor
+  (x = 0) y el borde de la imagen se cortaba.
+  - **Causa:** OpenCV, en Windows, pega la ventana al borde del monitor si queda a 15 px o menos
+    (`WM_WINDOWPOSCHANGING`). El `moveWindow` a 10 px terminaba en 0.
+  - **Arreglo:** la herramienta mide el marco visible con la API de Windows (`DwmGetWindowAttribute`), achica el lienzo
+    si no cabe y pone el marco a 30 px del borde izquierdo con `SetWindowPos` (`ventana_x_px` en `configs/fase3.yaml`).
+  - **Medido en esta pantalla:** marco visible de (30, 0) a (1 832, 1 124); la imagen va de (31, 38) a (1 831, 1 123).
+    Todo cabe en el área de trabajo, de (0, 0) a (1 920, 1 140).
+- **Vista:** se centra en la persona. Cerca del borde del fotograma se corre lo justo para que la imagen llene el panel,
+  sin gris.
+  - **Persona 1:** está a 59 px del borde derecho; antes quedaban 40 px grises en cada panel. Ahora la vista llega
+    justo hasta el borde y la persona queda al 55 % del ancho.
+  - **Las 498 personas:** se comprobó que la vista inicial no sale de la imagen y contiene la caja térmica.
+- **Cajas de WiSARD cortadas por el borde:** 6 cajas térmicas salen hasta 1 px del fotograma (posiciones 207, 219,
+  333, 609 y 660). Son candidatas a "fuera de cuadro".
+- **Capturas:** `reports/oclusion/herramienta_persona1.jpg` (vista inicial de la persona 1),
+  `herramienta_primero.jpg` y `herramienta_segundo.jpg`.
 
 **Prueba con 3 personas simuladas** (`scripts/probar_anotar_oclusion.py`). Las anotaciones van a una carpeta temporal,
-así que no se toca `data/oclusion.csv`. Las 32 comprobaciones pasaron:
+así que no se toca `data/oclusion.csv`. Las 47 comprobaciones pasaron (versión con la opción (a)):
 
-- **Persona A (con precarga RGB):**
-  - La precarga es correcta.
-  - La completa se dibujó en la térmica y la herramienta pasó sola a visible.
-  - La visible RGB se redibujó con el botón derecho.
-  - La visible térmica se redibujó y se deshizo.
-  - El zoom con la rueda mantiene el punto bajo el cursor.
-  - λ coincide con un cálculo aparte (0.787 y 0.313).
+- **Ventana y vista:**
+  - El lienzo cabe en el área de trabajo.
+  - En las 498 personas, la vista inicial no sale de la imagen y contiene la caja térmica.
+  - `--persona 1` abre en la persona 1 aunque haya avance guardado.
+- **Persona A (con precarga RGB), la completa:**
+  - Se dibujó en la térmica y quedó igual en las dos imágenes.
+  - Mayús + arrastrar mueve solo la completa RGB, sin cambiar su tamaño.
+  - Cada panel muestra dónde está la completa de la otra imagen.
+  - Con la herramienta **m**, un clic centra la completa térmica.
+  - Redibujarla en la RGB cambia el tamaño en las dos, y la térmica conserva su centro.
+  - **g** devuelve la completa RGB a la semejanza.
+  - Deshacer funciona en cada paso.
+- **Persona A, el resto:**
+  - Las visibles se redibujan.
+  - El zoom con la rueda mantiene el punto bajo el cursor. Alejando del todo, se ve la imagen entera.
+  - λ de cada imagen sale con su propia completa y coincide con un cálculo aparte.
 - **Persona B (sin caja RGB cerca):**
   - La visible RGB empieza pendiente.
-  - Con la completa sola no queda terminada.
-  - "No visible" en la RGB da λ = 1, y se puede quitar y volver a poner.
+  - Con "no visible" en la RGB, la completa RGB vuelve a donde la pone la semejanza, no se puede mover y sigue a la
+    térmica.
+  - λ RGB = 1.
 - **Persona C:** "no es persona"; "fuera de cuadro" puesto y deshecho; "anterior" vuelve a B con lo anotado.
-- **CSV:** se guarda después de cada cambio. Al reabrir se recupera todo y se sigue en la primera persona sin terminar.
+- **CSV:** se guarda después de cada cambio, con las dos completas y el corrimiento de la RGB (`completa_rgb_dx`,
+  `completa_rgb_dy`). Al reabrir se recupera todo y se sigue en la primera persona sin terminar.
 - **Modo del segundo anotador:**
   - Trabaja solo con las 75 de la muestra.
   - No hay nada precargado ni dibujado, aunque exista el archivo del primero.
+  - También puede mover su completa RGB.
   - Guarda en su propio archivo y no cambia el del primero.
 
-### Riesgo: desplazamiento entre la RGB y la térmica con una sola caja completa
+### Desplazamiento entre la RGB y la térmica: por qué la completa se puede mover
 
 En FHL 0405, la caja RGB precargada y la caja térmica de la misma persona no están centradas en el mismo punto. El
 centro se corre:
@@ -160,20 +189,21 @@ Con una sola completa para las dos imágenes, la parte de la persona RGB que cae
 | Moderada (50) | 35 | | 15 |
 | Severa (1) | 1 | | |
 
-Es una estimación aproximada: con las cajas reales, el anotador puede compensar en parte al dibujar la completa. La
-herramienta avisa cuando una visible se sale de la completa más de un 10 %, y con la precarga ese aviso aparecerá en la
-mayoría de las personas con caja RGB.
+Es una estimación aproximada, hecha con las cajas de WiSARD.
 
-**Opciones, para decidir antes de anotar en serio:**
+**Decidido (1 de noviembre de 2026): opción (a).**
 
-- **(a) Recomendada.** Una completa compartida en tamaño, pero que se pueda mover en cada imagen. Es una sola estimación
-  del cuerpo, y λ de cada imagen no mezcla el error de alineación con la oclusión.
-- **(b)** Dos completas, una por imagen (la regla anterior de CLAUDE.md).
-- **(c)** Dejarla como está y reportar el sesgo como limitación.
+- La completa tiene el mismo tamaño en las dos imágenes, pero se puede mover en cada una para centrarla sobre la
+  persona.
+- Si la persona no se ve en la RGB, la completa RGB queda donde la pone la semejanza.
+- **Opciones descartadas:** (b) dos completas, una por imagen; (c) dejar la completa fija y reportar el sesgo.
+- **Lo que queda registrado:** el corrimiento de la completa RGB respecto de la térmica (`completa_rgb_dx`,
+  `completa_rgb_dy`). Sirve para describir el error de alineación persona por persona.
+- **Aviso:** la herramienta avisa cuando una visible se sale más de un 10 % de la completa de su imagen.
 
-### Pendiente para la Fase 6
+### Para la Fase 6
 
-Los niveles de oclusión solo existirán para las personas de los 310 fotogramas anotados. Hay que decidir si:
+Decidido el 1 de noviembre de 2026; está anotado en CLAUDE.md.
 
-- las métricas globales usan los 928 fotogramas de la prueba;
-- y las métricas por nivel usan solo los 310 anotados.
+- **Métricas globales:** sobre los 928 fotogramas de prueba, y también sobre los 310 anotados.
+- **Métricas por nivel:** sobre los 310 anotados, que son los únicos con nivel de oclusión.

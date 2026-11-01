@@ -1,10 +1,13 @@
 r"""Fase 3b: anotación de oclusión de la prueba (FHL 0405, fotogramas con posición múltiplo de 3).
 
 Reglas en docs/reglas_anotacion.md. Por persona (cada caja térmica de WiSARD del fotograma):
-- caja completa: una sola, la misma para las dos imágenes (están alineadas: comparten la geometría de la térmica);
+- caja completa: una sola estimación del cuerpo, del mismo tamaño en las dos imágenes, que se puede mover en cada una
+  para centrarla sobre la persona (absorbe el error de alineación). Al dibujarla queda en el mismo lugar en las dos
+  (donde la pone la semejanza). Si la persona no se ve en la RGB, la completa RGB queda donde la pone la semejanza:
+  sigue a la térmica y no se puede mover;
 - caja visible RGB y caja visible térmica, o "no visible" (λ = 1);
 - marcas "fuera de cuadro" y "no es persona".
-λ = 1 − área(visible ∩ completa) / área(completa), en cada imagen.
+λ = 1 − área(visible ∩ completa de esa imagen) / área(completa), en cada imagen.
 
 Tres usos:
   --preparar  arma la lista fija de personas (data/<personas>) con su precarga y la muestra al azar (seed) para el
@@ -15,6 +18,7 @@ Tres usos:
   --segundo   segundo anotador: solo las personas de la muestra, sin precarga, sin las cajas de WiSARD y sin las del
               primer anotador (no lee su archivo). La persona a anotar se señala con triángulos amarillos en los bordes
               de la vista. Guarda en data/<anotaciones_segundo>.
+  --persona N abre en la persona N (desde 1); si no, en la primera sin terminar.
 
 Uso:
     .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --preparar
@@ -22,31 +26,41 @@ Uso:
     .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --segundo
 
 Ventana: arriba, la RGB alineada y la térmica lado a lado, ampliadas alrededor de la persona y con la misma vista (el
-cursor se repite en las dos); abajo, las imágenes completas con la zona ampliada en amarillo, la información de la
+cursor se repite en las dos). La vista se centra en la persona; cerca del borde del fotograma se corre lo justo para
+que la imagen llene el panel. Abajo, las imágenes completas con la zona ampliada en amarillo, la información de la
 persona y la ayuda.
 
 Ratón y teclas:
-  arrastrar (botón izq.)  dibuja la caja de la herramienta: completa (c), en cualquiera de las dos imágenes, o
-                          visible (v), la de la imagen donde se dibuja. Tras dibujar la completa pasa a visible.
-  arrastrar (botón der.)  dibuja siempre la visible de esa imagen
+  arrastrar (botón izq.)        según la herramienta: c = dibuja la completa (en cualquiera de las dos imágenes);
+                                v = dibuja la visible de esa imagen; m = mueve la completa de esa imagen (un clic la
+                                centra en ese punto). Tras dibujar la completa la herramienta pasa a visible.
+  Mayús + arrastrar (izq.)      mueve la completa de esa imagen, con cualquier herramienta
+  arrastrar (botón der.)        dibuja siempre la visible de esa imagen
+  g       vuelve a poner la completa RGB donde la pone la semejanza (en el lugar de la térmica)
   r / t   no visible en la RGB / en la térmica (otra vez: lo quita)
   f       fuera de cuadro          p   no es persona          u   deshacer
   n / b   persona siguiente / anterior          espacio   siguiente sin terminar
   rueda, + / -   zoom          flechas   mover la vista          0   vista inicial
   e   realce de contraste      i   píxeles sin suavizar           h   ocultar las cajas
   q   salir (también con la X). Esc cancela un arrastre.
+Redibujar la completa en una imagen cambia su tamaño en las dos; en la otra se conserva el centro.
 
 Se guarda en el CSV después de cada cambio y al pasar de persona (escritura atómica), y al abrir se retoma en la
 primera persona sin terminar. Una persona está terminada con la completa y las dos visibles resueltas (caja o no
 visible), o si está marcada "fuera de cuadro" o "no es persona". Coordenadas: px de las imágenes alineadas (640 x 512,
 la geometría de la térmica), continuas (el píxel i cubre [i, i + 1]), como las de YOLO por el tamaño.
 
-Pantalla: en Windows el proceso se declara consciente del DPI y la ventana se ajusta al área de trabajo.
+Pantalla: en Windows el proceso se declara consciente del DPI. Tras mostrar la ventana se mide su marco visible con la
+API de Windows, se achica el lienzo si no cabe en el área de trabajo y se coloca el marco dentro de ella, a
+`ventana_x_px` del borde izquierdo: OpenCV pega la ventana al borde del monitor si queda a 15 px o menos.
 """
 import argparse
 import copy
+import ctypes
 import os
+import sys
 import time
+from ctypes import wintypes
 from datetime import datetime
 from pathlib import Path
 
@@ -59,15 +73,19 @@ from comun import RAIZ, agregar_a_bitacora, leer_cajas_yolo, leer_rutas, leer_ya
 from fase2_homografias_cajas import cajas_llevadas, centros
 
 VENTANA = "anotar oclusion"
-COMPLETA, VISIBLE, OTRAS, MARCA = (255, 200, 0), (0, 255, 0), (150, 150, 150), (0, 220, 255)
+COMPLETA, COMPLETA_OTRA, VISIBLE = (255, 200, 0), (150, 110, 0), (0, 255, 0)
+OTRAS, MARCA = (150, 150, 150), (0, 220, 255)
 BLANCO, GRIS, AVISO, BIEN = (255, 255, 255), (185, 185, 185), (90, 90, 255), (120, 230, 120)
 FONDO, BORDE_IMAGEN = (30, 30, 30), (70, 70, 70)
 FUENTE = cv2.FONT_HERSHEY_SIMPLEX
 LADOS = {"rgb": "rgb", "ter": "termica"}  # clave interna -> prefijo de columna
 NOMBRE = {"rgb": "RGB", "ter": "termica"}
+OTRO = {"rgb": "ter", "ter": "rgb"}
+HERRAMIENTAS = {"completa": "CAJA COMPLETA", "visible": "CAJA VISIBLE", "mover": "MOVER COMPLETA"}
 FLECHAS = {2424832: (-1, 0), 2490368: (0, -1), 2555904: (1, 0), 2621440: (0, 1)}  # cv2.waitKeyEx en Windows
 CAJA = ["x0", "y0", "x1", "y1"]
-COLUMNAS = (["id", "vuelo", "posicion", "indice_caja", "anotador"] + [f"completa_{c}" for c in CAJA]
+COLUMNAS = (["id", "vuelo", "posicion", "indice_caja", "anotador"]
+            + [f"completa_{p}_{c}" for p in ("termica", "rgb") for c in CAJA] + ["completa_rgb_dx", "completa_rgb_dy"]
             + [f"{p}_{c}" for p in ("rgb", "termica") for c in ["estado"] + CAJA]
             + ["fuera_de_cuadro", "no_es_persona", "lambda_rgb", "lambda_termica", "terminada", "tiempo_s", "guardado"])
 
@@ -81,6 +99,18 @@ def interseccion(a, b):
     return area([max(a[0], b[0]), max(a[1], b[1]), min(a[2], b[2]), min(a[3], b[3])])
 
 
+def centro(b):
+    return (b[0] + b[2]) / 2, (b[1] + b[3]) / 2
+
+
+def con_centro(b, cx, cy, ancho=None, alto=None):
+    """Caja de tamaño (ancho, alto) (por omisión el de b) centrada en (cx, cy)."""
+    w = round(b[2] - b[0] if ancho is None else ancho, 2)
+    h = round(b[3] - b[1] if alto is None else alto, 2)
+    x0, y0 = round(cx - w / 2, 2), round(cy - h / 2, 2)
+    return [x0, y0, round(x0 + w, 2), round(y0 + h, 2)]  # el tamaño se conserva exacto (a 2 decimales)
+
+
 def lambda_oclusion(visible, completa):
     """λ = 1 − área(visible ∩ completa) / área(completa); 1 si no se ve; None si falta la completa o la visible."""
     if completa is None or visible["estado"] == "pendiente" or area(completa) <= 0:
@@ -88,6 +118,16 @@ def lambda_oclusion(visible, completa):
     if visible["estado"] == "no_visible":
         return 1.0
     return 1.0 - interseccion(visible["caja"], completa) / area(completa)
+
+
+def completa_de(r, lado):
+    return None if r["completa"] is None else r["completa"][lado]
+
+
+def normalizar(r):
+    """Si la persona no se ve en la RGB, la completa RGB queda donde la pone la semejanza (en el lugar de la térmica)."""
+    if r["completa"] is not None and r["rgb"]["estado"] == "no_visible":
+        r["completa"]["rgb"] = list(r["completa"]["ter"])
 
 
 def vacia():
@@ -119,8 +159,12 @@ def faltante(r):
 def a_fila(p, r, anotador):
     fila = {"id": p.id, "vuelo": p.vuelo, "posicion": int(p.posicion), "indice_caja": int(p.indice_caja),
             "anotador": anotador}
-    for c, v in zip(CAJA, r["completa"] or [None] * 4):
-        fila[f"completa_{c}"] = None if v is None else round(float(v), 2)
+    for l, pre in (("ter", "termica"), ("rgb", "rgb")):
+        for c, v in zip(CAJA, completa_de(r, l) or [None] * 4):
+            fila[f"completa_{pre}_{c}"] = None if v is None else round(float(v), 2)
+    if r["completa"] is not None:
+        (xr, yr), (xt, yt) = centro(r["completa"]["rgb"]), centro(r["completa"]["ter"])
+        fila["completa_rgb_dx"], fila["completa_rgb_dy"] = round(xr - xt, 2), round(yr - yt, 2)
     for l, pre in LADOS.items():
         fila[f"{pre}_estado"] = r[l]["estado"]
         caja = r[l]["caja"] if r[l]["estado"] == "caja" else [None] * 4
@@ -128,7 +172,7 @@ def a_fila(p, r, anotador):
             fila[f"{pre}_{c}"] = None if v is None else round(float(v), 2)
     fila["fuera_de_cuadro"], fila["no_es_persona"] = r["fuera_de_cuadro"], r["no_es_persona"]
     for l, pre in LADOS.items():
-        lam = lambda_oclusion(r[l], r["completa"])
+        lam = lambda_oclusion(r[l], completa_de(r, l))
         fila[f"lambda_{pre}"] = None if lam is None else round(lam, 4)
     fila["terminada"], fila["tiempo_s"], fila["guardado"] = terminada(r), round(r["tiempo_s"], 1), r["guardado"]
     return fila
@@ -138,15 +182,48 @@ def desde_fila(f):
     def caja(pre):
         v = [f[f"{pre}_{c}"] for c in CAJA]
         return None if any(pd.isna(x) for x in v) else [float(x) for x in v]
-    r = {"completa": caja("completa"), "fuera_de_cuadro": bool(f["fuera_de_cuadro"]),
-         "no_es_persona": bool(f["no_es_persona"]), "tiempo_s": float(f["tiempo_s"]),
-         "guardado": "" if pd.isna(f["guardado"]) else str(f["guardado"])}
+    ter, rgb = caja("completa_termica"), caja("completa_rgb")
+    r = {"completa": None if ter is None else {"ter": ter, "rgb": rgb},
+         "fuera_de_cuadro": bool(f["fuera_de_cuadro"]), "no_es_persona": bool(f["no_es_persona"]),
+         "tiempo_s": float(f["tiempo_s"]), "guardado": "" if pd.isna(f["guardado"]) else str(f["guardado"])}
+    if (ter is None) != (rgb is None):
+        raise SystemExit(f"{f['id']}: la completa está en una sola imagen")
     for l, pre in LADOS.items():
         estado = f[f"{pre}_estado"]
         r[l] = {"estado": estado, "caja": caja(pre) if estado == "caja" else None, "guardada": None}
         if estado not in ("caja", "no_visible", "pendiente") or (estado == "caja" and r[l]["caja"] is None):
             raise SystemExit(f"{f['id']}: estado de la visible {NOMBRE[l]} inválido ({estado})")
     return r
+
+
+# ---------------------------------------------------------------------------------------------------- pantalla
+def medir_ventana(nombre):
+    """Marco visible (sin los bordes invisibles de Windows), rect externo y área cliente en pantalla de la ventana, en
+    px físicos. None si no está o fuera de Windows."""
+    if sys.platform != "win32":
+        return None
+    u32 = ctypes.windll.user32
+    hwnd = u32.FindWindowW(None, nombre)
+    if not hwnd:
+        return None
+    ext, marco, cli = wintypes.RECT(), wintypes.RECT(), wintypes.RECT()
+    u32.GetWindowRect(hwnd, ctypes.byref(ext))
+    if ctypes.windll.dwmapi.DwmGetWindowAttribute(hwnd, 9, ctypes.byref(marco), ctypes.sizeof(marco)) != 0:
+        marco = ext  # DWMWA_EXTENDED_FRAME_BOUNDS no disponible
+    u32.GetClientRect(hwnd, ctypes.byref(cli))
+    pt = wintypes.POINT(0, 0)
+    u32.ClientToScreen(hwnd, ctypes.byref(pt))
+    return {"hwnd": hwnd, "externo": (ext.left, ext.top, ext.right, ext.bottom),
+            "marco": (marco.left, marco.top, marco.right, marco.bottom),
+            "cliente": (pt.x, pt.y, pt.x + cli.right, pt.y + cli.bottom)}
+
+
+def mover_ventana(info, x, y):
+    """Pone la esquina superior izquierda del marco visible en (x, y)."""
+    ex, ey = info["externo"][:2]
+    mx, my = info["marco"][:2]
+    ctypes.windll.user32.SetWindowPos(info["hwnd"], None, x - (mx - ex), y - (my - ey), 0, 0,
+                                      0x0001 | 0x0004 | 0x0010)  # SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE
 
 
 # ---------------------------------------------------------------------------------------------------- preparar
@@ -228,7 +305,7 @@ def preparar(cfg, rutas, forzar=False):
 
 # ---------------------------------------------------------------------------------------------------- herramienta
 class Anotador:
-    def __init__(self, o, personas, ids, alineados, salida, modo, tam_ter, area=None):
+    def __init__(self, o, personas, ids, alineados, salida, modo, tam_ter, area=None, inicio=None):
         self.o, self.modo, self.salida = o, modo, Path(salida)
         self.primero = modo == "primero"
         self.alineados = Path(alineados)
@@ -244,17 +321,25 @@ class Anotador:
         self.arrastre, self.raton_pos = None, None
         self.realce, self.pixeles, self.ver_cajas = False, False, True
         self._pos_cargada = None
-        sin = self.siguiente_sin_terminar(desde=-1)
-        self.i = 0 if sin is None else sin
+        if inicio is not None:
+            if not 1 <= inicio <= len(self.ids):
+                raise SystemExit(f"--persona debe estar entre 1 y {len(self.ids)}")
+            self.i = inicio - 1
+        else:
+            sin = self.siguiente_sin_terminar(desde=-1)
+            self.i = 0 if sin is None else sin
         self.abrir()
 
     # ------------------------------------------------------------------ disposición
-    def disponer(self, area):
+    def disponer(self, area, borde=None):
+        """Tamaños del lienzo. `borde` = (ancho, alto) que la ventana agrega al lienzo (marco y barra de título),
+        medido con la ventana ya abierta; antes de abrirla se usa `reserva_titulo_px`."""
         o = self.o
+        bx, by = borde if borde is not None else (0, o["reserva_titulo_px"])
         ancho, alto = o["ancho_max"], o["alto_max"]
         if area is not None:
-            ancho = min(ancho, area[2] - 2 * o["margen_pantalla_px"])
-            alto = min(alto, area[3] - o["reserva_titulo_px"] - o["margen_pantalla_px"])
+            ancho = min(ancho, area[2] - o["ventana_x_px"] - o["margen_pantalla_px"] - bx)
+            alto = min(alto, area[3] - o["margen_pantalla_px"] - by)
         sep = self.sep = o["separacion_px"]
         self.pw = (ancho - sep) // 2
         self.ancho, self.alto = 2 * self.pw + sep, alto
@@ -264,7 +349,7 @@ class Anotador:
         self.x_panel = {"rgb": 0, "ter": self.pw + sep}
         self.y_general = self.ph + sep
         self.y_barra = self.y_general + self.gh + sep
-        self.z_min = 0.5 * min(self.pw / self.tw, self.ph / self.th)
+        self.z_min = min(self.pw / self.tw, self.ph / self.th)  # imagen entera en el panel
 
     # ------------------------------------------------------------------ datos
     @property
@@ -288,6 +373,9 @@ class Anotador:
             raise SystemExit(f"{self.salida}: {len(ajenos)} personas que no están en la lista ({ajenos[:3]}...)")
         if len(df) and set(df.anotador) != {self.modo}:
             raise SystemExit(f"{self.salida}: anotaciones de {sorted(set(df.anotador))}, se esperaba {self.modo}")
+        faltan = [c for c in COLUMNAS if c not in df.columns]
+        if faltan:
+            raise SystemExit(f"{self.salida}: faltan las columnas {faltan} (¿archivo de otra versión de la herramienta?)")
         for f in df.to_dict("records"):
             self.anot[f["id"]] = desde_fila(f)
             self.tocadas.add(f["id"])
@@ -312,6 +400,7 @@ class Anotador:
     def cambiar(self, fn, mensaje=""):
         self.pilas.setdefault(self.id, []).append(copy.deepcopy(self.r))
         fn(self.r)
+        normalizar(self.r)
         self.r["guardado"] = datetime.now().isoformat(timespec="seconds")
         self.tocadas.add(self.id)
         self.mensaje = mensaje
@@ -328,16 +417,45 @@ class Anotador:
         self.mensaje = "deshecho"
         self.guardar()
 
-    def poner_caja(self, destino, caja):
+    def poner_caja(self, destino, caja, lado):
+        """Pone la caja dibujada en el panel `lado`: la completa (destino 'completa') o la visible de ese panel."""
         def fn(r):
             if destino == "completa":
-                r["completa"] = caja
+                if r["completa"] is None:  # primera vez: en el mismo lugar en las dos (donde la pone la semejanza)
+                    r["completa"] = {"ter": list(caja), "rgb": list(caja)}
+                else:  # nuevo tamaño en las dos; la otra imagen conserva su centro
+                    otro = OTRO[lado]
+                    r["completa"][lado] = list(caja)
+                    r["completa"][otro] = con_centro(caja, *centro(r["completa"][otro]))
             else:
                 r[destino] = {"estado": "caja", "caja": caja, "guardada": None}
+        primera = self.r["completa"] is None
         self.cambiar(fn)
         if destino == "completa" and self.herramienta == "completa":
             self.herramienta = "visible"
-            self.mensaje = "caja completa dibujada; herramienta: caja visible (c para volver a la completa)"
+            self.mensaje = ("caja completa dibujada; para centrarla en cada imagen: Mayus + arrastrar, o m"
+                            if primera else "caja completa redibujada (nuevo tamano en las dos imagenes)")
+
+    def mover_completa(self, lado, dx=None, dy=None, centro_xy=None):
+        """Mueve la completa de una imagen (`dx`, `dy`) o la centra en `centro_xy`; el tamaño no cambia."""
+        if self.r["completa"] is None:
+            self.mensaje = "primero dibuja la caja completa"
+            return
+        if lado == "rgb" and self.r["rgb"]["estado"] == "no_visible":
+            self.mensaje = "la RGB esta marcada no visible: su completa queda donde la pone la semejanza"
+            return
+        def fn(r):
+            b = r["completa"][lado]
+            cx, cy = centro_xy if centro_xy is not None else (centro(b)[0] + dx, centro(b)[1] + dy)
+            r["completa"][lado] = con_centro(b, cx, cy)
+        self.cambiar(fn, f"completa {NOMBRE[lado]} movida")
+
+    def completa_a_semejanza(self):
+        if self.r["completa"] is None:
+            self.mensaje = "primero dibuja la caja completa"
+            return
+        self.cambiar(lambda r: r["completa"].__setitem__("rgb", list(r["completa"]["ter"])),
+                     "completa RGB donde la pone la semejanza (en el lugar de la termica)")
 
     def alternar_no_visible(self, lado):
         def fn(r):
@@ -404,6 +522,15 @@ class Anotador:
         self.mostrar = {"rgb": cv2.cvtColor(lab, cv2.COLOR_LAB2BGR), "ter": cv2.cvtColor(gris, cv2.COLOR_GRAY2BGR)}
 
     # ------------------------------------------------------------------ vista
+    def limitar(self, cx, cy, z):
+        """Vista dentro de la imagen: si la zona visible es más chica que la imagen, no sale de ella (cerca del borde
+        se corre lo justo); si es más grande, la imagen queda centrada."""
+        z = min(self.o["zoom_max"], max(self.z_min, z))
+        w, h = self.pw / z, self.ph / z
+        cx = self.tw / 2 if w >= self.tw else min(max(cx, w / 2), self.tw - w / 2)
+        cy = self.th / 2 if h >= self.th else min(max(cy, h / 2), self.th - h / 2)
+        return [cx, cy, z]
+
     def vista_inicial(self):
         p, o = self.p, self.o
         x0, y0, x1, y1 = p.ter_x0, p.ter_y0, p.ter_x1, p.ter_y1
@@ -415,7 +542,7 @@ class Anotador:
             ux0, uy0, ux1, uy1 = min(x0, p.rgb_x0), min(y0, p.rgb_y0), max(x1, p.rgb_x1), max(y1, p.rgb_y1)
             ext = max(2 * max(cy - uy0, uy1 - cy), 2 * max(cx - ux0, ux1 - cx) * asp)
             alto = max(alto, o["recorte_factor_union"] * ext)
-        return [cx, cy, max(self.z_min, min(o["zoom_max"], self.ph / alto))]
+        return self.limitar(cx, cy, self.ph / alto)
 
     def origen(self):
         cx, cy, z = self.vista
@@ -444,16 +571,16 @@ class Anotador:
         nz = min(self.o["zoom_max"], max(self.z_min, z * factor))
         lado = self.panel_en(*pos) if pos is not None else None
         if lado is None:
-            self.vista = [cx, cy, nz]
+            self.vista = self.limitar(cx, cy, nz)
             return
         u, v = pos[0] - self.x_panel[lado], pos[1]
         x, y = self.desde_panel(u, v)
         x0n, y0n = x - (u + 0.5) / nz, y - (v + 0.5) / nz
-        self.vista = [x0n + self.pw / (2 * nz), y0n + self.ph / (2 * nz), nz]
+        self.vista = self.limitar(x0n + self.pw / (2 * nz), y0n + self.ph / (2 * nz), nz)
 
     def mover(self, dx, dy):
         cx, cy, z = self.vista
-        self.vista = [cx + dx * self.pw / (8 * z), cy + dy * self.ph / (8 * z), z]
+        self.vista = self.limitar(cx + dx * self.pw / (8 * z), cy + dy * self.ph / (8 * z), z)
 
     # ------------------------------------------------------------------ dibujo
     def rect(self, img, caja, color, grosor):
@@ -468,6 +595,12 @@ class Anotador:
                              flags=cv2.INTER_NEAREST if self.pixeles else cv2.INTER_CUBIC,
                              borderMode=cv2.BORDER_CONSTANT, borderValue=BORDE_IMAGEN)
         r, p = self.r, self.p
+        a = self.arrastre
+        movida = None  # completa de este panel mientras se arrastra para moverla
+        if a is not None and self.destino_de_arrastre(a) == "mover" and a["lado"] == lado and r["completa"]:
+            (xa, ya), (xb, yb) = self.puntos_de_arrastre(a)
+            b = r["completa"][lado]
+            movida = con_centro(b, centro(b)[0] + xb - xa, centro(b)[1] + yb - ya)
         if self.ver_cajas:
             if self.primero:  # las otras personas del fotograma, de WiSARD
                 for q in self.todas[self.todas.posicion == p.posicion].itertuples():
@@ -476,7 +609,10 @@ class Anotador:
             if r[lado]["estado"] == "caja":
                 self.rect(img, r[lado]["caja"], VISIBLE, 2)
             if r["completa"] is not None:
-                self.rect(img, r["completa"], COMPLETA, 2)
+                propia, otra = r["completa"][lado], r["completa"][OTRO[lado]]
+                if otra != propia:  # dónde está la completa en la otra imagen
+                    self.rect(img, otra, COMPLETA_OTRA, 1)
+                self.rect(img, movida or propia, COMPLETA, 2)
         # triángulos en los bordes que señalan el centro de la persona a anotar
         uc, vc = self.a_panel((p.ter_x0 + p.ter_x1) / 2, (p.ter_y0 + p.ter_y1) / 2)
         t = 9
@@ -486,26 +622,24 @@ class Anotador:
         if 0 <= vc < self.ph:
             for x, s in ((0, 1), (self.pw - 1, -1)):
                 cv2.fillPoly(img, [np.int32([[x, vc - t], [x, vc + t], [x + s * 1.6 * t, vc]])], MARCA, cv2.LINE_AA)
-        # arrastre en curso
-        a = self.arrastre
-        if a is not None:
-            caja = self.caja_de_arrastre(a)
+        # caja en curso de dibujo
+        if a is not None and self.destino_de_arrastre(a) != "mover":
             destino = self.destino_de_arrastre(a)
             if destino == "completa" or destino == lado:
-                self.rect(img, caja, COMPLETA if destino == "completa" else VISIBLE, 1)
+                self.rect(img, self.caja_de_arrastre(a), COMPLETA if destino == "completa" else VISIBLE, 1)
         # cursor repetido en los dos paneles
         if self.raton_pos is not None and self.panel_en(*self.raton_pos) is not None:
             lado_r = self.panel_en(*self.raton_pos)
             x, y = self.desde_panel(self.raton_pos[0] - self.x_panel[lado_r], self.raton_pos[1])
             u, v = (int(round(c - 0.5)) for c in self.a_panel(x, y))
-            color = COMPLETA if self.herramienta == "completa" else VISIBLE
+            color = VISIBLE if self.herramienta == "visible" else COMPLETA
             cv2.line(img, (u, 0), (u, self.ph - 1), color, 1)
             cv2.line(img, (0, v), (self.pw - 1, v), color, 1)
         estado = {"caja": "caja", "no_visible": "NO VISIBLE", "pendiente": "visible pendiente"}[r[lado]["estado"]]
         rotulo = f"{'RGB alineada' if lado == 'rgb' else 'termica'} - {estado}"
         (w, h), _ = cv2.getTextSize(rotulo, FUENTE, 0.6, 1)
-        cv2.rectangle(img, (0, 0), (w + 12, h + 12), (0, 0, 0), -1)
-        cv2.putText(img, rotulo, (6, h + 5), FUENTE, 0.6, AVISO if r[lado]["estado"] == "no_visible" else BLANCO, 1,
+        cv2.rectangle(img, (0, 0), (w + 16, h + 12), (0, 0, 0), -1)
+        cv2.putText(img, rotulo, (8, h + 5), FUENTE, 0.6, AVISO if r[lado]["estado"] == "no_visible" else BLANCO, 1,
                     cv2.LINE_AA)
         return img
 
@@ -513,8 +647,8 @@ class Anotador:
         img = cv2.resize(self.mostrar[lado], (self.gw, self.gh), interpolation=cv2.INTER_AREA)
         s = self.gw / self.tw
         x0, y0, z = self.origen()
-        cv2.rectangle(img, (int(x0 * s), int(y0 * s)), (int((x0 + self.pw / z) * s), int((y0 + self.ph / z) * s)),
-                      MARCA, 1)
+        cv2.rectangle(img, (int(x0 * s), int(y0 * s)), (int((x0 + self.pw / z) * s) - 1,
+                                                        int((y0 + self.ph / z) * s) - 1), MARCA, 1)
         p = self.p
         cv2.circle(img, (int((p.ter_x0 + p.ter_x1) / 2 * s), int((p.ter_y0 + p.ter_y1) / 2 * s)), 3, MARCA, -1)
         return img
@@ -545,9 +679,14 @@ class Anotador:
             linea2 = "la persona a anotar es la que senalan los triangulos amarillos"
         self.texto(L, linea2, x, y + 22)
         est = {"caja": "caja", "no_visible": "no visible", "pendiente": "PENDIENTE"}
-        self.texto(L, f"completa: {'caja' if r['completa'] is not None else 'PENDIENTE'} | visible RGB: "
-                      f"{est[r['rgb']['estado']]} | visible termica: {est[r['ter']['estado']]}", x, y + 44)
-        lam = {l: lambda_oclusion(r[l], r["completa"]) for l in LADOS}
+        if r["completa"] is None:
+            comp = "PENDIENTE"
+        else:
+            (xr, yr), (xt, yt) = centro(r["completa"]["rgb"]), centro(r["completa"]["ter"])
+            comp = f"caja (RGB corrida {xr - xt:+.1f}, {yr - yt:+.1f} px)"
+        self.texto(L, f"completa: {comp} | visible RGB: {est[r['rgb']['estado']]} | visible termica: "
+                      f"{est[r['ter']['estado']]}", x, y + 44)
+        lam = {l: lambda_oclusion(r[l], completa_de(r, l)) for l in LADOS}
         marcas = [m for m, b in (("FUERA DE CUADRO", r["fuera_de_cuadro"]), ("NO ES PERSONA", r["no_es_persona"])) if b]
         self.texto(L, " | ".join([f"lambda {NOMBRE[l]}: " + ("-" if lam[l] is None else f"{lam[l]:.2f}") for l in LADOS]
                                  + marcas), x, y + 66, BLANCO)
@@ -559,37 +698,43 @@ class Anotador:
         if r["completa"] is not None:
             for l in LADOS:
                 if r[l]["estado"] == "caja" and area(r[l]["caja"]) > 0:
-                    fuera = 1 - interseccion(r[l]["caja"], r["completa"]) / area(r[l]["caja"])
+                    fuera = 1 - interseccion(r[l]["caja"], r["completa"][l]) / area(r[l]["caja"])
                     if fuera > self.o["aviso_visible_fuera"]:
-                        avisos.append(f"la visible {NOMBRE[l]} se sale de la completa ({fuera:.0%} de su area)")
+                        avisos.append(f"la visible {NOMBRE[l]} se sale de su completa ({fuera:.0%} de su area)")
         if avisos:
             self.texto(L, " | ".join(avisos), x, y + 110, AVISO)
         if self.aviso_guardado or self.mensaje:
             self.texto(L, self.aviso_guardado or self.mensaje, x, y + 132, AVISO if self.aviso_guardado else MARCA)
         # ayuda
-        herr = "CAJA COMPLETA" if self.herramienta == "completa" else "CAJA VISIBLE"
         yb = self.y_barra + 17
-        self.texto(L, f"herramienta: {herr} (c completa, v visible) | arrastrar con el boton izquierdo: caja de la "
-                      f"herramienta | con el derecho: caja visible de esa imagen", 8, yb,
-                   COMPLETA if self.herramienta == "completa" else VISIBLE, 0.5)
-        self.texto(L, "r / t: no visible en RGB / termica | f: fuera de cuadro | p: no es persona | u: deshacer | "
-                      "n / b: siguiente / anterior | espacio: siguiente sin terminar", 8, yb + 23)
-        self.texto(L, "rueda o + / -: zoom | flechas: mover | 0: vista inicial | e: contraste | i: pixeles | "
+        self.texto(L, f"herramienta: {HERRAMIENTAS[self.herramienta]} (c completa, v visible, m mover completa) | "
+                      f"boton izquierdo: segun la herramienta | Mayus + izquierdo: mueve la completa de esa imagen | "
+                      f"derecho: visible", 8, yb, VISIBLE if self.herramienta == "visible" else COMPLETA, 0.5)
+        self.texto(L, "r / t: no visible en RGB / termica | g: completa RGB a la semejanza | f: fuera de cuadro | "
+                      "p: no es persona | u: deshacer | n / b: siguiente / anterior | espacio: siguiente sin terminar",
+                   8, yb + 23)
+        self.texto(L, "rueda o + / -: zoom | flechas: mover la vista | 0: vista inicial | e: contraste | i: pixeles | "
                       "h: ocultar cajas | q: salir (se guarda solo)", 8, yb + 46)
         return L
 
     # ------------------------------------------------------------------ eventos
     def destino_de_arrastre(self, a):
-        return "completa" if (a["boton"] == "izq" and self.herramienta == "completa") else a["lado"]
+        if a["boton"] == "der":
+            return a["lado"]
+        if a["mover"] or self.herramienta == "mover":
+            return "mover"
+        return "completa" if self.herramienta == "completa" else a["lado"]
 
-    def caja_de_arrastre(self, a):
+    def puntos_de_arrastre(self, a):
+        """Inicio y fin del arrastre en px de la imagen, con el cursor limitado al panel donde empezó."""
         xp = self.x_panel[a["lado"]]
         pts = []
         for u, v in ((a["u0"], a["v0"]), (a["u1"], a["v1"])):
-            u = min(max(u - xp, 0), self.pw - 1)
-            v = min(max(v, 0), self.ph - 1)
-            pts.append(self.desde_panel(u, v))
-        (xa, ya), (xb, yb) = pts
+            pts.append(self.desde_panel(min(max(u - xp, 0), self.pw - 1), min(max(v, 0), self.ph - 1)))
+        return pts
+
+    def caja_de_arrastre(self, a):
+        (xa, ya), (xb, yb) = self.puntos_de_arrastre(a)
         return [round(min(max(c, 0.0), lim), 2) for c, lim in
                 ((min(xa, xb), self.tw), (min(ya, yb), self.th), (max(xa, xb), self.tw), (max(ya, yb), self.th))]
 
@@ -603,15 +748,25 @@ class Anotador:
             lado = self.panel_en(u, v)
             if lado is not None:
                 self.arrastre = {"lado": lado, "boton": "izq" if evento == cv2.EVENT_LBUTTONDOWN else "der",
+                                 "mover": evento == cv2.EVENT_LBUTTONDOWN and bool(flags & cv2.EVENT_FLAG_SHIFTKEY),
                                  "u0": u, "v0": v, "u1": u, "v1": v}
         elif evento == cv2.EVENT_MOUSEMOVE and self.arrastre is not None:
             self.arrastre["u1"], self.arrastre["v1"] = u, v
         elif evento in (cv2.EVENT_LBUTTONUP, cv2.EVENT_RBUTTONUP) and self.arrastre is not None:
             a, self.arrastre = self.arrastre, None
             a["u1"], a["v1"] = u, v
+            destino = self.destino_de_arrastre(a)
+            corto = max(abs(u - a["u0"]), abs(v - a["v0"])) < self.o["caja_min_px"]
+            if destino == "mover":
+                (xa, ya), (xb, yb) = self.puntos_de_arrastre(a)
+                if corto:  # un clic centra la completa en ese punto
+                    self.mover_completa(a["lado"], centro_xy=(xb, yb))
+                else:
+                    self.mover_completa(a["lado"], xb - xa, yb - ya)
+                return
             if min(abs(u - a["u0"]), abs(v - a["v0"])) < self.o["caja_min_px"]:
                 return
-            self.poner_caja(self.destino_de_arrastre(a), self.caja_de_arrastre(a))
+            self.poner_caja(destino, self.caja_de_arrastre(a), a["lado"])
 
     def tecla(self, k):
         """Devuelve False para salir."""
@@ -623,6 +778,10 @@ class Anotador:
             self.herramienta = "completa"
         elif c == "v":
             self.herramienta = "visible"
+        elif c == "m":
+            self.herramienta = "mover"
+        elif c == "g":
+            self.completa_a_semejanza()
         elif c == "r":
             self.alternar_no_visible("rgb")
         elif c == "t":
@@ -662,12 +821,38 @@ class Anotador:
             return False
         return True
 
+    def colocar_ventana(self):
+        """Mide la ventana ya mostrada; si su marco no cabe en el área de trabajo achica el lienzo, y pone el marco
+        visible arriba del área de trabajo, a `ventana_x_px` de su borde izquierdo."""
+        if self.area is None:
+            return
+        m, x = self.o["margen_pantalla_px"], self.o["ventana_x_px"]
+        for _ in range(3):
+            cv2.waitKey(1)
+            info = medir_ventana(VENTANA)
+            if info is None:
+                return
+            mx0, my0, mx1, my1 = info["marco"]
+            borde = (mx1 - mx0 - self.ancho, my1 - my0 - self.alto)
+            if (mx1 - mx0 <= self.area[2] - x - m) and (my1 - my0 <= self.area[3] - m):
+                break
+            self.disponer(self.area, borde)
+            self.vista = self.limitar(*self.vista)
+            cv2.imshow(VENTANA, self.dibujar())
+        mover_ventana(info, self.area[0] + x, self.area[1])
+        cv2.waitKey(1)
+        info = medir_ventana(VENTANA)
+        x0, y0, x1, y1 = info["marco"]
+        ax0, ay0, ax1, ay1 = self.area[0], self.area[1], self.area[0] + self.area[2], self.area[1] + self.area[3]
+        dentro = ax0 <= x0 and ay0 <= y0 and x1 <= ax1 and y1 <= ay1
+        print(f"Ventana: marco {info['marco']}, lienzo {self.ancho} x {self.alto}, área de trabajo "
+              f"{(ax0, ay0, ax1, ay1)} -> {'entra completa' if dentro else 'NO ENTRA'}", flush=True)
+
     def ejecutar(self):
         cv2.namedWindow(VENTANA, cv2.WINDOW_AUTOSIZE)
         cv2.setMouseCallback(VENTANA, self.raton)
         cv2.imshow(VENTANA, self.dibujar())
-        if self.area is not None:
-            cv2.moveWindow(VENTANA, self.area[0] + self.o["margen_pantalla_px"], self.area[1])
+        self.colocar_ventana()
         while True:
             cv2.imshow(VENTANA, self.dibujar())
             k = cv2.waitKeyEx(30)
@@ -681,7 +866,7 @@ class Anotador:
         print(f"{n} de {len(self.ids)} personas terminadas; guardado en {self.salida}")
 
 
-def crear_anotador(cfg, rutas, segundo, salida=None, area=None):
+def crear_anotador(cfg, rutas, segundo, salida=None, area=None, inicio=None):
     """Anotador del primer o del segundo anotador. `salida` permite escribir en otro archivo (para pruebas)."""
     o, data = cfg["oclusion"], rutas["data"]
     ruta_personas = data / o["personas"]
@@ -695,7 +880,7 @@ def crear_anotador(cfg, rutas, segundo, salida=None, area=None):
         ids = personas.id
         salida = salida or data / o["anotaciones"]
     return Anotador(o, personas, ids, data / cfg["datasets"]["alineados"], salida,
-                    "segundo" if segundo else "primero", tuple(cfg["tam_termica"]), area)
+                    "segundo" if segundo else "primero", tuple(cfg["tam_termica"]), area, inicio)
 
 
 def main():
@@ -705,6 +890,7 @@ def main():
     ap.add_argument("--preparar", action="store_true", help="arma la lista de personas y la muestra del segundo")
     ap.add_argument("--forzar", action="store_true", help="con --preparar, sobrescribe una lista distinta")
     ap.add_argument("--segundo", action="store_true", help="modo del segundo anotador")
+    ap.add_argument("--persona", type=int, help="abre en la persona N (desde 1)")
     args = ap.parse_args()
     cfg = leer_yaml(args.config)
     rutas = leer_rutas(args.rutas)
@@ -713,7 +899,7 @@ def main():
         return
     from marcar_puntos import preparar_pantalla
     area = preparar_pantalla()  # antes de crear cualquier ventana
-    crear_anotador(cfg, rutas, args.segundo, area=area).ejecutar()
+    crear_anotador(cfg, rutas, args.segundo, area=area, inicio=args.persona).ejecutar()
 
 
 if __name__ == "__main__":
