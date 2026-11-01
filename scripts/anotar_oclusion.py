@@ -28,10 +28,13 @@ Tres usos:
               muestra, con la RGB alineada y la térmica y solo la caja térmica de WiSARD de la persona (verde) y las
               demás cajas térmicas de WiSARD del fotograma (gris). Se responde con una tecla: 1 se ve en la RGB, 2 no se
               ve en la RGB, 3 no es persona (x borra la respuesta); tras responder pasa a la siguiente sin responder.
-              No se dibujan cajas, no hay precarga y no lee el archivo del primer anotador. Una ronda por archivo:
-              guarda en el de data/<segundo_simple.rondas[ronda_actual]> y no lee los de otras rondas. Muestra en
+              No se dibujan cajas, no hay precarga y no lee ningún archivo de respuestas salvo el suyo (para
+              retomar). Una ronda por archivo: guarda en data/<modo_simple.rondas[ronda_actual].segundo>. Muestra en
               pantalla la regla aclarada el 2026-11-01 ("se ve" = se reconoce una parte del cuerpo con el brillo
               normal; si hay duda, no se ve) y el realce (e) está desactivado.
+  --primero-simple  primer anotador, modo simple (pedido el 2026-11-01, desde la ronda 2): igual que --segundo-simple
+              (la misma pantalla, la misma regla, sin realce, sin precarga ni cajas RGB) y no lee su anotación con
+              cajas ni las respuestas del segundo. Guarda en data/<modo_simple.rondas[ronda_actual].primero>.
   --persona N abre en la persona N (desde 1); si no, en la primera sin terminar.
 
 Uso:
@@ -41,6 +44,7 @@ Uso:
     .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --ajuste
     .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --segundo
     .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --segundo-simple
+    .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --primero-simple
 
 Ventana: arriba, la RGB alineada y la térmica lado a lado, ampliadas alrededor de la persona y con la misma vista (el
 cursor se repite en las dos). La vista se centra en la persona; cerca del borde del fotograma se corre lo justo para
@@ -58,7 +62,7 @@ Ratón y teclas:
   f       fuera de cuadro          p   no es persona          u   deshacer
   n / b   persona siguiente / anterior          espacio   siguiente sin terminar
   rueda, + / -   zoom          flechas   mover la vista          0   vista inicial
-  e   realce de contraste (no en --segundo-simple)      i   píxeles sin suavizar      h   ocultar las cajas
+  e   realce de contraste (no en el modo simple)      i   píxeles sin suavizar      h   ocultar las cajas
   q   salir (también con la X). Esc cancela un arrastre.
 Redibujar la completa en una imagen cambia su tamaño en las dos; en la otra se conserva el centro.
 
@@ -940,15 +944,20 @@ REGLA_SIMPLE = ["REGLA: SE VE = reconoces una parte del cuerpo (ropa, cabeza, br
 
 
 class AnotadorSimple(Anotador):
-    """Segundo anotador, modo simple (decidido el 2026-11-01). Por cada persona de la muestra se ven la RGB alineada y
-    la térmica con la caja térmica de WiSARD de la persona (verde; en la RGB, donde la pone la semejanza) y las demás
-    cajas térmicas de WiSARD del fotograma (gris). Se responde con una tecla: 1 se ve en la RGB, 2 no se ve en la RGB,
-    3 no es persona. No se dibujan cajas, no hay precarga (de la lista de personas solo se usan las columnas de WiSARD
-    de la térmica y las imágenes) y no se lee el archivo del primer anotador ni los de otras rondas. La regla aclarada
-    (REGLA_SIMPLE) se muestra en pantalla y el realce (e) está desactivado: "se ve" es con el brillo normal."""
+    """Modo simple (decidido el 2026-11-01), del segundo anotador o, desde la ronda 2, también del primero (`quien`),
+    con la misma pantalla. Por cada persona de la muestra se ven la RGB alineada y la térmica con la caja térmica de
+    WiSARD de la persona (verde; en la RGB, donde la pone la semejanza) y las demás cajas térmicas de WiSARD del
+    fotograma (gris). Se responde con una tecla: 1 se ve en la RGB, 2 no se ve en la RGB, 3 no es persona. No se dibujan
+    cajas, no hay precarga (de la lista de personas solo se usan las columnas de WiSARD de la térmica y las imágenes) y
+    no se lee ningún archivo de respuestas salvo el propio `salida`, para retomar. La regla aclarada (REGLA_SIMPLE) se
+    muestra en pantalla y el realce (e) está desactivado: "se ve" es con el brillo normal."""
 
-    def __init__(self, o, personas, ids, alineados, salida, tam_ter, area=None, inicio=None, ronda=None):
-        self.o, self.modo, self.salida, self.ronda = o, "segundo_simple", Path(salida), ronda
+    def __init__(self, o, personas, ids, alineados, salida, tam_ter, area=None, inicio=None, ronda=None,
+                 quien="segundo"):
+        if quien not in ("primero", "segundo"):
+            raise ValueError(quien)
+        self.o, self.modo, self.salida, self.ronda = o, f"{quien}_simple", Path(salida), ronda
+        self.quien = quien
         self.primero, self.muestra, self.nombre_lista = False, False, None
         self.alineados = Path(alineados)
         self.tw, self.th = tam_ter
@@ -1059,7 +1068,8 @@ class AnotadorSimple(Anotador):
         x = 2 * (self.gw + self.sep) + self.sep
         y = self.y_general + 16
         ronda = "" if self.ronda is None else f", ronda {self.ronda}"
-        self.texto(L, f"SEGUNDO ANOTADOR (modo simple{ronda}) | persona {self.i + 1} de {len(self.ids)} | respondidas "
+        quien = "PRIMER" if self.quien == "primero" else "SEGUNDO"
+        self.texto(L, f"{quien} ANOTADOR (modo simple{ronda}) | persona {self.i + 1} de {len(self.ids)} | respondidas "
                       f"{self.n_terminadas()} de {len(self.ids)} | fotograma {p.posicion}, caja {p.indice_caja + 1} de "
                       f"{p.cajas_en_fotograma}", x, y, BLANCO, 0.55)
         self.texto(L, "Se ve esta persona en la RGB? Verde: su caja termica de WiSARD (en la RGB, donde la pone la "
@@ -1128,29 +1138,33 @@ class AnotadorSimple(Anotador):
 
 
 def crear_anotador(cfg, rutas, segundo, salida=None, area=None, inicio=None, muestra=False, ajuste=False,
-                   simple=False):
+                   simple=None):
     """Anotador del primer o del segundo anotador. `salida` permite escribir en otro archivo (para pruebas). Con
     `muestra`, el primer anotador (con precarga) anota solo las personas de la muestra; con `ajuste`, solo las de la
-    lista de ajuste de la visible RGB, en su orden. Con `simple`, el segundo anotador en modo simple (una tecla por
-    persona de la muestra; escribe en el archivo de `segundo_simple.ronda_actual` y no lee el del primer anotador ni
-    los de otras rondas)."""
+    lista de ajuste de la visible RGB, en su orden. Con `simple` ("primero" o "segundo"), ese anotador en modo simple
+    (una tecla por persona de la muestra; escribe en su archivo de la ronda `modo_simple.ronda_actual` y no lee ningún
+    otro archivo de respuestas)."""
     if segundo and (muestra or ajuste):
         raise SystemExit("--muestra y --ajuste son para el primer anotador")
     if muestra and ajuste:
         raise SystemExit("--muestra y --ajuste no van juntos")
     if simple and (segundo or muestra or ajuste):
-        raise SystemExit("--segundo-simple va solo")
+        raise SystemExit(f"--{simple}-simple va solo")
     o, data = cfg["oclusion"], rutas["data"]
     ruta_personas = data / o["personas"]
     if not ruta_personas.exists():
         raise SystemExit(f"No existe {ruta_personas}: corre antes con --preparar")
     personas = pd.read_csv(ruta_personas, dtype={"id": str})
     if simple:
+        ms = o["modo_simple"]
+        ronda = ms["ronda_actual"]
+        archivo = ms["rondas"][ronda].get(simple)
+        if archivo is None and salida is None:
+            raise SystemExit(f"La ronda {ronda} (oclusion.modo_simple.ronda_actual) no tiene archivo del {simple} "
+                             f"anotador")
         ids = pd.read_csv(data / o["muestra_segundo"], dtype={"id": str}).sort_values("orden").id
-        ronda = o["segundo_simple"]["ronda_actual"]
-        return AnotadorSimple(o, personas, ids, data / cfg["datasets"]["alineados"],
-                              salida or data / o["segundo_simple"]["rondas"][ronda]["archivo"], tuple(cfg["tam_termica"]),
-                              area, inicio, ronda)
+        return AnotadorSimple(o, personas, ids, data / cfg["datasets"]["alineados"], salida or data / archivo,
+                              tuple(cfg["tam_termica"]), area, inicio, ronda, simple)
     if segundo or muestra:
         ids = pd.read_csv(data / o["muestra_segundo"], dtype={"id": str}).id
     if ajuste:
@@ -1182,6 +1196,8 @@ def main():
     ap.add_argument("--segundo-simple", action="store_true",
                     help="segundo anotador, modo simple: una tecla por persona (se ve / no se ve en la RGB / no es "
                          "persona)")
+    ap.add_argument("--primero-simple", action="store_true",
+                    help="primer anotador, modo simple: la misma pantalla y la misma regla que --segundo-simple")
     ap.add_argument("--persona", type=int, help="abre en la persona N (desde 1)")
     args = ap.parse_args()
     cfg = leer_yaml(args.config)
@@ -1189,10 +1205,13 @@ def main():
     if args.preparar:
         preparar(cfg, rutas, args.forzar)
         return
+    if args.primero_simple and args.segundo_simple:
+        raise SystemExit("--primero-simple y --segundo-simple no van juntos")
+    simple = "primero" if args.primero_simple else "segundo" if args.segundo_simple else None
     from marcar_puntos import preparar_pantalla
     area = preparar_pantalla()  # antes de crear cualquier ventana
     crear_anotador(cfg, rutas, args.segundo, area=area, inicio=args.persona, muestra=args.muestra,
-                   ajuste=args.ajuste, simple=args.segundo_simple).ejecutar()
+                   ajuste=args.ajuste, simple=simple).ejecutar()
 
 
 if __name__ == "__main__":

@@ -48,13 +48,16 @@ El nivel se calcula en la Fase 4; la herramienta no lo muestra.
 Desde el 1 de noviembre de 2026 el nivel tiene **dos clases**: **severa** si la persona no se ve en la RGB y **baja**
 si se ve (en la muestra no hubo ninguna moderada). La tabla de arriba solo se usa para reportar la comparación.
 
-## Segundo anotador, modo simple
+## Modo simple (los dos anotadores)
 
-Herramienta: `scripts/anotar_oclusion.py --segundo-simple`. Decidido el 1 de noviembre de 2026.
+Herramienta: `scripts/anotar_oclusion.py --segundo-simple` (segundo anotador, decidido el 1 de noviembre de 2026) y
+`--primero-simple` (primer anotador, desde la ronda 2, también decidido el 1 de noviembre de 2026, para que los dos
+usen el mismo criterio). Los dos modos muestran la misma pantalla y la misma regla.
 
-- Para cada una de las 75 personas de la muestra se ven la RGB alineada y la térmica, con la caja térmica de WiSARD de
-  la persona en verde y las de las demás personas del fotograma en gris.
-- No se dibujan cajas, no hay precarga y no se ven las respuestas del primer anotador.
+- Para cada una de las 75 personas de la muestra, en el mismo orden, se ven la RGB alineada y la térmica, con la caja
+  térmica de WiSARD de la persona en verde y las de las demás personas del fotograma en gris.
+- No se dibujan cajas, no hay precarga (ni la caja RGB de WiSARD) y no se ve ninguna respuesta: ni las del otro
+  anotador ni la anotación con cajas del primero. La herramienta solo lee el archivo propio, para retomar.
 - Se responde con una tecla: **1** se ve en la RGB, **2** no se ve en la RGB, **3** no es persona.
 
 ### Regla: cuándo "se ve en la RGB"
@@ -68,16 +71,27 @@ Aclarada el 1 de noviembre de 2026, después de la ronda 1. La herramienta la mu
 - El realce de contraste (**e**) está desactivado en este modo. El zoom (rueda, **+** / **−**) y los píxeles sin
   suavizar (**i**) sí se pueden usar.
 
+### Qué cambió en la regla
+
+| | Primer anotador, con cajas (`--muestra`) | Ronda 1 | Ronda 2 |
+|---|---|---|---|
+| Quién | primero | segundo | primero y segundo |
+| "Se ve en la RGB" | sin definir: dibuja la visible RGB de lo que ve | sin definir | **la regla de arriba** |
+| Realce (`e`) | disponible | disponible | **desactivado** |
+| Precarga | visible RGB = caja RGB de WiSARD a 3 alturas o menos | ninguna | ninguna |
+| Pantalla | la de las cajas | modo simple | modo simple, con la regla |
+
 ### Rondas
 
-| Ronda | Regla | Archivo |
-|---|---|---|
-| 1 | ambigua: "se ve" sin definir; el realce estaba disponible | `data/oclusion_segundo_simple_ronda1.csv` |
-| 2 | aclarada (la de arriba); sin realce | `data/oclusion_segundo_simple_ronda2.csv` |
+| Ronda | Regla | Primer anotador | Segundo anotador |
+|---|---|---|---|
+| 1 | ambigua | su anotación con cajas, `data/oclusion.csv` | `data/oclusion_segundo_simple_ronda1.csv` |
+| 2 | aclarada | `data/oclusion_primero_simple_ronda2.csv` | `data/oclusion_segundo_simple_ronda2.csv` |
 
-- La ronda 2 son **las 75 personas completas**, desde cero. La herramienta escribe en el archivo de
-  `segundo_simple.ronda_actual` (`configs/fase3.yaml`) y no lee los de otras rondas.
-- La ronda 1 (kappa 0.507 entre anotadores) se conserva y se reporta junto a la ronda 2 en
+- En la ronda 2, cada anotador responde **las 75 personas completas**, desde cero, sin ver las respuestas del otro.
+  La herramienta escribe en el archivo de su anotador en `modo_simple.ronda_actual` (`configs/fase3.yaml`).
+- El kappa que decide la concordancia es el de la ronda 2: el primero contra el segundo, los dos en modo simple.
+- La ronda 1 (kappa 0.507) y la anotación con cajas del primero se conservan y se reportan en
   `reports/fase4_validacion_auto.md`.
 
 ## Cómo se aplican en la herramienta
@@ -140,8 +154,9 @@ La herramienta es `scripts/anotar_oclusion.py`.
 - **Primer anotador:** guarda en `data/oclusion.csv`, también con `--muestra`. Las personas que ya están en ese archivo
   y no son de la muestra (la persona 1) se conservan sin cambios.
 - **Segundo anotador:** guarda en `data/oclusion_segundo.csv`.
-- **Segundo anotador, modo simple:** guarda en el archivo de la ronda actual (`data/oclusion_segundo_simple_ronda2.csv`),
-  solo las personas respondidas, después de cada respuesta. Al abrir de nuevo, sigue en la primera sin responder.
+- **Modo simple:** cada anotador guarda en su archivo de la ronda actual (`data/oclusion_primero_simple_ronda2.csv` o
+  `data/oclusion_segundo_simple_ronda2.csv`), solo las personas respondidas, después de cada respuesta. Al abrir de
+  nuevo, sigue en la primera sin responder.
 - Se guarda después de cada cambio y al pasar de persona. Al abrir de nuevo, la herramienta sigue en la primera persona
   sin terminar.
 - **No abras el CSV en Excel mientras anotas.** Excel bloquea el archivo y la herramienta no puede guardar. Si pasa,
@@ -158,6 +173,7 @@ La herramienta es `scripts/anotar_oclusion.py`.
 .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --muestra
 .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --segundo
 .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --segundo-simple
+.venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --primero-simple
 ```
 
 - **Con `--ajuste`:** primer anotador.
@@ -168,6 +184,7 @@ La herramienta es `scripts/anotar_oclusion.py`.
 - **Con `--muestra`:** primer anotador, con la precarga, solo las 75 personas de la muestra. "Persona N de 75" cuenta
   dentro de la muestra; `--persona N` también.
 
-- **Con `--segundo-simple`:** segundo anotador, modo simple, en la ronda actual (ver arriba).
+- **Con `--primero-simple` / `--segundo-simple`:** primer / segundo anotador, modo simple, en la ronda actual (ver
+  arriba).
 - **Sin opciones:** abre en la primera persona sin terminar.
 - **Con `--persona N`:** abre en la persona N.

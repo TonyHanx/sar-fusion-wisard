@@ -48,9 +48,11 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
     respecto de la térmica, las visibles, las marcas y λ.
   - `data\oclusion_muestra_segundo.csv`: las 75 personas de la muestra.
   - `data\oclusion_segundo.csv`: anotaciones del segundo anotador con cajas (modo `--segundo`, ya no se usa).
-  - Respuestas del segundo anotador en modo simple (`--segundo-simple`), una ronda por archivo:
-    `data\oclusion_segundo_simple_ronda1.csv` (regla ambigua) y `data\oclusion_segundo_simple_ronda2.csv` (regla
-    aclarada). La herramienta escribe en la de `segundo_simple.ronda_actual` de `configs/fase3.yaml`.
+  - Respuestas en modo simple, una ronda por archivo y anotador (`oclusion.modo_simple` en `configs/fase3.yaml`; la
+    herramienta escribe en el de `ronda_actual`):
+    - ronda 1 (regla ambigua), solo el segundo: `data\oclusion_segundo_simple_ronda1.csv`;
+    - ronda 2 (regla aclarada), los dos: `data\oclusion_primero_simple_ronda2.csv` (`--primero-simple`) y
+      `data\oclusion_segundo_simple_ronda2.csv` (`--segundo-simple`).
 - Correcciones de la muestra: `configs\correcciones_oclusion.yaml` (las aplica `scripts/corregir_oclusion.py`).
   - Respaldo de las anotaciones antes de cada corrección: `data\respaldos\`.
   - Lista para ajustar la visible RGB (herramienta `--ajuste`): `data\oclusion_ajuste_visibles.csv`.
@@ -170,9 +172,17 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
         realce.
       - Una mancha oscura, una sombra o una rama no cuentan. Si dudas, "no se ve".
       - En el modo simple el realce (`e`) está desactivado.
-    - **Ronda 2, regla aclarada:** las 75 completas, desde cero, en un archivo nuevo. Pendiente. Al terminar se calcula
-      otra vez el kappa (`fase4_validacion_auto.py --partes entre_anotadores --ronda 2`). El reporte deja las dos
-      rondas. Detalle en `reports/fase4_validacion_auto.md`.
+    - **Ronda 2, regla aclarada:** decidido el 1 de noviembre de 2026.
+      - **Los dos anotadores** responden las 75 completas, desde cero, en modo simple: la misma pantalla y la misma
+        regla, sin precarga ni cajas RGB y sin ver ningún archivo de respuestas.
+      - El primero usa `anotar_oclusion.py --primero-simple`. No revisa a mano solo la 72 y la 75.
+      - Pendiente.
+    - **Al terminar los dos** (`fase4_validacion_auto.py --partes entre_anotadores --ronda 2`):
+      - kappa del primero contra el segundo, los dos en modo simple: **el que decide**;
+      - kappa del automático contra el primero en modo simple;
+      - cuántas respuestas del primero cambian entre su anotación con cajas y el modo simple.
+    - El reporte deja las dos rondas y la anotación con cajas del primero, y explica qué cambió en la regla. Detalle en
+      `reports/fase4_validacion_auto.md`.
 - **λ RGB automático, validado con la muestra:** decidido el 1 de noviembre de 2026.
   - **Automático, para las 1 501 personas de FHL 0405** (`data/oclusion_auto.csv`):
     - λ = 1 − área(caja RGB más cercana a 3 alturas o menos) / área(caja térmica), recortado entre 0 y 1.
