@@ -53,6 +53,9 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
     - ronda 1 (regla ambigua), solo el segundo: `data\oclusion_segundo_simple_ronda1.csv`;
     - ronda 2 (regla aclarada), los dos: `data\oclusion_primero_simple_ronda2.csv` (`--primero-simple`) y
       `data\oclusion_segundo_simple_ronda2.csv` (`--segundo-simple`).
+  - Nivel a mano de las 498: las 423 que faltan, del primero (`--primero-simple-resto`, `oclusion.modo_simple.resto`),
+    en `data\oclusion_primero_simple_resto.csv`. Las 75 de la muestra son las suyas de la ronda 2.
+- Cajas dudosas de la prueba (las 10 "no es persona" de los dos en la ronda 2): `configs\cajas_dudosas.yaml`.
 - Correcciones de la muestra: `configs\correcciones_oclusion.yaml` (las aplica `scripts/corregir_oclusion.py`).
   - Respaldo de las anotaciones antes de cada corrección: `data\respaldos\`.
   - Lista para ajustar la visible RGB (herramienta `--ajuste`): `data\oclusion_ajuste_visibles.csv`.
@@ -180,7 +183,8 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
       - Hecha el 1 de noviembre de 2026. Primero: 38 se ven, 21 no se ven y 16 "no es persona". Segundo: 39, 22 y 14.
     - **Resultados de la ronda 2** (`fase4_validacion_auto.py --partes entre_anotadores --ronda 2`):
       - **Primero contra segundo, los dos en modo simple** (decide la concordancia): kappa **0.623** (IC 95 % 0.400 a
-        0.846), acuerdo 83.6 %, 9 desacuerdos en 55 comparables.
+        0.846), acuerdo 83.6 %, 9 desacuerdos en 55 comparables. **Se acepta** según la regla; el IC va como
+        limitación.
       - **Automático contra el primero en modo simple** (decide si se usa el automático): kappa **0.427** (IC 95 % 0.207
         a 0.646), acuerdo 71.2 %, 17 desacuerdos en 59.
         - 13 de los 17 son personas que el primero ve y WiSARD no tiene con caja RGB.
@@ -190,6 +194,8 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
         ve" → "no es persona", 3 "se ve" → "no se ve" y 1 "no es persona" → "no se ve". El primero contra sí mismo da
         kappa 0.483.
       - Las dos coinciden en 10 "no es persona": 22, 26, 27, 29, 30, 33, 36, 37, 38 y 41.
+        - Sus cajas están en `configs/cajas_dudosas.yaml`. Las etiquetas de prueba no se tocan.
+        - Quedan sin nivel, y en la fase 6 las métricas se calculan con y sin ellas.
     - El reporte deja las dos rondas y la anotación con cajas del primero, y explica qué cambió en la regla. Detalle en
       `reports/fase4_validacion_auto.md`.
 - **λ RGB automático, validado con la muestra:** decidido el 1 de noviembre de 2026. **No pasó la validación de la
@@ -223,9 +229,16 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
     simple **0.427** (IC 95 % 0.207 a 0.646), 59 personas. Es menor que 0.61.
     - **Decisión: no se usa el nivel automático.** El nivel binario de las 498 personas (1 de cada 3) se anota a mano
       en modo simple.
-    - Sensibilidad, solo informativa: sin la escena en sombra (fotogramas 468 a 588) el kappa da 0.575; si las 8 "se
-      ve" de esa escena fueran "no se ve", daría 0.695.
-    - Pendiente: la herramienta en modo simple hoy solo abre las 75 de la muestra.
+    - Las 8 "se ve" del primero en la escena en sombra (fotogramas 468 a 588) **no se revisan**: la regla se aplica tal
+      como quedó fijada.
+      - Sin esa escena el kappa da 0.575; con esas 8 como "no se ve", 0.695.
+      - Es solo un análisis de sensibilidad y no decide nada.
+    - **Nivel a mano:** lo anota el primero en modo simple, con la pantalla y la regla de la ronda 2.
+      - Las 75 de la muestra son las suyas de la ronda 2.
+      - Las 423 que faltan, con `anotar_oclusion.py --primero-simple-resto`, en un archivo propio; retoma si se cierra.
+      - Pendiente de anotar.
+    - **El 0.940 con cajas:** posible sesgo de anclaje por la precarga, porque la visible RGB venía con la caja RGB de
+      WiSARD, la misma del automático. Está en el reporte.
   - **Revisión antes del kappa** (1 de noviembre de 2026):
     - Se revisaron a ojo las personas con la completa RGB corrida más de 12 px o con una visible RGB en un par
       "solo térmica" (`oclusion_auto.py --revisar`, imágenes en `reports/oclusion/revision_muestra/`).
@@ -245,13 +258,10 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
       - Los niveles no cambian.
   - **Pendiente de decidir** (ver `reports/fase4_validacion_auto.md`):
     - si el fotograma 60 de FHL 0405 se excluye por desfase (y 71–72);
-    - si se confirman las "no es persona": en la ronda 2 los dos coinciden en 10 (fotogramas 321 a 474) y uno solo
-      marca otras 10. También qué se hace con esas cajas de WiSARD en las etiquetas de prueba;
-    - si se revisan con la regla aclarada las 8 "se ve" del primero en la escena en sombra (468 a 588) antes de anotar
-      las 498;
-    - para anotar las 498: un modo de la herramienta para ellas (o para las 423 que faltan, si se reutilizan las 75 del
-      primero de la ronda 2) y quién anota;
-    - si se acepta la concordancia de 0.623, cuyo IC empieza en 0.40.
+    - las "no es persona" de un solo anotador: 6 del primero, que quedan sin nivel, y 4 del segundo. Lo mismo para las
+      que el primero marque en las 423. ¿Van también a `configs/cajas_dudosas.yaml`?
+    - si el "sin ellas" de la fase 6 se extiende a las cajas de esos mismos objetos en los fotogramas no anotados (las
+      métricas globales van sobre los 928);
     - Las métricas por nivel van sobre los 310 fotogramas anotados: con el nivel a mano, el nivel solo existe ahí.
 - **Niveles: dos clases**, decidido el 1 de noviembre de 2026, porque en la muestra no hubo ninguna moderada (0 de 68).
   - **Severa:** la persona no se ve en la RGB.
@@ -260,6 +270,8 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
   - **Baja:** se ve en la RGB.
   - **Desde la ronda 2 se usa el manual en modo simple** de las 498 personas de los 310 fotogramas anotados (pendiente
     de anotar).
+    - Son las 75 de la muestra del primero en la ronda 2 más las 423 de `--primero-simple-resto`.
+    - Las 10 cajas dudosas quedan sin nivel.
   - Automático, solo como referencia: en FHL 0405, severa 976 y baja 525 de 1 501. En los 310 anotados, severa 323 y
     baja 175 de 498.
   - Antes eran tres niveles según λ RGB: baja (0 a 35 %), moderada (35 a 70 %) y severa (más de 70 %). Solo se usan
@@ -276,6 +288,8 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
   - **Globales** sobre los **928 fotogramas** de prueba, y también sobre los **310 anotados**.
   - **Por nivel de oclusión** sobre los **310 anotados**, los únicos con nivel. Al evaluar un nivel, las personas de los
     otros niveles se marcan como ignoradas.
+  - **Con y sin las cajas dudosas** (`configs/cajas_dudosas.yaml`), decidido el 1 de noviembre de 2026. "Sin ellas" =
+    esas cajas se marcan como ignoradas. Las etiquetas de prueba no se tocan.
 - **Prueba estadística:** McNemar (statsmodels) entre modelos dentro de cada nivel, corrección de Bonferroni, α = 0.05.
 - **Bootstrap por episodio (fase 6):** los intervalos de confianza se calculan remuestreando episodios completos, no
   fotogramas, porque los fotogramas seguidos de un episodio no son independientes. Usa seed=0.

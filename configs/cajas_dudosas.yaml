@@ -1,0 +1,45 @@
+# Cajas térmicas de WiSARD dudosas de la prueba (FHL 0405). Decidido el 2026-11-01, tras la ronda 2 entre anotadores.
+# Son las personas de la muestra que los dos anotadores marcaron "no es persona" en modo simple con la regla aclarada
+# (data/oclusion_primero_simple_ronda2.csv y data/oclusion_segundo_simple_ronda2.csv; detalle en
+# reports/fase4_validacion_auto/entre_anotadores/ronda2/respuestas.csv): en la caja térmica no se ve una persona.
+# - Las etiquetas de prueba NO se tocan: estas cajas siguen en data/etiquetas/termica/ y en
+#   data/datasets/<modelo>/labels/test/ (enlaces duros), como las dejó WiSARD (sin cajas repetidas).
+# - Quedan sin nivel de oclusión: no entran en ningún nivel (al evaluar un nivel se ignoran, como las de los otros).
+# - Fase 6: las métricas se calculan con y sin ellas (sin ellas = esas cajas se marcan como ignoradas: no cuentan
+#   como persona perdida ni una detección sobre ellas como falso positivo).
+# Una caja se identifica por `etiqueta` (dentro de data/etiquetas/) y `indice_caja` (línea, desde 0, sin contar líneas
+# vacías); `linea` es su texto exacto (clase cx cy w h, YOLO normalizado) y `caja_px` la misma caja en px de la térmica
+# (x0, y0, x1, y1; 640 x 512). `n_muestra` es el número de la persona en la muestra (1 a 75).
+# Las "no es persona" que marca un solo anotador no están aquí (ver reports/fase4_validacion_auto.md).
+criterio: no_es_persona para los dos anotadores, ronda 2 (modo simple, regla aclarada)
+cajas:
+  - {id: 210924_FHL_Enterprise_0405_0321_0, n_muestra: 22, vuelo: 210924_FHL_Enterprise_0405, posicion: 321, indice_caja: 0, cajas_en_fotograma: 2,
+     etiqueta: termica/210924_FHL_Enterprise_0405/210924_FHL_Enterprise_0405_0321.txt,
+     linea: "0 0.140625 0.601562 0.029687 0.023438", caja_px: [80.5, 302, 99.5, 314]}
+  - {id: 210924_FHL_Enterprise_0405_0339_1, n_muestra: 26, vuelo: 210924_FHL_Enterprise_0405, posicion: 339, indice_caja: 1, cajas_en_fotograma: 2,
+     etiqueta: termica/210924_FHL_Enterprise_0405/210924_FHL_Enterprise_0405_0339.txt,
+     linea: "0 0.046875 0.361328 0.020313 0.025391", caja_px: [23.5, 178.5, 36.5, 191.5]}
+  - {id: 210924_FHL_Enterprise_0405_0378_0, n_muestra: 27, vuelo: 210924_FHL_Enterprise_0405, posicion: 378, indice_caja: 0, cajas_en_fotograma: 1,
+     etiqueta: termica/210924_FHL_Enterprise_0405/210924_FHL_Enterprise_0405_0378.txt,
+     linea: "0 0.365625 0.361328 0.015625 0.019531", caja_px: [229, 180, 239, 190]}
+  - {id: 210924_FHL_Enterprise_0405_0426_2, n_muestra: 29, vuelo: 210924_FHL_Enterprise_0405, posicion: 426, indice_caja: 2, cajas_en_fotograma: 3,
+     etiqueta: termica/210924_FHL_Enterprise_0405/210924_FHL_Enterprise_0405_0426.txt,
+     linea: "0 0.132812 0.064453 0.025 0.035156", caja_px: [77, 24, 93, 42]}
+  - {id: 210924_FHL_Enterprise_0405_0429_1, n_muestra: 30, vuelo: 210924_FHL_Enterprise_0405, posicion: 429, indice_caja: 1, cajas_en_fotograma: 4,
+     etiqueta: termica/210924_FHL_Enterprise_0405/210924_FHL_Enterprise_0405_0429.txt,
+     linea: "0 0.096875 0.267578 0.028125 0.033203", caja_px: [53, 128.5, 71, 145.5]}
+  - {id: 210924_FHL_Enterprise_0405_0447_0, n_muestra: 33, vuelo: 210924_FHL_Enterprise_0405, posicion: 447, indice_caja: 0, cajas_en_fotograma: 4,
+     etiqueta: termica/210924_FHL_Enterprise_0405/210924_FHL_Enterprise_0405_0447.txt,
+     linea: "0 0.207813 0.291016 0.035937 0.044922", caja_px: [121.5, 137.5, 144.5, 160.5]}
+  - {id: 210924_FHL_Enterprise_0405_0453_0, n_muestra: 36, vuelo: 210924_FHL_Enterprise_0405, posicion: 453, indice_caja: 0, cajas_en_fotograma: 4,
+     etiqueta: termica/210924_FHL_Enterprise_0405/210924_FHL_Enterprise_0405_0453.txt,
+     linea: "0 0.203125 0.289062 0.039062 0.041016", caja_px: [117.5, 137.5, 142.5, 158.5]}
+  - {id: 210924_FHL_Enterprise_0405_0459_0, n_muestra: 37, vuelo: 210924_FHL_Enterprise_0405, posicion: 459, indice_caja: 0, cajas_en_fotograma: 4,
+     etiqueta: termica/210924_FHL_Enterprise_0405/210924_FHL_Enterprise_0405_0459.txt,
+     linea: "0 0.20625 0.285156 0.0375 0.035156", caja_px: [120, 137, 144, 155]}
+  - {id: 210924_FHL_Enterprise_0405_0462_3, n_muestra: 38, vuelo: 210924_FHL_Enterprise_0405, posicion: 462, indice_caja: 3, cajas_en_fotograma: 4,
+     etiqueta: termica/210924_FHL_Enterprise_0405/210924_FHL_Enterprise_0405_0462.txt,
+     linea: "0 0.20625 0.416016 0.035937 0.035156", caja_px: [120.5, 204, 143.5, 222]}
+  - {id: 210924_FHL_Enterprise_0405_0474_3, n_muestra: 41, vuelo: 210924_FHL_Enterprise_0405, posicion: 474, indice_caja: 3, cajas_en_fotograma: 4,
+     etiqueta: termica/210924_FHL_Enterprise_0405/210924_FHL_Enterprise_0405_0474.txt,
+     linea: "0 0.3375 0.355469 0.028125 0.041016", caja_px: [207, 171.5, 225, 192.5]}

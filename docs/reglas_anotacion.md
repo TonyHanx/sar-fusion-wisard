@@ -95,6 +95,21 @@ Aclarada el 1 de noviembre de 2026, después de la ronda 1. La herramienta la mu
 - La ronda 1 (kappa 0.507) y la anotación con cajas del primero se conservan y se reportan en
   `reports/fase4_validacion_auto.md`.
 
+### Las 498 personas (nivel a mano)
+
+El nivel automático no pasó la validación de la ronda 2 (kappa 0.427 contra el primero), así que el nivel binario de las
+498 personas se anota a mano (decidido el 1 de noviembre de 2026).
+
+- **Quién:** el primer anotador, en modo simple, con la misma pantalla y la misma regla de la ronda 2.
+- **Las 75 de la muestra** no se vuelven a responder: son sus respuestas de la ronda 2
+  (`data/oclusion_primero_simple_ronda2.csv`).
+- **Las 423 que faltan:** `--primero-simple-resto`, en el orden de la lista (por fotograma).
+  - Guarda en `data/oclusion_primero_simple_resto.csv`.
+  - La ronda de la regla está en `oclusion.modo_simple.resto` (`configs/fase3.yaml`).
+- **"No es persona":** las 10 en que coinciden los dos en la ronda 2 están en `configs/cajas_dudosas.yaml`.
+  - Las etiquetas de prueba no se tocan.
+  - Esas personas quedan sin nivel.
+
 ## Cómo se aplican en la herramienta
 
 La herramienta es `scripts/anotar_oclusion.py`.
@@ -158,6 +173,7 @@ La herramienta es `scripts/anotar_oclusion.py`.
 - **Modo simple:** cada anotador guarda en su archivo de la ronda actual (`data/oclusion_primero_simple_ronda2.csv` o
   `data/oclusion_segundo_simple_ronda2.csv`), solo las personas respondidas, después de cada respuesta. Al abrir de
   nuevo, sigue en la primera sin responder.
+  - Con `--primero-simple-resto`, igual, en `data/oclusion_primero_simple_resto.csv`.
 - Se guarda después de cada cambio y al pasar de persona. Al abrir de nuevo, la herramienta sigue en la primera persona
   sin terminar.
 - **No abras el CSV en Excel mientras anotas.** Excel bloquea el archivo y la herramienta no puede guardar. Si pasa,
@@ -175,6 +191,7 @@ La herramienta es `scripts/anotar_oclusion.py`.
 .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --segundo
 .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --segundo-simple
 .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --primero-simple
+.venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --primero-simple-resto
 ```
 
 - **Con `--ajuste`:** primer anotador.
@@ -187,5 +204,7 @@ La herramienta es `scripts/anotar_oclusion.py`.
 
 - **Con `--primero-simple` / `--segundo-simple`:** primer / segundo anotador, modo simple, en la ronda actual (ver
   arriba).
+- **Con `--primero-simple-resto`:** primer anotador, modo simple, las 423 personas que faltan de las 498 (ver "Las 498
+  personas"). "Persona N de 423" cuenta dentro de esa lista; `--persona N` también.
 - **Sin opciones:** abre en la primera persona sin terminar.
 - **Con `--persona N`:** abre en la persona N.

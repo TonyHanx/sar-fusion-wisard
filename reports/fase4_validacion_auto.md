@@ -17,13 +17,41 @@ primer anotador en modo simple de la ronda 2 (regla aclarada):
 
 - **0.427 es menor que 0.61: no se usa el nivel automático.** El nivel binario de las 498 personas (1 de cada 3) se
   anota a mano en modo simple.
-- El 0.940 queda como resultado de la primera anotación, con cajas.
+- El 0.940 queda como resultado de la primera anotación, con cajas. Su posible explicación es un sesgo de anclaje por
+  la precarga (ver "Decisiones tras la ronda 2").
 - 8 de los 17 desacuerdos son de una sola escena en sombra (fotogramas 468 a 588), donde la RGB es casi negra dentro
-  de la caja y el primero respondió "se ve". Detalle en "Ronda 2".
+  de la caja y el primero respondió "se ve". Detalle en "Ronda 2". No se revisan.
 
 ```
 .venv\Scripts\python.exe scripts\fase4_validacion_auto.py --config configs\fase3.yaml --rutas configs\rutas.yaml
 ```
+
+## Decisiones tras la ronda 2
+
+Decididas el 1 de noviembre de 2026, con los resultados de la ronda 2.
+
+- **Escena en sombra (fotogramas 468 a 588): no se revisa.** La regla se aplica tal como quedó fijada, y las 8 "se ve"
+  del primero en esa escena quedan como están.
+  - El kappa sin esa escena (0.575) y con esas 8 cambiadas a "no se ve" (0.695) es solo un análisis de sensibilidad.
+  - No decide nada.
+- **Concordancia entre anotadores: se acepta el 0.623**, porque pasa el 0.61 de la regla.
+  - El IC 95 % (0.40 a 0.85, con 55 personas) va como **limitación**.
+  - El IC es ancho y empieza en 0.40, así que no descarta un acuerdo solo moderado.
+- **Nivel a mano de las 498 personas:** lo anota el primer anotador en modo simple, con la misma pantalla y la misma
+  regla de la ronda 2.
+  - Las 75 de la muestra son sus respuestas de la ronda 2 (`data/oclusion_primero_simple_ronda2.csv`).
+  - Las 423 que faltan se anotan con el modo nuevo `--primero-simple-resto`.
+  - Van en un archivo propio, `data/oclusion_primero_simple_resto.csv`, y la herramienta retoma si se cierra. Ver
+    "Modo simple".
+- **Las 10 "no es persona" en que coinciden los dos** (22, 26, 27, 29, 30, 33, 36, 37, 38 y 41; fotogramas 321 a 474):
+  - las etiquetas de prueba **no se tocan**;
+  - sus cajas térmicas de WiSARD están en `configs/cajas_dudosas.yaml`, con el archivo de etiquetas, la línea y la caja
+    en px de cada una;
+  - quedan **sin nivel**;
+  - en la fase 6, las métricas se calculan **con y sin ellas**.
+- **El 0.940 con cajas** queda como resultado de la primera anotación.
+  - Su posible explicación es un **sesgo de anclaje por la precarga** (ver "3. Respuestas del primero que cambian
+    entre las cajas y el modo simple").
 
 ## Dos niveles
 
@@ -103,7 +131,12 @@ en `desacuerdos_dos_niveles.csv`.
 El nivel automático está en `data/oclusion_auto.csv` (columna `sin_caja_rgb_cerca`: severa si es verdadera). Ese archivo
 no cambió. **No se usa** desde la ronda 2 (kappa 0.427 contra el primero en modo simple): queda como referencia.
 
-## Las 7 "no es persona" (para confirmar)
+## Las 7 "no es persona" de la anotación con cajas
+
+Desde la ronda 2:
+- 6 de estas 7 (30 a 41, el objeto marrón) están entre las 10 "no es persona" en que coinciden los dos anotadores.
+  Están en `configs/cajas_dudosas.yaml`.
+- La 46 no: en la ronda 2 el primero responde "no se ve" y el segundo "se ve".
 
 Mosaico en `reports/fase4_validacion_auto/no_es_persona.jpg` y lista en `no_es_persona.csv`. Cada fila trae:
 - la RGB alineada;
@@ -133,6 +166,8 @@ Los triángulos amarillos señalan el centro de la caja.
     automáticas (15 %).
   - La caja térmica de WiSARD de ese objeto es parte de las etiquetas de referencia de la prueba. Los fotogramas de
     429 a 474 tienen todos de 4 a 5 cajas, así que probablemente esté en unos 46 fotogramas seguidos.
+  - Las etiquetas no se tocan. `configs/cajas_dudosas.yaml` tiene solo sus cajas de los fotogramas anotados (ver
+    "Pendiente de decidir").
 
 ## FHL 0405, fotogramas 58 a 64: posible desfase en el 60
 
@@ -199,9 +234,11 @@ regla (decidido el 1 de noviembre de 2026).
 ```
 .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --segundo-simple
 .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --primero-simple
+.venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --primero-simple-resto
 ```
 
-- **Personas:** las 75 de la muestra, en su orden (el mismo para los dos).
+- **Personas:** las 75 de la muestra, en su orden (el mismo para los dos). Con `--primero-simple-resto`, las 423 que
+  faltan de las 498 (ver abajo).
 - **Lo que ve:** la RGB alineada y la térmica, ampliadas alrededor de la persona, con la misma vista inicial que la
   herramienta.
   - Su caja térmica de WiSARD, en verde. En la RGB va donde la pone la semejanza.
@@ -223,14 +260,27 @@ regla (decidido el 1 de noviembre de 2026).
 - **Guarda** en el archivo de la ronda (ver la sección siguiente), después de cada respuesta. Columnas: `id`,
   `respuesta` (`se_ve_rgb`, `no_se_ve_rgb`, `no_es_persona`), `tiempo_s` y `guardado`. Al abrir de nuevo se retoma.
 - **Columna `anotador`:** `segundo_simple` o `primero_simple`. La herramienta no abre un archivo del otro anotador.
-- **Prueba:** `scripts/probar_anotar_oclusion.py` pasó de 59 a 71 comprobaciones con este modo, a 73 con la ronda 2 y a
-  80 con `--primero-simple`. Todas correctas. Entre otras cosas, comprueba que los paneles del primero y del segundo
-  son idénticos y que el primero solo lee la lista de personas y la muestra. Las capturas de los modos anteriores
-  salieron idénticas.
+- **Prueba:** `scripts/probar_anotar_oclusion.py` pasó de 59 a 71 comprobaciones con este modo, a 73 con la ronda 2, a
+  80 con `--primero-simple` y a 92 con `--primero-simple-resto`. Todas correctas. Entre otras cosas, comprueba que los
+  paneles del primero y del segundo son idénticos y que el primero solo lee la lista de personas y la muestra. Las
+  capturas de los modos anteriores salieron idénticas.
 - **Capturas:** `reports/oclusion/herramienta_segundo_simple.jpg` y `reports/oclusion/herramienta_primero_simple.jpg`,
   con la regla de la ronda 2 en pantalla.
 - Las respuestas se pasan a los dos niveles: "se ve" = baja, "no se ve" = severa, y "no es persona" aparte. Los
   resultados están en la sección siguiente.
+
+**Las 423 que faltan (`--primero-simple-resto`).** Para el nivel a mano de las 498, decidido el 1 de noviembre de 2026.
+
+- **Personas:** las 423 de `data/oclusion_personas.csv` que no son de la muestra, en el orden de la lista (por
+  fotograma). Con las 75 de la muestra suman las 498.
+- **Pantalla y regla:** las del modo simple de la ronda 2 (`oclusion.modo_simple.resto.ronda` en
+  `configs/fase3.yaml`). La cabecera dice "modo simple, resto de las 498, regla de la ronda 2".
+- **Guarda** en `data/oclusion_primero_simple_resto.csv`, con `anotador` = `primero_simple`, después de cada respuesta.
+  Al abrir de nuevo retoma en la primera sin responder.
+- **No lee** ningún archivo de respuestas salvo el propio.
+  - No acepta un archivo con personas de la muestra ni uno del segundo.
+  - Las 75 de la muestra no se vuelven a responder: el nivel de esas es el de `data/oclusion_primero_simple_ronda2.csv`.
+- **Captura:** `reports/oclusion/herramienta_primero_simple_resto.jpg`.
 
 ## Concordancia entre anotadores (dos clases)
 
@@ -390,6 +440,7 @@ respuestas del otro ni las de la ronda 1 ni la anotación con cajas. Regla aclar
 
 - Un kappa de 0.623 queda apenas sobre 0.61 ("acuerdo considerable", 0.61 a 0.80 en la escala de Landis y Koch). El
   IC es ancho y empieza en 0.40.
+- **Se acepta según la regla** (decidido el 1 de noviembre de 2026). El IC va como limitación.
 - Sube respecto de la ronda 1 (0.507), pero las dos rondas no son del todo comparables: en la ronda 1 el primero era su
   anotación con cajas.
 
@@ -413,7 +464,7 @@ respuestas del otro ni las de la ronda 1 ni la anotación con cajas. Regla aclar
 |---|---|
 | **El primero la ve y el segundo no (4)** | 28 (420), 32 (444), 39 (468), 53 (573) |
 | **El segundo la ve y el primero no (5)** | 46 (501), 49 (513), 71 (891), 72 (894), 73 (894) |
-| "No es persona" de los dos (10) | 22 (321), 26 (339), 27 (378), 29 (426), 30 (429), 33 (447), 36 (453), 37 (459), 38 (462), 41 (474) |
+| "No es persona" de los dos (10; en `configs/cajas_dudosas.yaml`) | 22 (321), 26 (339), 27 (378), 29 (426), 30 (429), 33 (447), 36 (453), 37 (459), 38 (462), 41 (474) |
 | "No es persona" solo del primero (6) | 48 (513), 51 (555), 52 (561), 54 (576), 55 (579), 58 (588) |
 | "No es persona" solo del segundo (4) | 21 (258), 35 (450), 59 (636), 66 (729) |
 
@@ -455,8 +506,10 @@ lo escribe en `ronda2/automatico.csv` y en la bitácora.
     no cuentan y que, si hay duda, "no se ve".
   - En esa misma escena, con imágenes parecidas (caja RGB negra y mancha caliente en la térmica), el primero respondió
     8 "se ve", 5 "no se ve" y 6 "no es persona". No cuento la 41, que es el objeto marrón.
-- **Cuánto pesa esa escena** (solo para ver la sensibilidad; no cambia la decisión): sin las personas de los fotogramas
-  468 a 588, el kappa queda en 0.575 (46 personas). Si esas 8 fueran "no se ve", sería 0.695.
+- **Análisis de sensibilidad** (no decide nada):
+  - Sin las personas de los fotogramas 468 a 588, el kappa queda en 0.575 (46 personas).
+  - Si esas 8 fueran "no se ve", sería 0.695.
+  - **Las 8 no se revisan:** la regla se aplica tal como quedó fijada (decidido el 1 de noviembre de 2026).
 - **72 y 75:** ahora "no se ve". Con el brillo normal solo se ve un punto blanco en el borde de la caja. WiSARD tiene caja
   RGB en las dos.
 - **68:** el primero la ve, como con las cajas; WiSARD no tiene su caja RGB.
@@ -482,9 +535,15 @@ lo escribe en `ronda2/automatico.csv` y en la bitácora.
   automático; solo la 46 se acerca.
 - **39, 42 y 44** tenían una visible RGB dibujada en la primera anotación. Pasaron a "no visible" en la revisión antes
   del kappa, por ser pares "solo térmica" (sin caja RGB de WiSARD). Ahora vuelven a "se ve".
-- **Posible explicación del 0.940:** en la anotación con cajas, la visible RGB venía precargada con la caja RGB de
-  WiSARD, y la revisión usó como criterio que el par no tuviera cajas RGB. Las dos cosas acercan al primero al nivel
-  automático. Sin precarga, el acuerdo baja de 0.940 a 0.427. Es una hipótesis: no se puede separar del cambio de regla.
+- **Posible sesgo de anclaje por la precarga (explicación del 0.940):**
+  - En la anotación con cajas, la visible RGB venía precargada con la caja RGB de WiSARD, que es la misma que usa el
+    nivel automático.
+  - El primero pudo anclarse a ella: aceptarla cuando estaba y no buscar a la persona en la RGB cuando no estaba.
+  - Además, la revisión antes del kappa usó como criterio que el par no tuviera cajas RGB.
+  - Las dos cosas acercan la respuesta del primero al automático por construcción, y el kappa sube.
+  - Sin precarga (modo simple), el acuerdo baja de 0.940 a 0.427, y 25 de los 26 cambios se alejan del automático. Es
+    lo que se esperaría con anclaje.
+  - Es una hipótesis: no se puede separar del cambio de regla, porque la ronda 2 también aclaró qué es "se ve".
 - Imágenes en `ronda2/imagenes_cambios_primero/`; lista en `ronda2/cambios_primero.csv` (con el segundo y el
   automático) y tabla en `ronda2/cambios_primero_tabla.csv`.
 
@@ -529,26 +588,37 @@ En `entre_anotadores/rondas.csv`.
   - Para la ronda 2: la regla aclarada en pantalla, el número de ronda en el encabezado, `e` desactivado y escritura en
     el archivo del anotador en `modo_simple.ronda_actual`.
   - `--primero-simple`: el mismo modo para el primer anotador.
+  - `--primero-simple-resto`: el primero, en modo simple, sobre las 423 personas de la lista que no son de la muestra.
+    Tiene su propio archivo.
+- `scripts/probar_anotar_oclusion.py`: 12 comprobaciones más para `--primero-simple-resto` (92 en total).
+- `configs/cajas_dudosas.yaml` (nuevo): las 10 cajas dudosas.
 - `configs/fase3.yaml`:
   - Sección `validacion_auto` (niveles, kappa mínimo, mosaico, revisión del fondo y `entre_anotadores`).
   - `oclusion.modo_simple`: `ronda_actual` y, por ronda, la regla y el archivo de cada anotador que la responde en
     modo simple (antes, `oclusion.anotaciones_segundo_simple`).
   - Salen `kappa_minimo` y `comparacion` de `oclusion_auto`.
+  - `oclusion.modo_simple.resto` (ronda de la regla y archivo) y `oclusion.cajas_dudosas`.
 
 ## Pendiente de decidir
 
+Ya decidido el 1 de noviembre de 2026 (ver "Decisiones tras la ronda 2"):
+- la escena en sombra no se revisa;
+- las 423 que faltan las anota el primero con `--primero-simple-resto`;
+- las 10 "no es persona" de los dos van a `configs/cajas_dudosas.yaml`;
+- se acepta la concordancia de 0.623, con el IC como limitación.
+
 1. **Fotograma 60:** ¿se excluye por desfase? Si se excluye, ¿también 71–72, que se corren lo mismo?
-2. **Las "no es persona":** en la ronda 2 los dos marcan 10 (22, 26, 27, 29, 30, 33, 36, 37, 38 y 41), y uno solo
-   otras 10. ¿Se confirman? ¿Qué se hace con esas cajas térmicas de WiSARD en las etiquetas de la prueba (fotogramas
-   321 a 474)?
-3. **La 73:** en la ronda 2, el primero no la ve y el segundo sí.
-4. **Dónde se evalúa por nivel:** con el nivel a mano, el nivel solo existe en los 310 fotogramas anotados, así que
+2. **Las "no es persona" de un solo anotador:** 6 solo del primero (48, 51, 52, 54, 55 y 58) y 4 solo del segundo
+   (21, 35, 59 y 66).
+   - El nivel es el del primero, así que sus 6 quedan sin nivel. ¿Van también a `configs/cajas_dudosas.yaml`?
+   - Lo mismo vale para las "no es persona" que el primero marque en las 423.
+   - Las 4 del segundo tienen nivel del primero ("se ve" o "no se ve").
+3. **Las cajas dudosas en los fotogramas no anotados:** `configs/cajas_dudosas.yaml` solo tiene las 10 cajas de los
+   fotogramas anotados.
+   - Los mismos objetos probablemente tienen caja de WiSARD en los fotogramas vecinos, que no se anotan (2 de cada 3).
+     Por ejemplo, el objeto marrón de 429 a 474.
+   - Las métricas globales van sobre los 928. ¿El "sin ellas" se extiende a esas cajas?
+4. **La 73:** en la ronda 2, el primero no la ve y el segundo sí.
+5. **Dónde se evalúa por nivel:** con el nivel a mano, el nivel solo existe en los 310 fotogramas anotados, así que
    las métricas por nivel van sobre los 310, como ya dice CLAUDE.md. Las globales siguen sobre los 928 y los 310.
-5. **FASES.md:** el mensaje de la fase 4 sigue hablando de λ y de tres niveles.
-6. **Escena en sombra (fotogramas 468 a 588):** el primero respondió "se ve" en 8 personas donde la RGB es casi negra
-   dentro de la caja; el segundo, en 6 de ellas. ¿Se revisan con la regla aclarada antes de anotar las 498? La decisión
-   sobre el automático depende de esa escena (sin ella, 0.575; con esas 8 como "no se ve", 0.695).
-7. **Anotación a mano de las 498:** la herramienta en modo simple hoy abre solo las 75 de la muestra.
-   - Falta un modo para las 498, o para las 423 restantes si se reutilizan las 75 del primero de la ronda 2.
-   - ¿Quién anota: solo el primero?
-8. **Concordancia (0.623):** pasa 0.61, pero el IC empieza en 0.40. ¿Se acepta así?
+6. **FASES.md:** el mensaje de la fase 4 sigue hablando de λ y de tres niveles.
