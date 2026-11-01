@@ -1,0 +1,13 @@
+id,n_muestra,posicion,indice_caja,criterio,completa_rgb_dx,completa_rgb_dy,corrimiento_px,rgb_estado,termica_estado,no_es_persona,fuera_de_cuadro,lambda_rgb,lambda_termica,nivel_manual,lambda_rgb_auto,nivel_auto
+210924_FHL_Enterprise_0405_0060_1,10,60,1,completa RGB corrida > 12 px,0.69,-17.13,17.14,caja,caja,False,False,0.0,0.0,baja,0.451,moderada
+210924_FHL_Enterprise_0405_0420_0,28,420,0,visible RGB dibujada en par solo térmica,-0.09,-1.47,1.47,caja,caja,False,False,0.0,0.0,baja,1.0,severa
+210924_FHL_Enterprise_0405_0462_3,38,462,3,visible RGB dibujada en par solo térmica,,,,caja,caja,True,False,,,severa,1.0,severa
+210924_FHL_Enterprise_0405_0468_0,39,468,0,visible RGB dibujada en par solo térmica,0.0,0.0,0.0,caja,caja,False,False,0.0,0.0,baja,1.0,severa
+210924_FHL_Enterprise_0405_0477_1,42,477,1,visible RGB dibujada en par solo térmica,0.0,0.0,0.0,caja,caja,False,False,0.0,0.0,baja,1.0,severa
+210924_FHL_Enterprise_0405_0489_1,44,489,1,visible RGB dibujada en par solo térmica,1.81,7.25,7.47,caja,caja,False,False,0.0,0.0,baja,1.0,severa
+210924_FHL_Enterprise_0405_0492_2,45,492,2,visible RGB dibujada en par solo térmica,-2.17,4.68,5.16,caja,caja,False,False,0.0,0.008,baja,1.0,severa
+210924_FHL_Enterprise_0405_0501_0,46,501,0,visible RGB dibujada en par solo térmica,0.0,0.0,0.0,caja,no_visible,False,False,0.0,1.0,baja,1.0,severa
+210924_FHL_Enterprise_0405_0504_2,47,504,2,visible RGB dibujada en par solo térmica,0.0,0.0,0.0,caja,caja,False,False,0.0,0.0,baja,1.0,severa
+210924_FHL_Enterprise_0405_0711_1,63,711,1,visible RGB dibujada en par solo térmica,0.0,0.0,0.0,caja,no_visible,False,False,0.0,1.0,baja,1.0,severa
+210924_FHL_Enterprise_0405_0711_2,64,711,2,visible RGB dibujada en par solo térmica,0.86,-0.74,1.13,caja,caja,False,False,0.0,0.0,baja,1.0,severa
+210924_FHL_Enterprise_0405_0726_0,65,726,0,visible RGB dibujada en par solo térmica,0.0,0.0,0.0,caja,caja,False,False,0.0,0.0,baja,1.0,severa

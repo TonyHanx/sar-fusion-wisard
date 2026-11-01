@@ -369,6 +369,23 @@ def main():
         comprobar(len(completo.ajenas) == 0 and completo.tocadas == set(d3.id),
                   "muestra: el modo completo lee el mismo archivo con todas sus personas")
 
+        # ---- --ajuste: la lista de ajuste de la visible RGB, en su orden; espacio avanza aunque todas estén terminadas
+        ruta_lista = rutas["data"] / o["lista_ajuste"]
+        if ruta_lista.exists() and reales[0].exists():
+            lista = pd.read_csv(ruta_lista, dtype={"id": str}).sort_values("orden")
+            salida4 = Path(tmp) / "oclusion_ajuste.csv"
+            salida4.write_bytes(reales[0].read_bytes())
+            n_filas = len(pd.read_csv(salida4))
+            j = crear_anotador(cfg, rutas, segundo=False, salida=salida4, area=area, ajuste=True)
+            comprobar(list(j.ids) == list(lista.id) and j.primero and j.i == 0,
+                      f"ajuste: las {len(j.ids)} personas de la lista, en su orden, abre en la primera")
+            comprobar(len(j.ajenas) == n_filas - len(j.ids), "ajuste: las demás personas del archivo quedan apartadas")
+            tecla(j, " ")
+            comprobar(j.i == 1, "ajuste: con todas terminadas, espacio pasa a la siguiente")
+            comprobar(len(pd.read_csv(salida4)) == n_filas, "ajuste: al guardar se conservan todas las filas")
+        else:
+            print(f"  (sin {ruta_lista.name} o sin anotaciones reales: no se prueba --ajuste)")
+
     despues_reales = {r: r.read_bytes() if r.exists() else None for r in reales}
     comprobar(despues_reales == antes, "data/oclusion.csv y data/oclusion_segundo.csv no se tocaron")
     print(f"Capturas en {capturas}")

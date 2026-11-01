@@ -18,6 +18,9 @@ Tres usos:
   --muestra   primer anotador (con la precarga), solo las personas de la muestra (data/<muestra_segundo>), para
               validar el λ automático (scripts/oclusion_auto.py). Guarda en data/<anotaciones>; las personas de ese
               archivo que no son de la muestra se conservan sin cambios.
+  --ajuste    como --muestra, pero con las personas de data/<lista_ajuste> en su orden (las de la muestra con visible
+              RGB, de mayor a menor según cuánto se sale la visible de la completa; la arma
+              scripts/corregir_oclusion.py), para ajustar la visible RGB a lo que se ve.
   --segundo   segundo anotador: solo las personas de la muestra, sin precarga, sin las cajas de WiSARD y sin las del
               primer anotador (no lee su archivo). La persona a anotar se señala con triángulos amarillos en los bordes
               de la vista. Guarda en data/<anotaciones_segundo>.
@@ -27,6 +30,7 @@ Uso:
     .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --preparar
     .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml
     .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --muestra
+    .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --ajuste
     .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --segundo
 
 Ventana: arriba, la RGB alineada y la térmica lado a lado, ampliadas alrededor de la persona y con la misma vista (el
@@ -309,9 +313,11 @@ def preparar(cfg, rutas, forzar=False):
 
 # ---------------------------------------------------------------------------------------------------- herramienta
 class Anotador:
-    def __init__(self, o, personas, ids, alineados, salida, modo, tam_ter, area=None, inicio=None, muestra=False):
+    def __init__(self, o, personas, ids, alineados, salida, modo, tam_ter, area=None, inicio=None, muestra=False,
+                 lista=None):
         self.o, self.modo, self.salida = o, modo, Path(salida)
         self.primero, self.muestra = modo == "primero", muestra
+        self.nombre_lista = lista or ("muestra" if muestra else None)
         self.alineados = Path(alineados)
         self.tw, self.th = tam_ter
         self.todas = personas.set_index("id", drop=False)
@@ -680,7 +686,7 @@ class Anotador:
         x = 2 * (self.gw + self.sep) + self.sep
         y = self.y_general + 16
         n_term = sum(terminada(self.anot[i]) for i in self.ids)
-        modo = ("PRIMER ANOTADOR" + (" (muestra)" if self.muestra else "") if self.primero
+        modo = ("PRIMER ANOTADOR" + (f" ({self.nombre_lista})" if self.nombre_lista else "") if self.primero
                 else "SEGUNDO ANOTADOR (sin precarga)")
         self.texto(L, f"{modo} | persona {self.i + 1} de {len(self.ids)} | terminadas {n_term} de {len(self.ids)} | "
                       f"fotograma {p.posicion}, caja {p.indice_caja + 1} de {p.cajas_en_fotograma}", x, y, BLANCO, 0.55)
@@ -812,8 +818,10 @@ class Anotador:
             self.ir_a(self.i - 1)
         elif c == " ":
             j = self.siguiente_sin_terminar()
-            if j is None:
-                self.mensaje = "todas las personas estan terminadas"
+            if j is None:  # todas terminadas: espacio pasa a la siguiente
+                self.ir_a(self.i + 1)
+                if not self.mensaje:
+                    self.mensaje = "todas las personas estan terminadas: espacio pasa a la siguiente"
             else:
                 self.ir_a(j)
         elif c in ("+", "="):
@@ -880,11 +888,14 @@ class Anotador:
         print(f"{n} de {len(self.ids)} personas terminadas; guardado en {self.salida}")
 
 
-def crear_anotador(cfg, rutas, segundo, salida=None, area=None, inicio=None, muestra=False):
+def crear_anotador(cfg, rutas, segundo, salida=None, area=None, inicio=None, muestra=False, ajuste=False):
     """Anotador del primer o del segundo anotador. `salida` permite escribir en otro archivo (para pruebas). Con
-    `muestra`, el primer anotador (con precarga) anota solo las personas de la muestra."""
-    if segundo and muestra:
-        raise SystemExit("--muestra es para el primer anotador; el segundo ya anota solo la muestra")
+    `muestra`, el primer anotador (con precarga) anota solo las personas de la muestra; con `ajuste`, solo las de la
+    lista de ajuste de la visible RGB, en su orden."""
+    if segundo and (muestra or ajuste):
+        raise SystemExit("--muestra y --ajuste son para el primer anotador")
+    if muestra and ajuste:
+        raise SystemExit("--muestra y --ajuste no van juntos")
     o, data = cfg["oclusion"], rutas["data"]
     ruta_personas = data / o["personas"]
     if not ruta_personas.exists():
@@ -892,15 +903,21 @@ def crear_anotador(cfg, rutas, segundo, salida=None, area=None, inicio=None, mue
     personas = pd.read_csv(ruta_personas, dtype={"id": str})
     if segundo or muestra:
         ids = pd.read_csv(data / o["muestra_segundo"], dtype={"id": str}).id
+    if ajuste:
+        ruta_lista = data / o["lista_ajuste"]
+        if not ruta_lista.exists():
+            raise SystemExit(f"No existe {ruta_lista}: corre antes scripts/corregir_oclusion.py")
+        ids = pd.read_csv(ruta_lista, dtype={"id": str}).sort_values("orden").id
     if segundo:
         salida = salida or data / o["anotaciones_segundo"]
-    elif muestra:
+    elif muestra or ajuste:
         salida = salida or data / o["anotaciones"]
     else:
         ids = personas.id
         salida = salida or data / o["anotaciones"]
     return Anotador(o, personas, ids, data / cfg["datasets"]["alineados"], salida,
-                    "segundo" if segundo else "primero", tuple(cfg["tam_termica"]), area, inicio, muestra)
+                    "segundo" if segundo else "primero", tuple(cfg["tam_termica"]), area, inicio, muestra,
+                    "ajuste de visibles RGB" if ajuste else None)
 
 
 def main():
@@ -910,6 +927,7 @@ def main():
     ap.add_argument("--preparar", action="store_true", help="arma la lista de personas y la muestra del segundo")
     ap.add_argument("--forzar", action="store_true", help="con --preparar, sobrescribe una lista distinta")
     ap.add_argument("--muestra", action="store_true", help="primer anotador, solo las personas de la muestra")
+    ap.add_argument("--ajuste", action="store_true", help="primer anotador, solo la lista de ajuste de la visible RGB")
     ap.add_argument("--segundo", action="store_true", help="modo del segundo anotador")
     ap.add_argument("--persona", type=int, help="abre en la persona N (desde 1)")
     args = ap.parse_args()
@@ -920,7 +938,8 @@ def main():
         return
     from marcar_puntos import preparar_pantalla
     area = preparar_pantalla()  # antes de crear cualquier ventana
-    crear_anotador(cfg, rutas, args.segundo, area=area, inicio=args.persona, muestra=args.muestra).ejecutar()
+    crear_anotador(cfg, rutas, args.segundo, area=area, inicio=args.persona, muestra=args.muestra,
+                   ajuste=args.ajuste).ejecutar()
 
 
 if __name__ == "__main__":

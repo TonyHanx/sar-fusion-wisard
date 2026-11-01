@@ -121,6 +121,11 @@ La herramienta es `scripts/anotar_oclusion.py`.
 .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --segundo
 ```
 
+- **Con `--ajuste`:** primer anotador.
+  - Abre solo las personas de la muestra con visible RGB, ordenadas de mayor a menor según cuánto se sale la visible
+    de la completa. La lista es `data/oclusion_ajuste_visibles.csv` y la arma `scripts/corregir_oclusion.py`.
+  - Si la persona está parcialmente tapada, se ajusta la visible RGB a lo que se ve. Si se ve entera, se pasa de largo.
+  - Como todas están terminadas, la barra espaciadora pasa a la siguiente.
 - **Con `--muestra`:** primer anotador, con la precarga, solo las 75 personas de la muestra. "Persona N de 75" cuenta
   dentro de la muestra; `--persona N` también.
 
