@@ -8,6 +8,7 @@ Para regenerar:
 .venv\Scripts\python.exe scripts\fase3_particion.py --config configs\fase3.yaml --rutas configs\rutas.yaml
 .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --preparar
 .venv\Scripts\python.exe scripts\probar_anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml
+.venv\Scripts\python.exe scripts\oclusion_auto.py --config configs\fase3.yaml --rutas configs\rutas.yaml
 ```
 
 ## 3a. Partición y datasets
@@ -130,7 +131,8 @@ FHL 0405, fotogramas con posición múltiplo de 3: 310 fotogramas y **498 person
   `herramienta_primero.jpg` y `herramienta_segundo.jpg`.
 
 **Prueba con 3 personas simuladas** (`scripts/probar_anotar_oclusion.py`). Las anotaciones van a una carpeta temporal,
-así que no se toca `data/oclusion.csv`. Las 47 comprobaciones pasaron (versión con la opción (a)):
+así que no se toca `data/oclusion.csv`. Las 55 comprobaciones pasaron (versión con la opción (a) y el modo
+`--muestra`):
 
 - **Ventana y vista:**
   - El lienzo cabe en el área de trabajo.
@@ -161,6 +163,11 @@ así que no se toca `data/oclusion.csv`. Las 47 comprobaciones pasaron (versión
   - No hay nada precargado ni dibujado, aunque exista el archivo del primero.
   - También puede mover su completa RGB.
   - Guarda en su propio archivo y no cambia el del primero.
+- **Modo `--muestra`** (primer anotador, solo las 75 de la muestra):
+  - Parte de una copia del `data/oclusion.csv` real, con la persona 1 ya anotada.
+  - Trae la precarga del primer anotador y abre en la primera persona de la muestra.
+  - Al guardar, la fila de la persona 1 queda idéntica, texto por texto, y el archivo sigue en el orden de la lista.
+  - Al retomar sigue en la siguiente de la muestra. El modo completo lee el mismo archivo con todas sus personas.
 
 ### Desplazamiento entre la RGB y la térmica: por qué la completa se puede mover
 
@@ -207,3 +214,55 @@ Decidido el 1 de noviembre de 2026; está anotado en CLAUDE.md.
 
 - **Métricas globales:** sobre los 928 fotogramas de prueba, y también sobre los 310 anotados.
 - **Métricas por nivel:** sobre los 310 anotados, que son los únicos con nivel de oclusión.
+
+### λ RGB automático y validación con la muestra
+
+Plan decidido el 1 de noviembre de 2026; está en CLAUDE.md.
+
+1. **λ automático** para las 1 501 personas.
+2. **Anotación manual** de las 75 personas de la muestra, por el primer anotador y con la precarga.
+3. **Comparación de los dos:** kappa de Cohen sobre el nivel. Con kappa de 0.61 o más se usa el automático; si no, se
+   vuelve a la anotación manual.
+
+**Regla del automático** (`scripts/oclusion_auto.py`):
+
+- Para cada persona térmica de los 928 pares de FHL 0405 se busca la caja RGB de WiSARD (sin repetidas) más cercana.
+  La caja se lleva a la térmica con la semejanza congelada.
+- Si su centro está a 3 alturas de la caja térmica o menos:
+  λ = 1 − área(caja RGB) / área(caja térmica), recortado a [0, 1].
+- Si no hay ninguna tan cerca, λ = 1.
+- Es la misma regla que la precarga de la herramienta. Las 498 personas de 1 de cada 3 tienen exactamente la caja
+  precargada (comprobado).
+
+| Grupo | Personas | Baja | Moderada | Severa | Sin caja RGB cerca | λ = 0 |
+|---|---:|---:|---:|---:|---:|---:|
+| Todas (928 pares) | 1 501 | 398 | 124 | 979 | 976 | 142 |
+| 1 de cada 3 (310 pares) | 498 | 126 | 48 | 324 | 323 | 49 |
+| Muestra | 75 | 19 | 9 | 47 | 46 | 6 |
+
+**Lo que se ve en los números:**
+
+- **Las 525 personas con caja RGB cerca:**
+  - λ automático: mediana 0.18, percentil 75 de 0.34, percentil 90 de 0.47 y máximo 0.74.
+  - La caja RGB mide en la mediana el 82 % de la térmica.
+  - La severa sale casi solo de "sin caja RGB cerca"; por caja RGB parcial, muy pocas.
+- **λ = 0 (142 personas):** la caja RGB es igual o más grande que la térmica.
+- **Sin caja RGB cerca (976):** en 139 hay alguna caja RGB en el par, pero a más de 3 alturas.
+- **13 personas comparten la caja RGB** con otra persona del mismo par: la regla no impide que dos personas térmicas
+  tomen la misma caja.
+
+**Comparación** (`--comparar`, cuando estén las 75):
+
+- **Qué calcula:**
+  - El kappa de Cohen sin pesos sobre el nivel, con IC 95 % asintótico (statsmodels).
+  - La matriz de confusión y la diferencia de λ (automático − manual): media, absoluta media y mediana.
+- **Personas que no entran:** "no es persona" y "fuera de cuadro" se cuentan aparte.
+- **Desglose informativo:** también da el kappa de las personas con caja RGB cerca y el de las que no tienen. Las que
+  no tienen caja RGB cerca dan λ = 1 en el automático, y probablemente "no visible" a mano: ese acuerdo es casi
+  seguro y puede subir el kappa de todas.
+- **Salidas:** `reports/oclusion_auto_vs_manual.md` y `.csv`, y una fila en la bitácora.
+- **Prueba:** con anotaciones manuales simuladas en una carpeta temporal se comprobó lo siguiente:
+  - El kappa coincide con un cálculo aparte.
+  - Se detiene si falta alguna persona.
+  - Deja fuera la persona 1 y las marcadas.
+  - La decisión sale bien con un kappa alto y con uno bajo.

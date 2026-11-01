@@ -125,9 +125,27 @@ fotogramas y 498 personas, que cubren los 18 episodios. Los conteos están en `r
 
 El primer comando es para ti; el segundo, para el segundo anotador.
 
+**Mensaje 3c (usado, 1 de noviembre de 2026):**
+
+> Calcula un λ RGB automático para las 1 501 personas de FHL 0405: λ = 1 − área(caja RGB más cercana a 3 alturas o
+> menos) / área(caja térmica), recortado entre 0 y 1; si no hay caja RGB cerca, λ = 1. Asigna el nivel (baja,
+> moderada, severa) y guarda todo en data/oclusion_auto.csv.
+> Yo anoto a mano solo las 75 personas de la muestra con la herramienta, en modo primer anotador y solo esas 75.
+> Conserva la persona 1 que ya anoté. Ábreme la herramienta así.
+> Cuando termine, compara el automático contra el manual en esas 75: kappa de Cohen sobre el nivel, matriz de confusión
+> y diferencia media de λ. Si el kappa es de 0.61 o más, usamos el automático; si no, volvemos a la anotación manual.
+> Actualiza CLAUDE.md con este plan y haz commit y push.
+
+```
+.venv\Scripts\python.exe scripts\oclusion_auto.py --config configs\fase3.yaml --rutas configs\rutas.yaml
+.venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --muestra
+.venv\Scripts\python.exe scripts\oclusion_auto.py --config configs\fase3.yaml --rutas configs\rutas.yaml --comparar
+```
+
 **Revisa:**
-- Anota tú las 498 personas: avanzas con espacio y la herramienta guarda sola.
-- Luego otra persona anota las 75 de la muestra con `--segundo`, sin ver tus cajas.
+- Anota las 75 personas de la muestra con `--muestra`: avanzas con espacio y la herramienta guarda sola.
+- Luego pide la comparación (`--comparar`). Con kappa de 0.61 o más se usa el automático; si no, anotas las 498.
+- El papel del segundo anotador con este plan está pendiente de decidir.
 
 ---
 

@@ -48,6 +48,8 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
     respecto de la térmica, las visibles, las marcas y λ.
   - `data\oclusion_muestra_segundo.csv`: las 75 personas de la muestra.
   - `data\oclusion_segundo.csv`: anotaciones del segundo anotador.
+- λ RGB automático (`scripts/oclusion_auto.py`): `data\oclusion_auto.csv`, con las 1 501 personas de FHL 0405. La
+  comparación con la anotación manual de la muestra va en `reports\oclusion_auto_vs_manual.md` (y `.csv`).
 - Proyecto anterior, solo como consulta: `C:\Users\User\sar-fusion\reports\` (scripts `emparejamiento.py` y
   `analisis_pares.py`, y `resumen_wisard.md`). Se puede reutilizar código de ahí, pero los resultados se regeneran aquí.
 
@@ -148,6 +150,24 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
     cercana a 3 alturas o menos.
   - **Segundo anotador:** anota una muestra al azar del 15 % (75 personas, seed=0), sin precarga y sin ver las cajas
     del primero. La concordancia se mide en la fase 4.
+- **λ RGB automático, validado con la muestra:** decidido el 1 de noviembre de 2026.
+  - **Automático, para las 1 501 personas de FHL 0405** (`data/oclusion_auto.csv`):
+    - λ = 1 − área(caja RGB más cercana a 3 alturas o menos) / área(caja térmica), recortado entre 0 y 1.
+    - La caja RGB es la de WiSARD sin repetidas, llevada a la térmica con la semejanza congelada; es la misma regla
+      que la precarga.
+    - Sin caja RGB cerca, λ = 1. Nivel con los límites de siempre.
+    - Resultado: baja 398, moderada 124 y severa 979. De ellas, 976 no tienen caja RGB cerca; 13 comparten la caja
+      RGB con otra persona del mismo par.
+  - **Manual, solo de las 75 de la muestra** (`data/oclusion_muestra_segundo.csv`):
+    - Las anota el primer anotador con la herramienta en modo `--muestra` (con la precarga) y se guardan en
+      `data/oclusion.csv`.
+    - La persona 1 (`..._0405_0000_0`), anotada antes y fuera de la muestra, se conserva en ese archivo.
+  - **Comparación** (`scripts/oclusion_auto.py --comparar`): kappa de Cohen sobre el nivel, matriz de confusión y
+    diferencia media de λ (automático − manual). Las personas "no es persona" o "fuera de cuadro" van aparte.
+  - **Regla de decisión:**
+    - Si el **kappa es de 0.61 o más**, se usa el λ automático.
+    - Si no, se vuelve a la anotación manual (las 498 personas de 1 de cada 3).
+  - **Pendiente de decidir:** el papel del segundo anotador con este plan.
 - **Niveles** según λ en la imagen RGB: baja (0 a 35 %), moderada (35 a 70 %), severa (más de 70 %).
 - **Configuración base:** 100 épocas, imagen de 640, lote 16 (bajar si no entra en 8 GB; el mismo para los tres),
   optimizador y tasa de aprendizaje por defecto de Ultralytics para YOLO26 (registrar cuáles fueron).
