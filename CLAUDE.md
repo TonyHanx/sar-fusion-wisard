@@ -94,6 +94,8 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
 - **Fusión temprana:** imagen TIFF de 4 canales, `channels: 4` en el yaml del dataset.
   Verificado: con 4 canales, la primera capa recibe los pesos preentrenados en los 3 canales de color y el cuarto
   queda al azar. Se probará también inicializar el cuarto canal con el promedio de los pesos de color.
+- **Modelo solo térmica:** la térmica entra con **3 canales (el gris repetido)**, para aprovechar los pesos
+  preentrenados de la primera capa. Decidido el 1 de noviembre de 2026.
 - **Etiquetas de referencia:** las de la imagen térmica, para los tres modelos.
 - **Alineación:** la RGB se recorta a la zona que ve la térmica y se lleva a 640 × 512. La transformación es una
   **semejanza por vuelo** (escala, giro y traslación; `cv2.estimateAffinePartial2D`) estimada con los centros de las
