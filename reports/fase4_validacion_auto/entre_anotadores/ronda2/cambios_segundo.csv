@@ -1,0 +1,16 @@
+id,n_muestra,posicion,indice_caja,primero_ronda1,primero_ronda2,segundo_ronda1,segundo_ronda2,cambio
+210924_FHL_Enterprise_0405_0144_1,15,144,1,severa,baja,severa,baja,True
+210924_FHL_Enterprise_0405_0258_1,21,258,1,severa,baja,severa,no_es_persona,True
+210924_FHL_Enterprise_0405_0321_0,22,321,0,severa,no_es_persona,severa,no_es_persona,True
+210924_FHL_Enterprise_0405_0378_0,27,378,0,severa,no_es_persona,severa,no_es_persona,True
+210924_FHL_Enterprise_0405_0429_1,30,429,1,no_es_persona,no_es_persona,baja,no_es_persona,True
+210924_FHL_Enterprise_0405_0447_0,33,447,0,no_es_persona,no_es_persona,severa,no_es_persona,True
+210924_FHL_Enterprise_0405_0450_3,35,450,3,severa,severa,severa,no_es_persona,True
+210924_FHL_Enterprise_0405_0468_0,39,468,0,severa,baja,baja,severa,True
+210924_FHL_Enterprise_0405_0504_2,47,504,2,severa,severa,no_es_persona,severa,True
+210924_FHL_Enterprise_0405_0513_1,48,513,1,severa,no_es_persona,no_es_persona,severa,True
+210924_FHL_Enterprise_0405_0561_0,52,561,0,severa,no_es_persona,baja,severa,True
+210924_FHL_Enterprise_0405_0573_0,53,573,0,severa,baja,baja,severa,True
+210924_FHL_Enterprise_0405_0711_1,63,711,1,severa,severa,baja,severa,True
+210924_FHL_Enterprise_0405_0729_0,66,729,0,severa,severa,severa,no_es_persona,True
+210924_FHL_Enterprise_0405_0894_0,72,894,0,baja,severa,severa,baja,True

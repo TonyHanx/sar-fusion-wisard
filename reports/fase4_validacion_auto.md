@@ -2,7 +2,24 @@
 
 Fecha: 1 de noviembre de 2026. Generado con `scripts/fase4_validacion_auto.py` (configuración en `configs/fase3.yaml`,
 sección `validacion_auto`). Tablas e imágenes en `reports/fase4_validacion_auto/`. No se tocó `data/` ni el dataset
-original. Hay dos filas nuevas en la bitácora.
+original. Cada cálculo agrega una fila a la bitácora.
+
+## Decisión sobre el nivel automático
+
+Con la regla fijada el 1 de noviembre de 2026 antes de la ronda 2, decide el kappa binario del automático contra el
+primer anotador en modo simple de la ronda 2 (regla aclarada):
+
+| Comparación | Kappa (IC 95 %) | Acuerdo |
+|---|---|---:|
+| **Automático contra primero en modo simple, ronda 2 (decide)** | **0.427** (0.207 a 0.646) | 71.2 % (59 personas) |
+| Primero contra segundo, los dos en modo simple, ronda 2 (concordancia) | 0.623 (0.400 a 0.846) | 83.6 % (55 personas) |
+| Automático contra primero con cajas (primera anotación) | 0.940 (0.858 a 1) | 97.1 % (68 personas) |
+
+- **0.427 es menor que 0.61: no se usa el nivel automático.** El nivel binario de las 498 personas (1 de cada 3) se
+  anota a mano en modo simple.
+- El 0.940 queda como resultado de la primera anotación, con cajas.
+- 8 de los 17 desacuerdos son de una sola escena en sombra (fotogramas 468 a 588), donde la RGB es casi negra dentro
+  de la caja y el primero respondió "se ve". Detalle en "Ronda 2".
 
 ```
 .venv\Scripts\python.exe scripts\fase4_validacion_auto.py --config configs\fase3.yaml --rutas configs\rutas.yaml
@@ -32,8 +49,8 @@ Por eso el nivel pasa a dos clases (decidido el 1 de noviembre de 2026):
 - El IC es asintótico (statsmodels). En el binario, su límite superior da 1.022: se recorta a 1.
 - **Decisión con esta anotación:** el kappa binario es de 0.61 o más, así que se iba a usar el nivel automático.
 - **Ya no decide** (1 de noviembre de 2026): la decisión pasa al kappa del automático contra el primer anotador en modo
-  simple de la ronda 2, con la regla aclarada. El 0.940 queda como resultado de la primera anotación, con cajas. Ver
-  "Concordancia entre anotadores".
+  simple de la ronda 2, con la regla aclarada. El 0.940 queda como resultado de la primera anotación, con cajas.
+- Con la ronda 2 (0.427), **no se usa el nivel automático**. Ver "Decisión sobre el nivel automático".
 
 **Matriz de confusión, dos niveles** (filas: manual; columnas: automático):
 
@@ -84,7 +101,7 @@ en `desacuerdos_dos_niveles.csv`.
 | Muestra | 75 | 46 | 29 |
 
 El nivel automático está en `data/oclusion_auto.csv` (columna `sin_caja_rgb_cerca`: severa si es verdadera). Ese archivo
-no cambió.
+no cambió. **No se usa** desde la ronda 2 (kappa 0.427 contra el primero en modo simple): queda como referencia.
 
 ## Las 7 "no es persona" (para confirmar)
 
@@ -244,9 +261,9 @@ Tres anotaciones de "se ve en la RGB" sobre las mismas 75 personas:
 |---|---|---|---:|---:|
 | Automático contra primero con cajas (primera anotación; ya no decide) | — | 0.940 (0.858 a 1) | 97.1 % | 2 de 68 |
 | Primero con cajas contra segundo | 1 | 0.507 (0.312 a 0.701) | 74.6 % | 16 de 63 |
-| **Primero contra segundo, los dos en modo simple (decide la concordancia)** | 2 | pendiente | | |
-| **Automático contra primero en modo simple (decide si se usa el automático)** | 2 | pendiente | | |
-| Respuestas del primero que cambian entre las cajas y el modo simple | 2 | pendiente | | |
+| **Primero contra segundo, los dos en modo simple (decide la concordancia)** | 2 | **0.623** (0.400 a 0.846) | 83.6 % | 9 de 55 |
+| **Automático contra primero en modo simple (decide si se usa el automático)** | 2 | **0.427** (0.207 a 0.646) | 71.2 % | 17 de 59 |
+| Respuestas del primero que cambian entre las cajas y el modo simple | 2 | 0.483 (el primero contra sí mismo) | | 26 de 75 cambian |
 
 - **Primer anotador con cajas:** "se ve" si tiene visible RGB; "no se ve" si la visible RGB es "no visible".
 - **Aparte:** las "no es persona" de cualquiera de los dos (y las "fuera de cuadro" de las cajas del primero).
@@ -342,55 +359,156 @@ definición y el realce de contraste (`e`) estaba disponible.
 
 ### Ronda 2 (regla aclarada)
 
-**Pendiente:** ninguno de los dos anotadores la hizo todavía.
-
-**Cómo se hace:**
-
-- Cada anotador responde **las 75 personas completas**, desde cero, en su archivo nuevo de la ronda 2
-  (`oclusion.modo_simple.ronda_actual: 2` en `configs/fase3.yaml`):
-  - primero: `data/oclusion_primero_simple_ronda2.csv`;
-  - segundo: `data/oclusion_segundo_simple_ronda2.csv`.
-- Ninguno ve las respuestas del otro, ni las de la ronda 1, ni la anotación con cajas. El primero no revisa a mano solo
-  la 72 y la 75: responde las 75 con la regla nueva, como el segundo.
-- El realce (`e`) está desactivado: si se pulsa, la herramienta avisa y no cambia la imagen. El zoom y `i` (píxeles sin
-  suavizar) siguen disponibles.
+Hecha el 1 de noviembre de 2026. Cada anotador respondió las 75 personas en modo simple, desde cero, sin ver las
+respuestas del otro ni las de la ronda 1 ni la anotación con cajas. Regla aclarada en pantalla y realce desactivado.
 
 ```
 .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --primero-simple
 .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --segundo-simple
-```
-
-**Cuando estén las dos**, el cálculo de la ronda 2 (se detiene si falta alguna de las 75 en cualquiera de los dos
-archivos):
-
-```
 .venv\Scripts\python.exe scripts\fase4_validacion_auto.py --config configs\fase3.yaml --rutas configs\rutas.yaml --partes entre_anotadores --ronda 2
 ```
 
-Salidas en `entre_anotadores/ronda2/`:
+| Anotador | Archivo | Se ve | No se ve | No es persona | Hora | Mediana por persona |
+|---|---|---:|---:|---:|---|---:|
+| Primero | `data/oclusion_primero_simple_ronda2.csv` | 38 | 21 | 16 | 16:50:12 a 16:52:37 | 1.4 s |
+| Segundo | `data/oclusion_segundo_simple_ronda2.csv` | 39 | 22 | 14 | 16:41:28 a 16:43:31 | 1.3 s |
 
-1. **Primero contra segundo, los dos en modo simple (el que decide):** `kappa.csv` (primera fila), `matriz.csv`,
-   `tabla_completa.csv`, `desacuerdos.csv` e `imagenes/`. Van aparte las "no es persona" de cualquiera de los dos.
-2. **Automático contra el primero en modo simple (decide si se usa el automático):** `automatico.csv`,
-   `automatico_matriz.csv`, `automatico_desacuerdos.csv` e `imagenes_automatico/`.
-   - Se calcula sobre todas las personas que el primero no marca "no es persona", igual que el 0.940 con las cajas.
-   - **Regla de decisión**, fijada el 1 de noviembre de 2026 antes de la ronda 2: si el kappa es de 0.61 o más, se usa
-     el nivel automático; si no, el nivel binario de las 498 personas se anota a mano en modo simple. El script
-     escribe la decisión en `automatico.csv` y en la bitácora.
-3. **Respuestas del primero que cambian entre las cajas y el modo simple:** `cambios_primero.csv` (con lo que dijeron
-   el segundo y el automático), `cambios_primero_tabla.csv` (cajas contra modo simple, con las "no es persona") e
-   `imagenes_cambios_primero/`. Incluye el kappa del primero contra sí mismo, solo informativo.
+- Salidas en `reports/fase4_validacion_auto/entre_anotadores/ronda2/`. Hay una fila nueva en la bitácora.
+- Respuestas en menos de 0.5 s: 9 del primero y 6 del segundo. Todas están entre las personas 4 y 17 (fotogramas 9 a
+  198, personas a la vista), donde los dos y el automático dicen "se ve".
 
-Solo informativo:
+#### 1. Primero contra segundo, los dos en modo simple (decide la concordancia)
 
-- en `kappa.csv`, cada anotador contra el automático y el primero con cajas contra el segundo de la ronda 2;
-- `cambios_segundo.csv`: las respuestas del segundo que cambian de la ronda 1 a la 2, y el kappa del segundo contra sí
-  mismo;
-- `entre_anotadores/rondas.csv`: el kappa entre anotadores de cada ronda, con qué anotación del primero se usó.
+55 personas comparables. Van aparte 20 por ser "no es persona" de alguno de los dos.
 
-Se probó con archivos de ronda 2 simulados, en una carpeta temporal; la bitácora y `data/` no se tocaron. También se
-probó que la ronda 1 sigue saliendo idéntica y que el script se detiene con un mensaje claro si falta el archivo de un
-anotador, si está incompleto o si es del otro anotador.
+| Comparación | Kappa (IC 95 %) | Acuerdo | Desacuerdos |
+|---|---|---:|---:|
+| **Primero contra segundo, modo simple** | **0.623** (0.400 a 0.846) | 83.6 % | 9 de 55 |
+| Primero (modo simple) contra automático (informativo) | 0.451 (0.228 a 0.675) | 72.7 % | 15 de 55 |
+| Segundo (ronda 2) contra automático (informativo) | 0.561 (0.356 a 0.765) | 78.2 % | 12 de 55 |
+| Primero con cajas contra segundo de la ronda 2 (informativo) | 0.607 (0.419 a 0.795) | 80.0 % | 12 de 60 |
+
+- Un kappa de 0.623 queda apenas sobre 0.61 ("acuerdo considerable", 0.61 a 0.80 en la escala de Landis y Koch). El
+  IC es ancho y empieza en 0.40.
+- Sube respecto de la ronda 1 (0.507), pero las dos rondas no son del todo comparables: en la ronda 1 el primero era su
+  anotación con cajas.
+
+**Matriz de confusión** (filas: primero; columnas: segundo):
+
+| Primero \ segundo | se ve | no se ve | Total |
+|---|---:|---:|---:|
+| se ve | 33 | 4 | 37 |
+| no se ve | 5 | 13 | 18 |
+| Total | 38 | 17 | 55 |
+
+**Tabla completa, con las "no es persona":**
+
+| Primero \ segundo | se ve | no se ve | no es persona |
+|---|---:|---:|---:|
+| se ve | 33 | 4 | 1 |
+| no se ve | 5 | 13 | 3 |
+| no es persona | 1 | 5 | 10 |
+
+| Tipo | Personas (n.º y fotograma) |
+|---|---|
+| **El primero la ve y el segundo no (4)** | 28 (420), 32 (444), 39 (468), 53 (573) |
+| **El segundo la ve y el primero no (5)** | 46 (501), 49 (513), 71 (891), 72 (894), 73 (894) |
+| "No es persona" de los dos (10) | 22 (321), 26 (339), 27 (378), 29 (426), 30 (429), 33 (447), 36 (453), 37 (459), 38 (462), 41 (474) |
+| "No es persona" solo del primero (6) | 48 (513), 51 (555), 52 (561), 54 (576), 55 (579), 58 (588) |
+| "No es persona" solo del segundo (4) | 21 (258), 35 (450), 59 (636), 66 (729) |
+
+Imágenes de los desacuerdos y de las "no es persona" de uno solo en `ronda2/imagenes/`.
+
+#### 2. Automático contra el primero en modo simple (decide si se usa el automático)
+
+59 personas: todas menos las 16 que el primero marca "no es persona".
+
+| Comparación | Kappa (IC 95 %) | Acuerdo | Desacuerdos |
+|---|---|---:|---:|
+| **Automático contra primero, modo simple** | **0.427** (0.207 a 0.646) | 71.2 % | 17 de 59 |
+| Automático contra primero con cajas (primera anotación) | 0.940 (0.858 a 1) | 97.1 % | 2 de 68 |
+
+| Primero (modo simple) \ automático | baja (caja RGB de WiSARD cerca) | severa (sin caja RGB cerca) | Total |
+|---|---:|---:|---:|
+| se ve | 25 | 13 | 38 |
+| no se ve | 4 | 17 | 21 |
+| Total | 29 | 30 | 59 |
+
+**Decisión** (regla fijada el 1 de noviembre de 2026, antes de la ronda 2): el kappa es 0.427, menor que 0.61. **No se
+usa el nivel automático: el nivel binario de las 498 personas (1 de cada 3) se anota a mano en modo simple.** El script
+lo escribe en `ronda2/automatico.csv` y en la bitácora.
+
+**Los 17 desacuerdos** (imágenes en `ronda2/imagenes_automatico/`):
+
+| Tipo | Personas (n.º y fotograma) |
+|---|---|
+| El primero la ve y WiSARD no tiene caja RGB cerca (13) | 15 (144), 21 (258), 28 (420), 32 (444), 39 (468), 40 (474), 42 (477), 43 (483), 44 (489), 53 (573), 56 (585), 57 (588), 68 (864) |
+| El primero no la ve y WiSARD tiene caja RGB (4) | 59 (636), 72 (894), 73 (894), 75 (900) |
+
+**Lo que se ve en las imágenes:**
+
+- **8 de los 13 son de la escena en sombra profunda de los fotogramas 468 a 588:** 39, 40, 42, 43, 44, 53, 56 y 57.
+  - El segundo también dice "se ve" en 6 de ellas: 40, 42, 43, 44, 56 y 57.
+  - Con el brillo normal, la RGB dentro de la caja es casi negra, como en la ronda 1 (por ejemplo, la 42 y la 57). La
+    térmica muestra una mancha caliente.
+  - En las imágenes no se distingue una parte del cuerpo. La regla aclarada dice que una mancha oscura o una sombra
+    no cuentan y que, si hay duda, "no se ve".
+  - En esa misma escena, con imágenes parecidas (caja RGB negra y mancha caliente en la térmica), el primero respondió
+    8 "se ve", 5 "no se ve" y 6 "no es persona". No cuento la 41, que es el objeto marrón.
+- **Cuánto pesa esa escena** (solo para ver la sensibilidad; no cambia la decisión): sin las personas de los fotogramas
+  468 a 588, el kappa queda en 0.575 (46 personas). Si esas 8 fueran "no se ve", sería 0.695.
+- **72 y 75:** ahora "no se ve". Con el brillo normal solo se ve un punto blanco en el borde de la caja. WiSARD tiene caja
+  RGB en las dos.
+- **68:** el primero la ve, como con las cajas; WiSARD no tiene su caja RGB.
+
+#### 3. Respuestas del primero que cambian entre las cajas y el modo simple
+
+**26 de 75.** El primero contra sí mismo, en las dos clases (58 personas, informativo): kappa 0.483.
+
+| Cajas \ modo simple | se ve | no se ve | no es persona |
+|---|---:|---:|---:|
+| se ve | 26 | 3 | 0 |
+| no se ve | 12 | 17 | 10 |
+| no es persona | 0 | 1 | 6 |
+
+| Cambio | Personas (n.º y fotograma) |
+|---|---|
+| No se ve → se ve (12) | 15 (144), 21 (258), 28 (420), 32 (444), 39 (468), 40 (474), 42 (477), 43 (483), 44 (489), 53 (573), 56 (585), 57 (588) |
+| No se ve → no es persona (10) | 22 (321), 26 (339), 27 (378), 29 (426), 48 (513), 51 (555), 52 (561), 54 (576), 55 (579), 58 (588) |
+| Se ve → no se ve (3) | 59 (636), 72 (894), 75 (900) |
+| No es persona → no se ve (1) | 46 (501) |
+
+- Las 12 que pasan a "se ve" no tienen caja RGB de WiSARD cerca. 25 de los 26 cambios se alejan del nivel
+  automático; solo la 46 se acerca.
+- **39, 42 y 44** tenían una visible RGB dibujada en la primera anotación. Pasaron a "no visible" en la revisión antes
+  del kappa, por ser pares "solo térmica" (sin caja RGB de WiSARD). Ahora vuelven a "se ve".
+- **Posible explicación del 0.940:** en la anotación con cajas, la visible RGB venía precargada con la caja RGB de
+  WiSARD, y la revisión usó como criterio que el par no tuviera cajas RGB. Las dos cosas acercan al primero al nivel
+  automático. Sin precarga, el acuerdo baja de 0.940 a 0.427. Es una hipótesis: no se puede separar del cambio de regla.
+- Imágenes en `ronda2/imagenes_cambios_primero/`; lista en `ronda2/cambios_primero.csv` (con el segundo y el
+  automático) y tabla en `ronda2/cambios_primero_tabla.csv`.
+
+#### El segundo, de la ronda 1 a la 2 (informativo)
+
+15 de 75 respuestas cambian. El segundo contra sí mismo, en las dos clases (59 personas): kappa 0.767.
+
+| Cambio | Personas |
+|---|---|
+| Se ve → no se ve (4) | 39, 52, 53, 63 |
+| No se ve → se ve (2) | 15, 72 |
+| → no es persona (7) | 21, 22, 27, 33, 35, 66 (antes "no se ve"); 30 (antes "se ve") |
+| No es persona → no se ve (2) | 47, 48 |
+
+Lista en `ronda2/cambios_segundo.csv`. La 47, respondida en 0.0 s en la ronda 1, ahora es "no se ve" (los dos).
+
+#### Las dos rondas
+
+| Ronda | Regla | Primero | Comparables | Kappa (IC 95 %) | Acuerdo | Desacuerdos |
+|---|---|---|---:|---|---:|---:|
+| 1 | ambigua | cajas | 63 | 0.507 (0.312 a 0.701) | 74.6 % | 16 |
+| 2 | aclarada | modo simple | 55 | 0.623 (0.400 a 0.846) | 83.6 % | 9 |
+
+En `entre_anotadores/rondas.csv`.
 
 ## Cambios en el código
 
@@ -420,16 +538,17 @@ anotador, si está incompleto o si es del otro anotador.
 ## Pendiente de decidir
 
 1. **Fotograma 60:** ¿se excluye por desfase? Si se excluye, ¿también 71–72, que se corren lo mismo?
-2. **Las 7 "no es persona":** ¿se confirman con el mosaico? Si se confirman 30 a 41, ¿qué se hace con la caja térmica
-   de WiSARD de ese objeto en las etiquetas de la prueba, probablemente en los fotogramas 429 a 474?
-3. **La 73:** ¿se ve o no en la RGB? No cambia la decisión.
-4. **Dónde se evalúa por nivel:** el nivel automático existe para las 1 501 personas. ¿Las métricas por nivel siguen
-   sobre los 310 fotogramas anotados o pasan a los 928? CLAUDE.md todavía dice los 310.
+2. **Las "no es persona":** en la ronda 2 los dos marcan 10 (22, 26, 27, 29, 30, 33, 36, 37, 38 y 41), y uno solo
+   otras 10. ¿Se confirman? ¿Qué se hace con esas cajas térmicas de WiSARD en las etiquetas de la prueba (fotogramas
+   321 a 474)?
+3. **La 73:** en la ronda 2, el primero no la ve y el segundo sí.
+4. **Dónde se evalúa por nivel:** con el nivel a mano, el nivel solo existe en los 310 fotogramas anotados, así que
+   las métricas por nivel van sobre los 310, como ya dice CLAUDE.md. Las globales siguen sobre los 928 y los 310.
 5. **FASES.md:** el mensaje de la fase 4 sigue hablando de λ y de tres niveles.
-6. **Concordancia entre anotadores:** la ronda 1 (0.507) no se acepta tal cual; la regla está aclarada ("se ve" = con
-   el brillo normal) y los dos anotadores responden la ronda 2 en modo simple. Falta la ronda 2. Después:
-   - ¿qué se hace si el primero contra el segundo queda por debajo de 0.61?
-   - Decidido el 1 de noviembre de 2026: si se usa el automático lo decide el kappa del automático contra el primero
-     en modo simple de la ronda 2 (0.61 o más: el automático; si no, las 498 a mano en modo simple). El 0.940 con
-     cajas queda como resultado de la primera anotación.
-7. **La 47** (0.0 s en la ronda 1): se vuelve a responder en la ronda 2.
+6. **Escena en sombra (fotogramas 468 a 588):** el primero respondió "se ve" en 8 personas donde la RGB es casi negra
+   dentro de la caja; el segundo, en 6 de ellas. ¿Se revisan con la regla aclarada antes de anotar las 498? La decisión
+   sobre el automático depende de esa escena (sin ella, 0.575; con esas 8 como "no se ve", 0.695).
+7. **Anotación a mano de las 498:** la herramienta en modo simple hoy abre solo las 75 de la muestra.
+   - Falta un modo para las 498, o para las 423 restantes si se reutilizan las 75 del primero de la ronda 2.
+   - ¿Quién anota: solo el primero?
+8. **Concordancia (0.623):** pasa 0.61, pero el IC empieza en 0.40. ¿Se acepta así?
