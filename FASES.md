@@ -162,6 +162,10 @@ El primer comando es para ti; el segundo, para el segundo anotador.
 - Nivel a mano de las 498: tus 75 de la ronda 2 más las 423 que faltan, con `--primero-simple-resto` (guarda en
   `data/oclusion_primero_simple_resto.csv` y retoma si cierras). Las 10 "no es persona" de los dos están en
   `configs/cajas_dudosas.yaml`: no se tocan las etiquetas y quedan sin nivel.
+- Después del cierre (1 de noviembre de 2026):
+  - las 66 "no es persona" van todas a `configs/cajas_dudosas.yaml`, que genera `scripts/fase4_cajas_dudosas.py`
+    siguiendo cada caja por los fotogramas no anotados;
+  - la escena en sombra (468 a 588) se reanota entera con `--primero-simple-reanotar escena_sombra`.
 
 ---
 
@@ -221,8 +225,8 @@ El primer comando es para ti; el segundo, para el segundo anotador.
 >    - Métricas globales sobre los 928 fotogramas de prueba y también sobre los 310 anotados.
 >    - Métricas por nivel de oclusión sobre los 310 anotados. Al evaluar un nivel, las personas de los otros niveles van
 >      como `iscrowd=1`.
->    - Todas, con y sin las cajas dudosas de `configs/cajas_dudosas.yaml`. "Sin ellas" = esas cajas van como
->      `iscrowd=1`. Las etiquetas no se tocan.
+>    - Todas, con y sin las cajas dudosas de `configs/cajas_dudosas.yaml` (las anotadas y las seguidas por los
+>      fotogramas no anotados). "Sin ellas" = esas cajas van como `iscrowd=1`. Las etiquetas no se tocan.
 > 2. Para cada nivel, aplica McNemar entre los modelos sobre si cada persona fue detectada, con corrección de Bonferroni.
 > 3. Calcula intervalos de confianza con bootstrap por episodio. Se remuestrean episodios completos (tramos seguidos
 >    con persona), no fotogramas, con seed=0. Hazlo para las métricas de cada modelo y para las diferencias entre

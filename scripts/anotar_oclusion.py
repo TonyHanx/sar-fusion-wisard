@@ -39,6 +39,11 @@ Tres usos:
               la ronda 2): las personas de la lista que no son de la muestra (423), en el orden de la lista, con la
               misma pantalla y la regla de la ronda `modo_simple.resto.ronda`. Las de la muestra son las suyas de esa
               ronda. Guarda en data/<modo_simple.resto.archivo> y retoma desde ahí; no lee otro archivo de respuestas.
+  --primero-simple-reanotar NOMBRE  primer anotador, modo simple, reanotación del tramo NOMBRE de
+              `modo_simple.reanotaciones` (decidida el 2026-11-01 para la escena en sombra): todas las personas de la
+              lista con fotograma entre `desde` y `hasta` (muestra y resto juntas), en orden de fotograma, con la misma
+              pantalla y la regla de la ronda `ronda`. Guarda en data/<archivo> y retoma desde ahí; no lee ningún otro
+              archivo de respuestas. Sus respuestas reemplazan las anteriores en el nivel final (scripts/fase4_nivel.py).
   --persona N abre en la persona N (desde 1); si no, en la primera sin terminar.
 
 Uso:
@@ -50,6 +55,7 @@ Uso:
     .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --segundo-simple
     .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --primero-simple
     .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --primero-simple-resto
+    .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --primero-simple-reanotar escena_sombra
 
 Ventana: arriba, la RGB alineada y la térmica lado a lado, ampliadas alrededor de la persona y con la misma vista (el
 cursor se repite en las dos). La vista se centra en la persona; cerca del borde del fotograma se corre lo justo para
@@ -1146,16 +1152,21 @@ class AnotadorSimple(Anotador):
 
 
 def crear_anotador(cfg, rutas, segundo, salida=None, area=None, inicio=None, muestra=False, ajuste=False,
-                   simple=None, resto=False):
+                   simple=None, resto=False, reanotar=None):
     """Anotador del primer o del segundo anotador. `salida` permite escribir en otro archivo (para pruebas). Con
     `muestra`, el primer anotador (con precarga) anota solo las personas de la muestra; con `ajuste`, solo las de la
     lista de ajuste de la visible RGB, en su orden. Con `simple` ("primero" o "segundo"), ese anotador en modo simple
     (una tecla por persona de la muestra; escribe en su archivo de la ronda `modo_simple.ronda_actual` y no lee ningún
     otro archivo de respuestas). Con `simple="primero"` y `resto`, el primero en modo simple sobre las personas de la
     lista que no son de la muestra, con la regla de la ronda `modo_simple.resto.ronda` (escribe en
-    `modo_simple.resto.archivo`)."""
-    if resto and simple != "primero":
-        raise SystemExit("--primero-simple-resto es solo del primer anotador, en modo simple")
+    `modo_simple.resto.archivo`). Con `simple="primero"` y `reanotar` (nombre de `modo_simple.reanotaciones`), el
+    primero en modo simple sobre todas las personas de la lista con fotograma entre `desde` y `hasta`, en orden de
+    fotograma, con la regla de la ronda `ronda` (escribe en `archivo`)."""
+    if (resto or reanotar) and simple != "primero":
+        raise SystemExit("--primero-simple-resto y --primero-simple-reanotar son solo del primer anotador, en modo "
+                         "simple")
+    if resto and reanotar:
+        raise SystemExit("--primero-simple-resto y --primero-simple-reanotar no van juntos")
     if segundo and (muestra or ajuste):
         raise SystemExit("--muestra y --ajuste son para el primer anotador")
     if muestra and ajuste:
@@ -1167,6 +1178,18 @@ def crear_anotador(cfg, rutas, segundo, salida=None, area=None, inicio=None, mue
     if not ruta_personas.exists():
         raise SystemExit(f"No existe {ruta_personas}: corre antes con --preparar")
     personas = pd.read_csv(ruta_personas, dtype={"id": str})
+    if simple and reanotar:
+        todas = o["modo_simple"].get("reanotaciones", {})
+        if reanotar not in todas:
+            raise SystemExit(f"'{reanotar}' no está en oclusion.modo_simple.reanotaciones ({sorted(todas)})")
+        r = todas[reanotar]
+        orden = personas.sort_values("orden")
+        ids = orden.id[orden.posicion.between(r["desde"], r["hasta"])]
+        if ids.empty:
+            raise SystemExit(f"No hay personas entre los fotogramas {r['desde']} y {r['hasta']}")
+        lista = f"reanotacion {reanotar} {r['desde']}-{r['hasta']}"
+        return AnotadorSimple(o, personas, ids, data / cfg["datasets"]["alineados"], salida or data / r["archivo"],
+                              tuple(cfg["tam_termica"]), area, inicio, r["ronda"], "primero", lista)
     if simple and resto:
         r = o["modo_simple"]["resto"]
         de_muestra = set(pd.read_csv(data / o["muestra_segundo"], dtype={"id": str}).id)
@@ -1220,6 +1243,8 @@ def main():
                     help="primer anotador, modo simple: la misma pantalla y la misma regla que --segundo-simple")
     ap.add_argument("--primero-simple-resto", action="store_true",
                     help="primer anotador, modo simple, las personas de la lista que no son de la muestra")
+    ap.add_argument("--primero-simple-reanotar", metavar="NOMBRE",
+                    help="primer anotador, modo simple, reanotación de un tramo de oclusion.modo_simple.reanotaciones")
     ap.add_argument("--persona", type=int, help="abre en la persona N (desde 1)")
     args = ap.parse_args()
     cfg = leer_yaml(args.config)
@@ -1227,14 +1252,16 @@ def main():
     if args.preparar:
         preparar(cfg, rutas, args.forzar)
         return
-    if args.primero_simple + args.segundo_simple + args.primero_simple_resto > 1:
-        raise SystemExit("--primero-simple, --segundo-simple y --primero-simple-resto no van juntos")
-    simple = ("primero" if args.primero_simple or args.primero_simple_resto
+    if args.primero_simple + args.segundo_simple + args.primero_simple_resto + bool(args.primero_simple_reanotar) > 1:
+        raise SystemExit("--primero-simple, --segundo-simple, --primero-simple-resto y --primero-simple-reanotar no van "
+                         "juntos")
+    simple = ("primero" if args.primero_simple or args.primero_simple_resto or args.primero_simple_reanotar
               else "segundo" if args.segundo_simple else None)
     from marcar_puntos import preparar_pantalla
     area = preparar_pantalla()  # antes de crear cualquier ventana
     crear_anotador(cfg, rutas, args.segundo, area=area, inicio=args.persona, muestra=args.muestra,
-                   ajuste=args.ajuste, simple=simple, resto=args.primero_simple_resto).ejecutar()
+                   ajuste=args.ajuste, simple=simple, resto=args.primero_simple_resto,
+                   reanotar=args.primero_simple_reanotar).ejecutar()
 
 
 if __name__ == "__main__":
