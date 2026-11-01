@@ -1,0 +1,54 @@
+# Fase 3: partición, datasets de Ultralytics y anotación de oclusión.
+seed: 0
+pares: pares.csv                                   # dentro de data/; se usan los anotados y no excluidos
+particion: configs/particion.yaml
+transformaciones: configs/homografias_cajas.yaml   # semejanza congelada de la fase 2
+tam_termica: [640, 512]
+
+# Fase 3a (scripts/fase3_particion.py): etiquetas térmicas sin cajas repetidas y un dataset por modelo.
+datasets:
+  alineados: alineados               # dentro de data/: imágenes e indice.csv de scripts/alinear.py
+  etiquetas: etiquetas               # dentro de data/: rgb/ y termica/ con las etiquetas sin cajas repetidas
+  carpeta: datasets                  # dentro de data/: <modelo>/images/<división>/ y <modelo>/labels/<división>/
+  enlace: duro                       # duro (enlace duro a data/alineados, sin ocupar más disco) o copia
+  nombres: {0: persona}
+  divisiones: {entrenamiento: train, validacion: val, prueba: test}
+  modelos:
+    fusion: {imagenes: fusion, channels: 4, yaml: configs/fusion.yaml}     # TIFF B, G, R, T -> el modelo recibe R, G, B, T
+    rgb: {imagenes: rgb, channels: 3, yaml: configs/rgb.yaml}
+    # PNG gris de 1 canal: con channels 3, Ultralytics lo lee con IMREAD_COLOR y lo repite en los 3 canales
+    termico: {imagenes: termica, channels: 3, yaml: configs/termico.yaml}
+  resumen: fase3_particion.csv            # dentro de reports/: pares, personas y episodios por división y vuelo
+  repetidas: fase3_cajas_repetidas.csv    # dentro de reports/: cajas repetidas por vuelo y modalidad
+  verificacion: fase3_verificacion_datasets.csv   # dentro de reports/: lo que lee Ultralytics de cada dataset
+  muestras_verificacion: 3                # imágenes al azar (seed) por modelo para comparar el tensor con los PNG
+
+# Fase 3b (scripts/anotar_oclusion.py): anotación de oclusión de la prueba.
+oclusion:
+  vuelo: 210924_FHL_Enterprise_0405
+  paso: 3                                  # fotogramas con posición múltiplo de 3
+  radio_precarga_alturas: 3                # la visible RGB se precarga con la caja RGB más cercana a 3 alturas o menos
+  personas: oclusion_personas.csv          # dentro de data/: lista fija de personas a anotar (con su precarga)
+  anotaciones: oclusion.csv                # dentro de data/: anotaciones del primer anotador
+  fraccion_segundo: 0.15                   # muestra al azar (seed) para el segundo anotador
+  muestra_segundo: oclusion_muestra_segundo.csv   # dentro de data/
+  anotaciones_segundo: oclusion_segundo.csv       # dentro de data/
+  # Ventana, en px físicos de pantalla: la herramienta es consciente del DPI (la escala de Windows al 125 % no la
+  # agranda) y se recorta al área de trabajo (sin la barra de tareas). En 1920 x 1140 queda de 1800 x 1085.
+  ancho_max: 1800                          # el mismo ancho que entró en pantalla con scripts/marcar_puntos.py
+  alto_max: 1100
+  margen_pantalla_px: 10
+  reserva_titulo_px: 45                    # barra de título de la ventana
+  separacion_px: 10
+  barra_px: 74                             # barra de ayuda (3 líneas)
+  alto_vista_general_px: 170               # imágenes completas con la zona ampliada marcada, e información
+  # Vista ampliada (px de la térmica): alto = max(mínimo, factor x alto de la caja térmica, factor x ancho ajustado al
+  # panel). Si hay caja RGB precargada, se agranda para que quepan las dos: factor_union x su extensión desde el centro.
+  recorte_alto_min_px: 96
+  recorte_factor_alto: 5
+  recorte_factor_union: 1.4
+  zoom_paso: 1.25
+  zoom_max: 40                             # px de pantalla por px de la térmica
+  caja_min_px: 4                           # arrastres más cortos (px de pantalla) no crean caja
+  aviso_visible_fuera: 0.10                # avisa si más de esta fracción de una visible queda fuera de la completa
+  clahe: {limite: 2.0, rejilla: 8}         # realce de contraste opcional (tecla e)

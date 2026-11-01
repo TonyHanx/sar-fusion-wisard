@@ -37,6 +37,16 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
 - Imágenes alineadas de los 4 617 pares (fase 2, `scripts/alinear.py`): `data\alineados\` con `rgb\`, `termica\`
   (gris, 1 canal), `fusion\` (TIFF con muestras B, G, R, T, que Ultralytics entrega al modelo como R, G, B, T) e
   `indice.csv`.
+- Fase 3a (`scripts/fase3_particion.py`):
+  - Etiquetas de los pares finales sin cajas repetidas: `data\etiquetas\` (`rgb\` y `termica\`).
+  - Datasets de Ultralytics: `data\datasets\{fusion,rgb,termico}\`, con enlaces duros a `data\alineados\` y las
+    etiquetas térmicas.
+  - Yaml de los datasets: `configs\fusion.yaml`, `configs\rgb.yaml` y `configs\termico.yaml`.
+- Anotación de oclusión (fase 3b, `scripts/anotar_oclusion.py`):
+  - `data\oclusion_personas.csv`: lista fija de 498 personas, con la precarga.
+  - `data\oclusion.csv`: anotaciones del primer anotador.
+  - `data\oclusion_muestra_segundo.csv`: las 75 personas de la muestra.
+  - `data\oclusion_segundo.csv`: anotaciones del segundo anotador.
 - Proyecto anterior, solo como consulta: `C:\Users\User\sar-fusion\reports\` (scripts `emparejamiento.py` y
   `analisis_pares.py`, y `resumen_wisard.md`). Se puede reutilizar código de ahí, pero los resultados se regeneran aquí.
 
@@ -86,6 +96,12 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
   área), salvo en **Carnation 0023/0024**, donde la RGB tiene zoom y la relación se invierte.
 - 476 pares tienen persona en la térmica y ninguna en la RGB, casi todos de FHL (394 en FHL 0405/0406). Son los
   candidatos a oclusión severa.
+- **Cajas repetidas:** son líneas idénticas dentro de un mismo `.txt`. Hay 46:
+  - Baker: 27 RGB, en pares finales.
+  - FHL 0401: 4 RGB en pares finales, y 1 RGB y 14 térmicas en pares excluidos.
+  - Ninguna térmica en pares finales: las etiquetas de los modelos no cambian.
+  - La fase 3a las quita al escribir `data\etiquetas\`. El dataset original no se toca. Detalle en
+    `reports/fase3_cajas_repetidas.csv`.
 
 ## Decisiones fijas (no cambiar sin consultarme)
 
@@ -96,7 +112,7 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
   queda al azar. Se probará también inicializar el cuarto canal con el promedio de los pesos de color.
 - **Modelo solo térmica:** la térmica entra con **3 canales (el gris repetido)**, para aprovechar los pesos
   preentrenados de la primera capa. Decidido el 1 de noviembre de 2026.
-- **Etiquetas de referencia:** las de la imagen térmica, para los tres modelos.
+- **Etiquetas de referencia:** las de la imagen térmica, sin cajas repetidas, para los tres modelos.
 - **Alineación:** la RGB se recorta a la zona que ve la térmica y se lleva a 640 × 512. La transformación es una
   **semejanza por vuelo** (escala, giro y traslación; `cv2.estimateAffinePartial2D`) estimada con los centros de las
   cajas de personas de los pares con persona en las dos imágenes, con RANSAC y seed=0. Los pares se reparten en
@@ -105,16 +121,39 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
   2026): no se vuelve a estimar (`transformacion_congelada` en `configs/fase2.yaml`). Se valida con puntos de control marcados a mano y con
   superposiciones. La homografía completa se descartó porque se deforma donde las personas ocupan poco espacio
   (FHL 0134, MtErie 0007). Decidido el 31 de octubre de 2026.
-- **Partición por vuelo** (cada vuelo en una sola partición). Se define en la fase 3. MtErie 0007 (bajo el dosel, con
-  la cámara de frente) va en validación.
-- **Oclusión:** solo en las personas de la partición de prueba. Dos cajas por persona en cada imagen del par: cuerpo
-  completo (estimado) y parte visible. λ = 1 − área visible / área completa.
+- **Partición por vuelo:** cada vuelo va entero en una sola partición. Decidida el 1 de noviembre de 2026; está en
+  `configs/particion.yaml`.
+
+  | Partición | Vuelos | Pares | Personas |
+  |---|---|---:|---:|
+  | Entrenamiento | Baker, MtErie 0003, MtErie 0005 y FHL 0401 | 3 247 | 9 340 |
+  | Validación | FHL 0134 y MtErie 0007 (bajo el dosel, con la cámara de frente) | 442 | 500 |
+  | Prueba | FHL 0405 | 928 | 1 501 |
+
+- **Oclusión:** decidido el 1 de noviembre de 2026. Las reglas están en `docs/reglas_anotacion.md`.
+  - **Qué se anota:** la prueba (FHL 0405), solo los fotogramas con posición múltiplo de 3 (1 de cada 3). Son 310
+    fotogramas y 498 personas, y cubren los 18 episodios.
+  - **Cajas por persona:**
+    - **Una sola caja completa**: el cuerpo entero estimado, la misma para las dos imágenes alineadas.
+    - Una caja visible en cada imagen, o "no visible" (λ = 1).
+  - **λ = 1 − área (visible ∩ completa) / área completa**, en cada imagen.
+  - **"Fuera de cuadro"** no cuenta como oclusión. **"No es persona"** (caja térmica de WiSARD mal puesta) se reporta
+    aparte.
+  - **Precarga del primer anotador:** la visible térmica es la caja de WiSARD, y la visible RGB es la caja RGB más
+    cercana a 3 alturas o menos.
+  - **Segundo anotador:** anota una muestra al azar del 15 % (75 personas, seed=0), sin precarga y sin ver las cajas
+    del primero. La concordancia se mide en la fase 4.
 - **Niveles** según λ en la imagen RGB: baja (0 a 35 %), moderada (35 a 70 %), severa (más de 70 %).
 - **Configuración base:** 100 épocas, imagen de 640, lote 16 (bajar si no entra en 8 GB; el mismo para los tres),
   optimizador y tasa de aprendizaje por defecto de Ultralytics para YOLO26 (registrar cuáles fueron).
 - **Métricas:** recall, precisión (umbral de confianza 0.5), F2 y mAP@0.5, por nivel de oclusión, con script propio
   sobre pycocotools. Al evaluar un nivel, las personas de los otros niveles se marcan como ignoradas.
 - **Prueba estadística:** McNemar (statsmodels) entre modelos dentro de cada nivel, corrección de Bonferroni, α = 0.05.
+- **Bootstrap por episodio (fase 6):** los intervalos de confianza se calculan remuestreando episodios completos, no
+  fotogramas, porque los fotogramas seguidos de un episodio no son independientes. Usa seed=0.
+  - Los episodios son tramos seguidos con persona.
+  - En la fase 6 se fijan el número de remuestreos y qué episodios se usan: los 18 de FHL 0405, o los 13 que quedan
+    si los pares excluidos no cortan.
 
 ## Estructura del repositorio
 

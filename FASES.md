@@ -72,35 +72,62 @@ Las fases siguen el flujo de trabajo de la Figura 1 (pasos 1 a 7).
 
 ## Fase 3. Partición y anotación de oclusión (paso 3 del flujo)
 
-**Antes (tú):** decide con tu asesora qué vuelos van a cada partición. Propuesta: entrenamiento Baker 1, Carnation 0023,
-MtErie 0003, FHL 0134 y FHL 0401; validación MtErie 0005 y 0007; prueba FHL 0405.
+**Decidido con la asesora (1 de noviembre de 2026):**
 
-**Mensaje 3a:**
+| Partición | Vuelos | Pares | Personas |
+|---|---|---:|---:|
+| Entrenamiento | Baker, MtErie 0003, MtErie 0005 y FHL 0401 | 3 247 | 9 340 |
+| Validación | FHL 0134 y MtErie 0007 | 442 | 500 |
+| Prueba | FHL 0405 | 928 | 1 501 |
 
-> Fase 3a. La partición es: [pega aquí la partición acordada].
+Carnation 0023/0024 salió entero en la fase 2. La oclusión se anota en 1 de cada 3 fotogramas de la prueba: 310
+fotogramas y 498 personas, que cubren los 18 episodios. Los conteos están en `reports/conteo_particion.md`.
+
+**Mensaje 3a (usado):**
+
+> 3a. Partición: entrenamiento Baker, MtErie 0003, MtErie 0005 y FHL 0401; validación FHL 0134 y MtErie 0007; prueba
+> FHL 0405. Guárdala en configs/particion.yaml. Elimina las 46 cajas duplicadas y anota cuántas eran por vuelo. Crea
+> fusion.yaml (4 canales), rgb.yaml y termico.yaml (gris repetido en 3 canales), todos con las etiquetas térmicas. No
+> entrenes nada.
+
+**Mensaje 3b (usado):**
+
+> 3b. Anotación de oclusión en FHL 0405, fotogramas con posición múltiplo de 3 (498 personas):
 >
-> 1. Guarda la partición en `configs/particion.yaml` y genera las listas de entrenamiento, validación y prueba.
-> 2. Crea los yaml de Ultralytics para los tres modelos (`fusion.yaml` con `channels: 4`, `rgb.yaml`, `termico.yaml`),
->    todos con las etiquetas térmicas.
-> 3. Cuenta cuántas personas hay en la partición de prueba: eso es lo que voy a anotar.
-
-**Mensaje 3b:**
-
-> Fase 3b. Prepara la anotación de oclusión de la partición de prueba.
->
-> 1. Escribe `docs/reglas_anotacion.md` con estas reglas:
->    - Caja visible: el rectángulo más ajustado a la parte del cuerpo que se ve.
->    - Caja completa: el cuerpo entero estimado según la postura (de pie, sentado o acostado), incluida la parte tapada.
->    - Si la persona no se ve en esa imagen, no hay caja visible y λ = 1.
->    - Si la persona está cortada por el borde de la imagen, se marca "fuera de cuadro" y no cuenta como oclusión.
+> 1. Escribe `docs/reglas_anotacion.md`:
+>    - Caja completa (una por persona, la misma para las dos imágenes): el cuerpo entero estimado según la postura (de
+>      pie, sentado o acostado), incluida la parte tapada.
+>    - Caja visible RGB y caja visible térmica: el rectángulo más ajustado a lo que se ve del cuerpo en cada imagen. Si
+>      no se ve nada, no hay caja y λ = 1.
+>    - λ = 1 − área (visible ∩ completa) / área completa, en cada imagen.
+>    - "Fuera de cuadro" si el cuerpo está cortado por el borde; no cuenta como oclusión.
+>    - "No es persona" si la caja térmica de WiSARD está mal; se reporta aparte.
 >    - Las sombras no son parte de la persona.
-> 2. Haz una herramienta, `scripts/anotar_oclusion.py`, que me muestre cada persona de la prueba con su RGB alineada y su
->    térmica lado a lado, ampliadas alrededor de la caja térmica, y me deje dibujar la caja completa y la visible en cada
->    imagen, marcar "fuera de cuadro" y avanzar. Que guarde el avance en `data/oclusion.csv` y permita retomar.
-> 3. Prepara además una muestra al azar del 15 % de esas personas para un segundo anotador, en un archivo aparte.
+> 2. Haz `scripts/anotar_oclusion.py`:
+>    - Muestra cada persona con la RGB alineada y la térmica lado a lado, ampliadas alrededor de la caja térmica.
+>    - Precarga la caja visible térmica con la etiqueta de WiSARD, y la visible RGB con la caja RGB más cercana a 3
+>      alturas o menos, si hay.
+>    - Yo dibujo la caja completa y corrijo las visibles.
+>    - Teclas para deshacer, "no visible", "fuera de cuadro", "no es persona", avanzar y retroceder.
+>    - Guarda en `data/oclusion.csv` después de cada persona y permite retomar.
+>    - La ventana tiene que entrar en mi pantalla (escala de Windows al 125 %).
+> 3. Prepara una muestra al azar del 15 % de esas personas (seed=0) para un segundo anotador, en un archivo aparte, con
+>    la herramienta en modo "sin precargar ni mostrar mis cajas".
+> 4. Actualiza CLAUDE.md y FASES.md con estas decisiones.
+> 5. Prueba la herramienta con 3 personas simuladas, haz commit y push, y ábreme la herramienta.
+
+**Cómo se usa:**
+
+```
+.venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml
+.venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --segundo
+```
+
+El primer comando es para ti; el segundo, para el segundo anotador.
 
 **Revisa:**
-- Anota tú todas las personas de la prueba. Luego otra persona anota la muestra sin ver tus cajas.
+- Anota tú las 498 personas: avanzas con espacio y la herramienta guarda sola.
+- Luego otra persona anota las 75 de la muestra con `--segundo`, sin ver tus cajas.
 
 ---
 
@@ -110,9 +137,11 @@ MtErie 0003, FHL 0134 y FHL 0401; validación MtErie 0005 y 0007; prueba FHL 040
 
 > Fase 4.
 >
-> 1. Calcula λ en RGB y en térmica para cada persona anotada y asigna el nivel con λ RGB (baja, moderada o severa).
->    Marca también oclusión blanda (visible en al menos una imagen) o dura (tapada en ambas).
-> 2. Calcula el kappa de Cohen entre los dos anotadores sobre el nivel asignado.
+> 1. Calcula λ en RGB y en térmica para cada persona anotada (`data/oclusion.csv`; una caja completa compartida y una
+>    visible por imagen) y asigna el nivel con λ RGB (baja, moderada o severa). Marca también oclusión blanda (visible
+>    en al menos una imagen) o dura (tapada en ambas). Cuenta aparte las "fuera de cuadro" y las "no es persona".
+> 2. Calcula el kappa de Cohen entre los dos anotadores sobre el nivel asignado, con las 75 personas de la muestra
+>    (`data/oclusion_segundo.csv`).
 > 3. Genera `reports/tabla_niveles.csv` con personas por nivel y `reports/fase4.md` con el resumen y el kappa.
 
 **Revisa:**
@@ -156,7 +185,10 @@ MtErie 0003, FHL 0134 y FHL 0401; validación MtErie 0005 y 0007; prueba FHL 040
 >    (umbral de confianza 0.5), F2 y mAP@0.5 con pycocotools, global y por nivel de oclusión. Al evaluar un nivel, las
 >    personas de los otros niveles van como `iscrowd=1`.
 > 2. Para cada nivel, aplica McNemar entre los modelos sobre si cada persona fue detectada, con corrección de Bonferroni.
-> 3. Genera `reports/resultados.csv`, `reports/mcnemar.csv` y un gráfico de recall por nivel con una línea por modelo.
+> 3. Calcula intervalos de confianza con bootstrap por episodio. Se remuestrean episodios completos (tramos seguidos
+>    con persona), no fotogramas, con seed=0. Hazlo para las métricas de cada modelo y para las diferencias entre
+>    modelos, por nivel.
+> 4. Genera `reports/resultados.csv`, `reports/mcnemar.csv` y un gráfico de recall por nivel con una línea por modelo.
 
 **Revisa:**
 - El recall baja al subir la oclusión (es lo esperado).
