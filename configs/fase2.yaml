@@ -165,10 +165,12 @@ homografias_cajas:
   ejemplos_desfase_nuevos: 4        # tramos de la regla nueva que la anterior no tenía, repartidos según su mediana
   alto_panel_ejemplos: 240
   # Validación con puntos marcados a mano: vuelo -> fotogramas que se usan. En MtErie 0003 se descartan inicio y final
-  # (marcados con la térmica cortada; decidido el 2026-10-31).
+  # (marcados con la térmica cortada; decidido el 2026-10-31). En FHL 0405 solo cuenta el final (930, solo puntos
+  # seguros): el 440 son solo copas y su único punto es un clic accidental (x = 142 de la RGB, fuera de lo que ve la
+  # térmica); el inicio (30) no se usa (puntos 2 y 4 a 104 y 55 px, con las personas a 4.7 px). Decidido el 2026-11-01.
   validacion_manual:
     210417_MtErie_Enterprise_0003: [mitad]
-    210924_FHL_Enterprise_0405: [inicio, mitad, final]
+    210924_FHL_Enterprise_0405: [final]
   peores_por_vuelo: 3               # superposiciones de los pares de evaluación con mayor distancia
   superposiciones_por_vuelo: 10     # pares repartidos a lo largo del vuelo, para revisar la alineación a ojo
   alto_panel: 384
