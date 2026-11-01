@@ -1,6 +1,6 @@
 # Fase 2. Alineación de la RGB con la térmica (en curso)
 
-Fecha: 2026-10-31 · Estado: **desfases cerrados**. El modelo es la **semejanza por vuelo**, estimada una vez con un
+Fecha: 2026-10-31, actualizado el 2026-11-01 · Estado: **desfases cerrados y validación manual hecha**. El modelo es la **semejanza por vuelo**, estimada una vez con un
 reparto por bloques fijos de 20 posiciones y **congelada**. Salen por desfase 158 pares:
 
 - 135 de la regla relativa revisada a ojo (41 de 45 tramos);
@@ -8,8 +8,8 @@ reparto por bloques fijos de 20 posiciones y **congelada**. Salen por desfase 15
 - 18 de la extensión por el fondo;
 - 3 al cerrar: MtErie 0005 207 (a mano) y FHL 0405 160–161 (revisado a ojo).
 
-Quedan **4 617 pares** (471 "solo térmica"); en FHL 0405, **928**. Lo que queda de la fase: tu validación en FHL 0405
-y los TIFF.
+Quedan **4 617 pares** (471 "solo térmica"); en FHL 0405, **928**. La validación con puntos manuales en FHL 0405 está
+hecha (2026-11-01): 13.2 px de media en los 3 puntos seguros del fotograma 930. Lo que queda de la fase son los TIFF.
 
 ## Decisiones tomadas el 2026-10-31
 
@@ -41,7 +41,8 @@ y los TIFF.
 - **MtErie 0007 se conserva e irá en la partición de validación.** Es un vuelo **bajo el dosel con la cámara de
   frente**, no hacia abajo como los demás.
 - **Validación manual:** en MtErie 0003 se descartan los puntos de inicio y final, porque se marcaron con la térmica
-  cortada. Se conservan los de mitad. La validación se completa con FHL 0405 (fotogramas 30, 440 y 930).
+  cortada. Se conservan los de mitad. En FHL 0405 solo cuenta el final (930, 3 puntos seguros), decidido el
+  2026-11-01: el 440 son solo copas y el 30 tiene dos puntos mal marcados.
 - **TIFF de 4 canales con compresión deflate** (zlib con predictor), con los canales en el orden B, G, R, térmica.
   Ultralytics lee el TIFF con OpenCV, que devuelve los canales en el orden del archivo. Con 4 canales no invierte BGR
   a RGB, así que el modelo recibe R, G, B, térmica, igual que con 3 canales.
@@ -151,6 +152,8 @@ Avisos del script (criterios propuestos por mí, no son reglas):
   menos que con la homografía, porque tiene la mitad de grados de libertad y el campo de visión sale sano.
 - En MtErie 0005 y MtErie 0007 la mediana pasa de 7 px. En MtErie 0005, un vuelo con giros, el primer y el último
   tercio tienen medias de 14.5 y 14.8 px. En MtErie 0007, el primer tercio tiene 16.3 px.
+- En MtErie 0003 y FHL 0405 el error con los puntos manuales pasa del umbral de 3 px: 10.6 y 13.2 px (ver
+  "Validación con los puntos manuales").
 
 ### Por qué semejanza y no homografía
 
@@ -199,9 +202,31 @@ quitado caía a 72–286 px en inicio y a 28–59 px en final. Siguen en
 `configs/puntos_control/210417_MtErie_Enterprise_0003.yaml`, pero no se usan (`validacion_manual` en
 `configs/fase2.yaml`).
 
-**FHL 0405 (fotogramas 30, 440 y 930):** pendiente; los marcas tú. El fotograma 30 queda justo después del tramo
-27–29, donde las personas están a 23–25 px. En el 30 están a 4.7 px. El 440 no tiene personas y el 930 tiene una a
-6.6 px.
+**FHL 0405, solo el final (posición 930, 3 puntos seguros)**, marcados el 2026-11-01 y medidos con la semejanza
+congelada, sin volver a estimarla (`validacion_manual.csv`):
+
+| Punto | Dónde | RGB (px) | Térmica marcada (px) | Llevado − marcado (px) | Franja | Homografía | Afín | **Semejanza** |
+|---:|---|---|---|---|---:|---:|---:|---:|
+| 1 | Sendero, centro de la imagen | (954, 438) | (306, 191) | (+3, +4) | 2.0 | 2.5 | 1.6 | **5.3** |
+| 2 | Final del sendero, borde de la copa | (1189, 314) | (417, 124) | (+10, +8) | 10.0 | 15.9 | 9.4 | **12.6** |
+| 3 | Punta del tronco caído, abajo a la derecha | (1516, 841) | (577, 406) | (+19, −10) | 15.5 | 28.2 | 24.9 | **21.7** |
+| | **Media** | | | | 9.2 | 15.5 | 11.9 | **13.2** |
+
+El error crece hacia el borde de la imagen: 5 px en el centro y 22 en la punta del tronco, como el punto 8 de MtErie
+0003. Con 3 puntos, la validación tampoco distingue entre modelos (de 9.2 a 15.5 px). Si se quita un punto y se
+ajusta una semejanza con los otros dos, el punto quitado cae a 16, 14 y 38 px; con dos puntos la semejanza queda
+justo determinada, así que esa cifra es frágil. En el mismo fotograma, la persona está a 6.6 px de su caja RGB llevada,
+y la mediana de evaluación del vuelo es 4.6 px. El script marca el aviso "error con puntos manuales 13.2 px", porque
+su umbral es de 3 px. Imagen: `puntos_manuales_210924_FHL_Enterprise_0405.jpg`.
+
+**Puntos de FHL 0405 que no se usan (decidido el 2026-11-01):** siguen en
+`configs/puntos_control/210924_FHL_Enterprise_0405.yaml`, pero `validacion_manual` solo usa el final.
+
+- **Mitad (440):** son solo copas y no se marcó. Su único punto es un clic accidental: está en x = 142 de la RGB,
+  fuera de lo que ve la térmica (171 px de error).
+- **Inicio (30):** 6 puntos, con errores de 10.5, 104.1, 12.3, 54.8, 13.6 y 19.1 px (media 35.7). En ese fotograma
+  las personas coinciden a 4.7 px, así que los puntos 2 y 4 están mal marcados. Quitando uno y ajustando con los
+  demás, el punto quitado cae a 14–58 px.
 
 ### MtErie 0007
 
@@ -525,8 +550,8 @@ C: 110 GB (medido el 2026-10-31).
 
 ## Pendiente
 
-1. **Tu validación en FHL 0405**: marcas los puntos en los fotogramas 30, 440 y 930 y se vuelve a correr
-   `fase2_homografias_cajas.py`. Con la transformación congelada, el script solo mide el error y no la reestima. Si
-   el error saliera grande, la decisión de volver a estimarla es tuya.
-2. **Generar los PNG y los TIFF** de los 4 617 pares, por partes, con 10 superposiciones por vuelo.
-3. Para la Fase 3: la propuesta de partición de `FASES.md` incluye Carnation 0023, que ya está excluido.
+1. **Generar los PNG y los TIFF** de los 4 617 pares, por partes, con 10 superposiciones por vuelo.
+2. Para la Fase 3: la propuesta de partición de `FASES.md` incluye Carnation 0023, que ya está excluido.
+
+La validación en FHL 0405 ya está hecha (13.2 px; ver "Validación con los puntos manuales"). La transformación sigue
+congelada. Volver a estimarla es decisión tuya.
