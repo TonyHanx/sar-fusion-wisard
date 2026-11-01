@@ -200,7 +200,90 @@ Imagen en `reports/fase4_validacion_auto/fondo_0058-0064.jpg` (mezclas RGB aline
   modos anteriores salieron idénticas.
 - **Captura:** `reports/oclusion/herramienta_segundo_simple.jpg`.
 - Sus respuestas se comparan con las del primer anotador en dos niveles: "se ve" = baja, "no se ve" = severa, y
-  "no es persona" aparte.
+  "no es persona" aparte. El resultado está en la sección siguiente.
+
+## Concordancia entre anotadores (dos clases)
+
+Pedida el 1 de noviembre de 2026, cuando el segundo anotador terminó las 75 en modo simple.
+
+```
+.venv\Scripts\python.exe scripts\fase4_validacion_auto.py --config configs\fase3.yaml --rutas configs\rutas.yaml --partes entre_anotadores
+```
+
+- **Segundo anotador** (`data/oclusion_segundo_simple.csv`): 42 "se ve", 24 "no se ve" y 9 "no es persona".
+- **Primer anotador:** "se ve" si tiene visible RGB; "no se ve" si la visible RGB es "no visible".
+- **Aparte:** las "no es persona" de cualquiera de los dos. Son 12 personas, y no hay ninguna "fuera de cuadro".
+- **Salidas:** tablas en `reports/fase4_validacion_auto/entre_anotadores/` (`respuestas.csv`, `kappa.csv`,
+  `matriz.csv`, `tabla_completa.csv` y `desacuerdos.csv`). Hay una fila en la bitácora.
+
+| Comparación (63 personas) | Kappa (IC 95 %) | Acuerdo | Desacuerdos |
+|---|---|---:|---:|
+| **Primer anotador contra segundo** | **0.507** (0.312 a 0.701) | 74.6 % | 16 |
+| Primero contra automático (informativo) | 0.936 (0.848 a 1) | 96.8 % | 2 |
+| Segundo contra automático (informativo) | 0.507 (0.312 a 0.701) | 74.6 % | 16 |
+
+- Un kappa de 0.507 es un **acuerdo moderado** (0.41 a 0.60 en la escala de Landis y Koch). Queda por debajo de 0.61,
+  el umbral que se usó para aceptar el automático.
+- CLAUDE.md no fija qué hacer con este kappa.
+- Las dos filas informativas usan las mismas 63 personas: el automático coincide con el primer anotador, no con el
+  segundo.
+- Que las filas 1 y 3 den lo mismo es casualidad.
+  - El primero y el automático solo difieren en la 68 y la 73.
+  - El segundo coincide con el primero en la 68 y con el automático en la 73.
+
+**Matriz de confusión** (filas: primer anotador; columnas: segundo):
+
+| Primero \ segundo | se ve | no se ve | Total |
+|---|---:|---:|---:|
+| se ve | 26 | 2 | 28 |
+| no se ve | 14 | 21 | 35 |
+| Total | 40 | 23 | 63 |
+
+**Tabla completa, con las "no es persona":**
+
+| Primero \ segundo | se ve | no se ve | no es persona |
+|---|---:|---:|---:|
+| se ve | 26 | 2 | 1 |
+| no se ve | 14 | 21 | 4 |
+| no es persona | 2 | 1 | 4 |
+
+### Los desacuerdos
+
+**Imágenes**, en `reports/fase4_validacion_auto/entre_anotadores/imagenes/`:
+- Por persona, la vista de la herramienta con las cajas del primer anotador y, debajo, los paneles sin cajas (RGB,
+  térmica y RGB con realce). El encabezado dice qué respondió cada uno.
+- `mosaico.jpg` las junta.
+- `secuencia_0513.jpg` y `secuencia_0894.jpg` muestran la térmica alrededor de los dos fotogramas con dos personas en
+  desacuerdo.
+
+| Tipo | Personas (n.º y fotograma) |
+|---|---|
+| **El segundo la ve y el primero no (14)** | 39 (468), 40 (474), 42 (477), 43 (483), 44 (489), 49 (513), 52 (561), 53 (573), 54 (576), 56 (585), 57 (588), 63 (711), 71 (891), 73 (894) |
+| **El primero la ve y el segundo no (2)** | 72 (894), 75 (900) |
+| "No es persona" solo del primero (aparte) | 30 (429; el segundo: se ve), 33 (447; no se ve), 46 (501; se ve) |
+| "No es persona" solo del segundo (aparte) | 26 (339), 29 (426), 47 (504), 48 (513), 59 (636) |
+| "No es persona" de los dos (aparte) | 36, 37, 38 y 41 (el objeto marrón de 453 a 474) |
+
+**Lo que se ve en las imágenes** (con la RGB ampliada y, aparte, con el brillo estirado):
+
+- **14 contra 2.** Los desacuerdos van casi todos en el mismo sentido: el segundo ve más.
+  - 10 de los 14 son una sola escena, de los fotogramas 468 a 588 (39 a 57): la persona está en un hueco del dosel en
+    sombra profunda.
+  - Con el brillo normal, la RGB es casi negra dentro de la caja.
+  - Al estirar solo los tonos oscuros aparece una mancha oscura o azulada dentro de la caja. Puede ser la persona con
+    ropa oscura o solo sombra; a esta resolución no se puede asegurar.
+- **WiSARD:** no tiene caja RGB en 13 de los 14; la excepción es la 73, que sí la tiene.
+- **39, 42 y 44:** el primer anotador les había dibujado una visible RGB. Pasaron a "no visible" en la revisión antes
+  del kappa, por ser pares "solo térmica".
+- **72 y 75:** con el brillo normal solo se ve un punto blanco en el borde de la caja. Al estirar el brillo aparece una
+  persona con ropa blanca y azul. WiSARD tiene caja RGB en las dos.
+- **En resumen:** casi todos los desacuerdos dependen de si se aclara la imagen. La regla de anotación no dice si "se
+  ve" es con el brillo normal o aclarando (tecla `e`, zoom).
+
+**Tiempo del segundo anotador:**
+- Las 75 respuestas se guardaron entre las 15:02:51 y las 15:06:11.
+- Mediana de 1.9 s por persona; el 75 % en 3.5 s o menos.
+- Una en 0.0 s: la 47, marcada "no es persona" apenas apareció en pantalla. Puede ser una tecla de más.
 
 ## Cambios en el código
 
@@ -208,14 +291,16 @@ Imagen en `reports/fase4_validacion_auto/fondo_0058-0064.jpg` (mezclas RGB aline
   - comparación de dos niveles con la de tres;
   - imágenes de los desacuerdos;
   - mosaico de las "no es persona";
-  - revisión del fondo.
+  - revisión del fondo;
+  - concordancia entre anotadores (`--partes entre_anotadores`).
 - `scripts/oclusion_auto.py`:
   - Sale `--comparar` (3 niveles): la comparación ahora está en el script nuevo.
-  - `--revisar` acepta otra carpeta de salida y otro motivo, para las imágenes de los desacuerdos.
+  - `--revisar` acepta otra carpeta de salida y otro motivo (uno para todas o uno por persona), para las imágenes de
+    los desacuerdos.
 - `scripts/anotar_oclusion.py`: modo `--segundo-simple`. Las piezas comunes del panel (fondo, triángulos, cursor,
   rótulo), la carga de imágenes y la escritura atómica quedaron en métodos aparte, sin cambiar la herramienta.
 - `configs/fase3.yaml`:
-  - Sección `validacion_auto` (niveles, kappa mínimo, mosaico y revisión del fondo).
+  - Sección `validacion_auto` (niveles, kappa mínimo, mosaico, revisión del fondo y `entre_anotadores`).
   - `oclusion.anotaciones_segundo_simple`.
   - Salen `kappa_minimo` y `comparacion` de `oclusion_auto`.
 
@@ -228,3 +313,6 @@ Imagen en `reports/fase4_validacion_auto/fondo_0058-0064.jpg` (mezclas RGB aline
 4. **Dónde se evalúa por nivel:** el nivel automático existe para las 1 501 personas. ¿Las métricas por nivel siguen
    sobre los 310 fotogramas anotados o pasan a los 928? CLAUDE.md todavía dice los 310.
 5. **FASES.md:** el mensaje de la fase 4 sigue hablando de λ y de tres niveles.
+6. **Concordancia entre anotadores: 0.507**, por debajo de 0.61. ¿Qué se hace con este resultado? Y para eso:
+   ¿"se ve en la RGB" es con el brillo normal o aclarando la imagen? Casi todos los desacuerdos dependen de eso.
+7. **La 47:** el segundo anotador la respondió en 0.0 s ("no es persona"). ¿Se le pide que la revise?

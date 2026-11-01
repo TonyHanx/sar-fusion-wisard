@@ -131,9 +131,9 @@ def calcular(cfg, rutas):
 
 def revisar(cfg, rutas, personas=None, nombre=None, base=None, criterio="pedida para revisar"):
     """Sin `personas`: las de los criterios de `revision`, en reports/<carpeta>/. Con `personas` (números en la
-    muestra): esas, en <base>/<nombre>/ (por omisión base = reports/<carpeta>), con `criterio` como motivo; si hay dos o
-    más del mismo fotograma, también la superposición de sus cajas térmicas de WiSARD y de sus completas
-    (superposicion.csv) y la secuencia de térmicas vecinas."""
+    muestra): esas, en <base>/<nombre>/ (por omisión base = reports/<carpeta>), con `criterio` como motivo (un texto, o
+    un diccionario número -> texto); si hay dos o más del mismo fotograma, también la superposición de sus cajas
+    térmicas de WiSARD y de sus completas (superposicion.csv) y la secuencia de térmicas vecinas."""
     import shutil
     import tempfile
 
@@ -173,7 +173,7 @@ def revisar(cfg, rutas, personas=None, nombre=None, base=None, criterio="pedida 
             raise SystemExit(f"No están en la muestra: {faltan}")
         por_n = {int(n): i for i, n in x.n_muestra.items()}
         sel = x.loc[[por_n[n] for n in personas]].copy()
-        sel["criterio"] = criterio
+        sel["criterio"] = ([criterio[int(n)] for n in sel.n_muestra] if isinstance(criterio, dict) else criterio)
         carpeta = (Path(base) if base else carpeta) / nombre
     cols = ["n_muestra", "posicion", "indice_caja", "criterio", "completa_rgb_dx", "completa_rgb_dy",
             "corrimiento_px", "rgb_estado", "termica_estado", "no_es_persona", "fuera_de_cuadro", "lambda_rgb",
@@ -239,7 +239,7 @@ def revisar(cfg, rutas, personas=None, nombre=None, base=None, criterio="pedida 
             par = cv2.resize(par, (round(par.shape[1] * h / par.shape[0]), h), interpolation=cv2.INTER_AREA)
             rot = np.zeros((28, par.shape[1], 3), np.uint8)
             cv2.putText(rot, f"{f.n_muestra} de {len(muestra)} | fot. {f.posicion} caja {f.indice_caja + 1} | "
-                             f"{_ascii(criterio) if personas else _motivo(f, corrida[i], dibujada[i])}"
+                             f"{_ascii(f.criterio) if personas else _motivo(f, corrida[i], dibujada[i])}"
                              f" | manual {f.lambda_rgb:.2f} / auto {f.lambda_rgb_auto:.2f}",
                         (6, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (255, 255, 255), 1, cv2.LINE_AA)
             losetas.append(np.vstack([rot, par]))

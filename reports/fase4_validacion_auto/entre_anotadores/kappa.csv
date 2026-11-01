@@ -1,0 +1,4 @@
+comparacion,comparables,kappa,ic95_bajo,ic95_alto,acuerdo,desacuerdos
+primero contra segundo,63,0.5068,0.3125,0.7012,0.746,16
+primero contra automático (informativo),63,0.9357,0.848,1.0234,0.9683,2
+segundo contra automático (informativo),63,0.5068,0.3125,0.7012,0.746,16

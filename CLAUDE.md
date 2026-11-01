@@ -158,6 +158,10 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
     - Modo simple, decidido el 1 de noviembre de 2026 (`anotar_oclusion.py --segundo-simple`).
     - Ve la RGB y la térmica con la caja térmica de WiSARD y responde con una tecla: `1` se ve en la RGB, `2` no se ve
       en la RGB, `3` no es persona. No dibuja cajas.
+    - Resultado (1 de noviembre de 2026, 63 comparables; las "no es persona" de cualquiera van aparte): kappa **0.507**
+      (IC 95 % 0.312 a 0.701), acuerdo 74.6 %.
+      - 14 de los 16 desacuerdos son personas que el segundo ve y el primero no. Casi todas están en sombra profunda.
+      - Qué hacer con este kappa está pendiente. Detalle en `reports/fase4_validacion_auto.md`.
 - **λ RGB automático, validado con la muestra:** decidido el 1 de noviembre de 2026.
   - **Automático, para las 1 501 personas de FHL 0405** (`data/oclusion_auto.csv`):
     - λ = 1 − área(caja RGB más cercana a 3 alturas o menos) / área(caja térmica), recortado entre 0 y 1.
