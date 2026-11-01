@@ -48,7 +48,9 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
     respecto de la térmica, las visibles, las marcas y λ.
   - `data\oclusion_muestra_segundo.csv`: las 75 personas de la muestra.
   - `data\oclusion_segundo.csv`: anotaciones del segundo anotador con cajas (modo `--segundo`, ya no se usa).
-  - `data\oclusion_segundo_simple.csv`: respuestas del segundo anotador en modo simple (`--segundo-simple`).
+  - Respuestas del segundo anotador en modo simple (`--segundo-simple`), una ronda por archivo:
+    `data\oclusion_segundo_simple_ronda1.csv` (regla ambigua) y `data\oclusion_segundo_simple_ronda2.csv` (regla
+    aclarada). La herramienta escribe en la de `segundo_simple.ronda_actual` de `configs/fase3.yaml`.
 - Correcciones de la muestra: `configs\correcciones_oclusion.yaml` (las aplica `scripts/corregir_oclusion.py`).
   - Respaldo de las anotaciones antes de cada corrección: `data\respaldos\`.
   - Lista para ajustar la visible RGB (herramienta `--ajuste`): `data\oclusion_ajuste_visibles.csv`.
@@ -158,10 +160,19 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
     - Modo simple, decidido el 1 de noviembre de 2026 (`anotar_oclusion.py --segundo-simple`).
     - Ve la RGB y la térmica con la caja térmica de WiSARD y responde con una tecla: `1` se ve en la RGB, `2` no se ve
       en la RGB, `3` no es persona. No dibuja cajas.
-    - Resultado (1 de noviembre de 2026, 63 comparables; las "no es persona" de cualquiera van aparte): kappa **0.507**
-      (IC 95 % 0.312 a 0.701), acuerdo 74.6 %.
+    - **Ronda 1, regla ambigua** (1 de noviembre de 2026, 63 comparables; las "no es persona" de cualquiera van
+      aparte): kappa **0.507** (IC 95 % 0.312 a 0.701), acuerdo 74.6 %.
       - 14 de los 16 desacuerdos son personas que el segundo ve y el primero no. Casi todas están en sombra profunda.
-      - Qué hacer con este kappa está pendiente. Detalle en `reports/fase4_validacion_auto.md`.
+      - **No se acepta tal cual.**
+    - **Regla aclarada** (1 de noviembre de 2026, en `docs/reglas_anotacion.md`; la herramienta la muestra en
+      pantalla):
+      - "Se ve" = reconoces una parte del cuerpo (ropa, cabeza, brazos o piernas) en la RGB con el brillo normal, sin
+        realce.
+      - Una mancha oscura, una sombra o una rama no cuentan. Si dudas, "no se ve".
+      - En el modo simple el realce (`e`) está desactivado.
+    - **Ronda 2, regla aclarada:** las 75 completas, desde cero, en un archivo nuevo. Pendiente. Al terminar se calcula
+      otra vez el kappa (`fase4_validacion_auto.py --partes entre_anotadores --ronda 2`). El reporte deja las dos
+      rondas. Detalle en `reports/fase4_validacion_auto.md`.
 - **λ RGB automático, validado con la muestra:** decidido el 1 de noviembre de 2026.
   - **Automático, para las 1 501 personas de FHL 0405** (`data/oclusion_auto.csv`):
     - λ = 1 − área(caja RGB más cercana a 3 alturas o menos) / área(caja térmica), recortado entre 0 y 1.

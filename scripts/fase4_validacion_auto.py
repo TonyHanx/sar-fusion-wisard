@@ -7,7 +7,7 @@ en la RGB; baja = se ve.
 - Automático (data/<oclusion_auto.salida>): severa si no hay caja RGB de WiSARD a `oclusion_auto.radio_alturas` alturas
   o menos; baja si la hay.
 
-Partes (por omisión, las tres), con salidas en reports/<validacion_auto.carpeta>/:
+Partes (por omisión, todas), con salidas en reports/<validacion_auto.carpeta>/:
   comparar       kappa de Cohen binario (sin pesos, IC 95 % asintótico de statsmodels), matriz de confusión y lista de
                  desacuerdos con sus imágenes (las de oclusion_auto.revisar, en desacuerdos/). Se usa el automático si
                  el kappa binario es de `kappa_minimo` o más. Aparte, solo para reportar, el kappa de 3 niveles con λ por
@@ -23,18 +23,22 @@ Partes (por omisión, las tres), con salidas en reports/<validacion_auto.carpeta
                  desde el fotograma anterior dentro de cada cámara (RGB con RGB, térmica con térmica) y su diferencia
                  (salto): un desfase solo en p da un salto en p y el contrario en p + 1. Imagen de inspección como las
                  de la revisión de desfases de la fase 2, con `detalle` entero. Agrega una fila a la bitácora.
-  entre_anotadores  concordancia entre el primer anotador y el segundo (modo simple, data/<oclusion.
-                 anotaciones_segundo_simple>) sobre las dos clases: se ve en la RGB (baja) o no (severa). Las "no es
+  entre_anotadores  concordancia entre el primer anotador y el segundo (modo simple) sobre las dos clases: se ve en la
+                 RGB (baja) o no (severa), en la ronda `--ronda` del segundo (por omisión, oclusion.segundo_simple.
+                 ronda_actual; su archivo, en data/<segundo_simple.rondas[N].archivo>, debe tener las 75). Las "no es
                  persona" de cualquiera de los dos (y las "fuera de cuadro" del primero) van aparte. Kappa de Cohen con
                  IC 95 %, matriz de confusión, tabla completa con las "no es persona", desacuerdos con sus imágenes (en
-                 <entre_anotadores.carpeta>/, también las "no es persona" de uno solo) y respuestas del segundo más
-                 rápidas que `tiempo_rapido_s`. Agrega una fila a la bitácora.
+                 <entre_anotadores.carpeta>/ronda<N>/, también las "no es persona" de uno solo) y respuestas del segundo
+                 más rápidas que `tiempo_rapido_s`. Desde la ronda 2, además, las respuestas del segundo que cambian
+                 respecto de la ronda anterior (ronda<N>/cambios.csv) y el kappa de cada ronda (rondas.csv). Agrega una
+                 fila a la bitácora.
 
 No modifica data/ ni el dataset original (lo lee para la medida del fondo, como en la fase 2).
 
 Uso:
     .venv\Scripts\python.exe scripts\fase4_validacion_auto.py --config configs\fase3.yaml --rutas configs\rutas.yaml
     .venv\Scripts\python.exe scripts\fase4_validacion_auto.py --config configs\fase3.yaml --rutas configs\rutas.yaml --partes fondo
+    .venv\Scripts\python.exe scripts\fase4_validacion_auto.py --config configs\fase3.yaml --rutas configs\rutas.yaml --partes entre_anotadores --ronda 2
 """
 import argparse
 import shutil
@@ -316,23 +320,44 @@ def fondo(cfg, rutas, carpeta):
 
 
 # ---------------------------------------------------------------------------------------------------- entre anotadores
-def entre_anotadores(cfg, rutas, carpeta):
+def respuestas_segundo(cfg, rutas, ronda, ids):
+    """Respuestas del segundo anotador (modo simple) de una ronda, pasadas a las clases; exige las de todas las `ids`."""
+    va, ss = cfg["validacion_auto"], cfg["oclusion"]["segundo_simple"]
+    baja, severa = va["niveles"]
+    if ronda not in ss["rondas"]:
+        raise SystemExit(f"La ronda {ronda} no está en oclusion.segundo_simple.rondas ({sorted(ss['rondas'])})")
+    ruta = rutas["data"] / ss["rondas"][ronda]["archivo"]
+    if not ruta.exists():
+        raise SystemExit(f"No existe {ruta}: la ronda {ronda} del segundo anotador no está hecha (anotar_oclusion.py "
+                         f"--segundo-simple, con segundo_simple.ronda_actual = {ronda})")
+    seg = pd.read_csv(ruta, dtype={"id": str}).set_index("id")
+    faltan = [i for i in ids if i not in seg.index]
+    if faltan:
+        raise SystemExit(f"La ronda {ronda} no está completa: faltan {len(faltan)} de {len(ids)} personas en {ruta} "
+                         f"(la primera: {faltan[0]})")
+    seg = seg.loc[list(ids)]
+    seg["segundo"] = seg.respuesta.map({"se_ve_rgb": baja, "no_se_ve_rgb": severa, "no_es_persona": "no_es_persona"})
+    return seg, ruta
+
+
+def entre_anotadores(cfg, rutas, carpeta, ronda=None):
+    """Concordancia del primer anotador con la ronda `ronda` del segundo (por omisión, `segundo_simple.ronda_actual`).
+    Salidas en <entre_anotadores.carpeta>/ronda<N>/; desde la ronda 2, además, qué cambió respecto de la anterior."""
     o, va = cfg["oclusion"], cfg["validacion_auto"]
     ea = va["entre_anotadores"]
+    ss = o["segundo_simple"]
+    ronda = ss["ronda_actual"] if ronda is None else ronda
+    regla = ss["rondas"].get(ronda, {}).get("regla", "?")
     baja, severa = va["niveles"]
     texto = {baja: "se ve", severa: "no se ve", "no_es_persona": "no es persona", "fuera_de_cuadro": "fuera de cuadro"}
     man = leer_muestra(cfg, rutas)
-    ruta2 = rutas["data"] / o["anotaciones_segundo_simple"]
-    seg = pd.read_csv(ruta2, dtype={"id": str}).set_index("id")
-    faltan = [i for i in man.index if i not in seg.index]
-    if faltan:
-        raise SystemExit(f"Faltan {len(faltan)} de {len(man)} personas en {ruta2} (la primera: {faltan[0]})")
+    seg, ruta2 = respuestas_segundo(cfg, rutas, ronda, man.index)
+    print(f"Ronda {ronda} (regla {regla}): {ruta2}")
     x = man[["n_muestra", "posicion", "indice_caja", "rgb_estado", "no_es_persona", "fuera_de_cuadro"]].join(
-        seg[["respuesta", "tiempo_s"]].rename(columns={"respuesta": "respuesta_segundo",
-                                                       "tiempo_s": "tiempo_segundo_s"}))
+        seg[["respuesta", "segundo", "tiempo_s"]].rename(columns={"respuesta": "respuesta_segundo",
+                                                                  "tiempo_s": "tiempo_segundo_s"}))
     x["primero"] = np.select([x.no_es_persona, x.fuera_de_cuadro, x.rgb_estado == "no_visible", x.rgb_estado == "caja"],
                              ["no_es_persona", "fuera_de_cuadro", severa, baja], "sin_resolver")
-    x["segundo"] = x.respuesta_segundo.map({"se_ve_rgb": baja, "no_se_ve_rgb": severa, "no_es_persona": "no_es_persona"})
     if (x.primero == "sin_resolver").any() or x.segundo.isna().any():
         raise SystemExit("Hay respuestas sin resolver o desconocidas")
     x["aparte"] = x.primero.isin(["no_es_persona", "fuera_de_cuadro"]) | (x.segundo == "no_es_persona")
@@ -362,7 +387,7 @@ def entre_anotadores(cfg, rutas, carpeta):
                              "desacuerdos": int((comp[quien] != comp.automatico).sum())}
     res = res.round(4)
 
-    sub = carpeta / ea["carpeta"]
+    sub = carpeta / ea["carpeta"] / f"ronda{ronda}"
     sub.mkdir(parents=True, exist_ok=True)
     cols = ["n_muestra", "posicion", "indice_caja", "primero", "segundo", "aparte", "desacuerdo", "tiempo_segundo_s"]
     x = x.join(comp[["automatico"]])
@@ -390,14 +415,60 @@ def entre_anotadores(cfg, rutas, carpeta):
     print(f"\n'No es persona' de uno solo:\n{uno_solo[cols].to_string()}")
     print(f"\nTiempo del segundo por persona (s): mediana {x.tiempo_segundo_s.median():.1f}, "
           f"menos de {ea['tiempo_rapido_s']} s: {len(rapidas)} ({', '.join(map(str, rapidas.n_muestra))})")
+    cambios_txt = ""
+    if ronda - 1 in ss["rondas"]:
+        cambios_txt = cambios_entre_rondas(cfg, rutas, carpeta, ronda, x)
     agregar_a_bitacora(
-        rutas["bitacora"], "4", "concordancia entre anotadores (muestra, dos clases)",
-        f"primero (visible RGB) contra segundo (modo simple); {len(x)} personas, aparte {int(x.aparte.sum())} "
-        f"('no es persona' de alguno)",
+        rutas["bitacora"], "4", f"concordancia entre anotadores (muestra, dos clases, ronda {ronda})",
+        f"primero (visible RGB) contra segundo (modo simple, ronda {ronda}, regla {regla}); {len(x)} personas, aparte "
+        f"{int(x.aparte.sum())} ('no es persona' de alguno)",
         f"kappa {k[0]:.3f} (IC {k[1]:.3f}-{k[2]:.3f}), acuerdo {(~comp.desacuerdo).mean():.1%}, {len(des)} "
         f"desacuerdos en {len(comp)}; 'no es persona' de uno solo: {len(uno_solo)}; informativo, contra el automático: "
-        f"primero {res.kappa.iloc[1]:.3f}, segundo {res.kappa.iloc[2]:.3f}")
+        f"primero {res.kappa.iloc[1]:.3f}, segundo {res.kappa.iloc[2]:.3f}" + cambios_txt)
     return x, res, m
+
+
+def cambios_entre_rondas(cfg, rutas, carpeta, ronda, x):
+    """Compara la ronda `ronda` con la anterior: kappa entre anotadores de las dos (de sus kappa.csv) y respuestas del
+    segundo que cambiaron, con la del primero. Escribe <entre_anotadores.carpeta>/ronda<N>/cambios.csv y rondas.csv."""
+    ea = cfg["validacion_auto"]["entre_anotadores"]
+    ss = cfg["oclusion"]["segundo_simple"]
+    previa = ronda - 1
+    sub = carpeta / ea["carpeta"]
+    ruta_k = sub / f"ronda{previa}" / "kappa.csv"
+    if not ruta_k.exists():
+        raise SystemExit(f"No existe {ruta_k}: calcula antes la ronda {previa} (--ronda {previa})")
+    prev, _ = respuestas_segundo(cfg, rutas, previa, x.index)
+    c = x[["n_muestra", "posicion", "indice_caja", "primero", "segundo"]].join(
+        prev[["segundo"]].rename(columns={"segundo": f"segundo_ronda{previa}"}))
+    c = c.rename(columns={"segundo": f"segundo_ronda{ronda}"})[
+        ["n_muestra", "posicion", "indice_caja", "primero", f"segundo_ronda{previa}", f"segundo_ronda{ronda}"]]
+    a, b = c[f"segundo_ronda{previa}"], c[f"segundo_ronda{ronda}"]
+    c["cambio"] = a != b
+    c["con_el_primero"] = np.select([a.eq(c.primero) & b.ne(c.primero), a.ne(c.primero) & b.eq(c.primero)],
+                                    ["deja de coincidir", "pasa a coincidir"], "")
+    c[c.cambio].to_csv(sub / f"ronda{ronda}" / "cambios.csv", encoding="utf-8")
+    filas = []
+    for r in sorted(ss["rondas"]):
+        rk = sub / f"ronda{r}" / "kappa.csv"
+        if r <= ronda and rk.exists():
+            kr = pd.read_csv(rk).iloc[0]
+            filas.append({"ronda": r, "regla": ss["rondas"][r]["regla"], **kr.drop("comparacion").to_dict()})
+    rondas = pd.DataFrame(filas)
+    rondas.to_csv(sub / "rondas.csv", index=False, encoding="utf-8")
+    # El segundo contra sí mismo (dos clases, sin las "no es persona" de ninguna de sus dos rondas), informativo.
+    dos = c[a.isin(cfg["validacion_auto"]["niveles"]) & b.isin(cfg["validacion_auto"]["niveles"])]
+    kk = kappa(matriz(dos, f"segundo_ronda{previa}", f"segundo_ronda{ronda}", cfg["validacion_auto"]["niveles"],
+                      (f"ronda{previa}", f"ronda{ronda}")))
+    n_pasa = int((c.con_el_primero == "pasa a coincidir").sum())
+    n_deja = int((c.con_el_primero == "deja de coincidir").sum())
+    print(f"\nRondas (primero contra segundo)\n{rondas.to_string(index=False)}")
+    print(f"\nRespuestas del segundo que cambian de la ronda {previa} a la {ronda}: {int(c.cambio.sum())} de {len(c)} "
+          f"(pasan a coincidir con el primero: {n_pasa}; dejan de coincidir: {n_deja}); segundo contra sí mismo en las "
+          f"dos clases (informativo): kappa {kk[0]:.3f} en {len(dos)}")
+    print(c[c.cambio].to_string())
+    return (f"; respecto de la ronda {previa}: {int(c.cambio.sum())} respuestas del segundo cambian (pasan a coincidir "
+            f"con el primero: {n_pasa}; dejan de coincidir: {n_deja}; el segundo contra sí mismo, kappa {kk[0]:.3f})")
 
 
 def main():
@@ -405,6 +476,8 @@ def main():
     ap.add_argument("--config", required=True)
     ap.add_argument("--rutas", required=True)
     ap.add_argument("--partes", nargs="+", choices=PARTES, default=PARTES)
+    ap.add_argument("--ronda", type=int, default=None,
+                    help="ronda del segundo anotador para entre_anotadores (por omisión, segundo_simple.ronda_actual)")
     args = ap.parse_args()
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     cfg = leer_yaml(args.config)
@@ -414,8 +487,10 @@ def main():
     for parte in PARTES:
         if parte in args.partes:
             print(f"\n===== {parte}")
-            {"comparar": comparar, "no_es_persona": no_es_persona, "fondo": fondo,
-             "entre_anotadores": entre_anotadores}[parte](cfg, rutas, carpeta)
+            if parte == "entre_anotadores":
+                entre_anotadores(cfg, rutas, carpeta, args.ronda)
+            else:
+                {"comparar": comparar, "no_es_persona": no_es_persona, "fondo": fondo}[parte](cfg, rutas, carpeta)
 
 
 if __name__ == "__main__":

@@ -149,6 +149,10 @@ El primer comando es para ti; el segundo, para el segundo anotador.
   `scripts/fase4_validacion_auto.py` (decidido el 1 de noviembre de 2026). Con kappa binario de 0.61 o más se usa el
   automático; si no, anotas las 498. Dio 0.940: se usa el automático (`reports/fase4_validacion_auto.md`).
 - Segundo anotador: modo simple (`--segundo-simple`), una tecla por persona.
+  - Ronda 1 (regla ambigua): kappa 0.507 entre anotadores, no se acepta tal cual.
+  - Ronda 2 (regla aclarada: "se ve" con el brillo normal, sin realce; si dudas, "no se ve"): las 75 completas en
+    `data/oclusion_segundo_simple_ronda2.csv`. Al terminar, el kappa con
+    `fase4_validacion_auto.py --partes entre_anotadores --ronda 2`.
 
 ---
 
