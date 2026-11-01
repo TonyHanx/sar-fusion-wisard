@@ -17,8 +17,12 @@ los mismos métodos que usa la ventana (raton y tecla) y comprueba:
    terminar;
 6. modo del segundo anotador: solo la muestra, nada precargado ni dibujado, guarda en su propio archivo;
 7. --muestra (primer anotador, solo la muestra, con precarga): las personas ya anotadas fuera de la muestra (la persona
-   1 del archivo real) se conservan idénticas al guardar, y el modo completo sigue leyendo el archivo.
-Guarda capturas del lienzo de los dos modos en reports/oclusion/.
+   1 del archivo real) se conservan idénticas al guardar, y el modo completo sigue leyendo el archivo;
+8. --ajuste: la lista de ajuste en su orden;
+9. --segundo-simple: solo la muestra, sin leer los archivos de anotaciones ni usar la precarga RGB, solo la caja
+   térmica de WiSARD dibujada (h la oculta), arrastrar no hace nada, teclas 1 / 2 / 3, b y x, CSV con solo las
+   respondidas, retomar, y con todas respondidas se queda en la persona.
+No toca los archivos de anotaciones de data/. Guarda capturas del lienzo de los modos en reports/oclusion/.
 
 Uso:
     .venv\Scripts\python.exe scripts\probar_anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml
@@ -32,7 +36,8 @@ import cv2
 import numpy as np
 import pandas as pd
 
-from anotar_oclusion import COMPLETA, COMPLETA_OTRA, VISIBLE, centro, crear_anotador, terminada
+from anotar_oclusion import (CAJA_WISARD, COLUMNAS_SIMPLE, COMPLETA, COMPLETA_OTRA, VISIBLE, centro, crear_anotador,
+                             terminada)
 from comun import leer_rutas, leer_yaml
 from marcar_puntos import preparar_pantalla
 
@@ -103,7 +108,8 @@ def main():
     o = cfg["oclusion"]
     capturas = rutas["reports"] / "oclusion"
     capturas.mkdir(parents=True, exist_ok=True)
-    reales = [rutas["data"] / o["anotaciones"], rutas["data"] / o["anotaciones_segundo"]]
+    reales = [rutas["data"] / o["anotaciones"], rutas["data"] / o["anotaciones_segundo"],
+              rutas["data"] / o["anotaciones_segundo_simple"]]
     antes = {r: r.read_bytes() if r.exists() else None for r in reales}
     area = preparar_pantalla()
 
@@ -386,8 +392,66 @@ def main():
         else:
             print(f"  (sin {ruta_lista.name} o sin anotaciones reales: no se prueba --ajuste)")
 
+        # ---- --segundo-simple: una tecla por persona de la muestra, sin cajas ni respuestas del primero
+        salida5 = Path(tmp) / "oclusion_segundo_simple.csv"
+        leidos = []
+        leer_csv = pd.read_csv
+
+        def espia(ruta, *args, **kw):  # registra qué archivos lee el modo simple
+            leidos.append(Path(ruta).name)
+            return leer_csv(ruta, *args, **kw)
+        pd.read_csv = espia
+        try:
+            ss = crear_anotador(cfg, rutas, segundo=False, salida=salida5, area=area, simple=True)
+        finally:
+            pd.read_csv = leer_csv
+        comprobar(list(ss.ids) == list(muestra) and ss.i == 0 and not ss.primero,
+                  f"simple: las {len(ss.ids)} personas de la muestra, abre en la primera")
+        comprobar(o["anotaciones"] not in leidos and o["anotaciones_segundo"] not in leidos
+                  and not any(c.startswith("rgb_") for c in ss.todas.columns),
+                  f"simple: no lee los archivos de anotaciones (lee {sorted(set(leidos))}) ni usa la precarga RGB")
+        comprobar(pixeles_de(ss, COMPLETA) == 0 and pixeles_de(ss, COMPLETA_OTRA) == 0,
+                  "simple: no se dibuja ninguna completa")
+        con_caja = pixeles_de(ss, CAJA_WISARD)
+        tecla(ss, "h")
+        comprobar(con_caja > 0 and pixeles_de(ss, CAJA_WISARD) == 0,
+                  "simple: la caja térmica de WiSARD (verde) se ve en los dos paneles y h la oculta")
+        tecla(ss, "h")
+        ss.raton(cv2.EVENT_MOUSEMOVE, ss.x_panel["rgb"] + ss.pw // 2 + 40, ss.ph // 2 - 30, 0)
+        cv2.imwrite(str(capturas / "herramienta_segundo_simple.jpg"), ss.dibujar(), [cv2.IMWRITE_JPEG_QUALITY, 90])
+        ss.raton(cv2.EVENT_LBUTTONDOWN, ss.x_panel["ter"] + 100, 100, 0)
+        ss.raton(cv2.EVENT_LBUTTONUP, ss.x_panel["ter"] + 300, 300, 0)
+        comprobar(not salida5.exists(), "simple: arrastrar no dibuja ni guarda nada")
+        tecla(ss, "1")
+        comprobar(ss.i == 1 and ss.resp[ss.ids[0]]["respuesta"] == "se_ve_rgb",
+                  "simple: 1 = se ve en la RGB y pasa a la siguiente")
+        tecla(ss, "2")
+        tecla(ss, "3")
+        comprobar(ss.i == 3 and [ss.resp[i]["respuesta"] for i in ss.ids[:3]] == ["se_ve_rgb", "no_se_ve_rgb",
+                                                                                 "no_es_persona"],
+                  "simple: 2 = no se ve en la RGB, 3 = no es persona")
+        tecla(ss, "b")
+        tecla(ss, "x")
+        comprobar(ss.i == 2 and ss.resp[ss.ids[2]]["respuesta"] is None, "simple: b vuelve y x borra la respuesta")
+        d5 = pd.read_csv(salida5, dtype={"id": str})
+        comprobar(list(d5.columns) == COLUMNAS_SIMPLE and list(d5.id) == list(ss.ids[:2])
+                  and list(d5.respuesta) == ["se_ve_rgb", "no_se_ve_rgb"] and set(d5.anotador) == {"segundo_simple"},
+                  "simple: el CSV tiene solo las respondidas, con su respuesta y el anotador 'segundo_simple'")
+        ss2 = crear_anotador(cfg, rutas, segundo=False, salida=salida5, area=area, simple=True)
+        comprobar(ss2.i == 2 and ss2.resp[ss.ids[1]]["respuesta"] == "no_se_ve_rgb",
+                  "simple: al retomar se recuperan las respuestas y abre en la primera sin responder")
+        for k in range(len(ss2.ids)):
+            ss2.i = k
+            ss2.abrir()
+            ss2.resp[ss2.id]["respuesta"] = ss2.resp[ss2.id]["respuesta"] or "se_ve_rgb"
+        ss2.i = 0
+        ss2.abrir()
+        tecla(ss2, "2")
+        comprobar(ss2.i == 0 and "todas" in ss2.mensaje, "simple: con todas respondidas se queda en la persona")
+        comprobar(len(pd.read_csv(salida5)) == len(ss2.ids), "simple: guarda las 75 respuestas")
+
     despues_reales = {r: r.read_bytes() if r.exists() else None for r in reales}
-    comprobar(despues_reales == antes, "data/oclusion.csv y data/oclusion_segundo.csv no se tocaron")
+    comprobar(despues_reales == antes, "los archivos reales de anotaciones de data/ no se tocaron")
     print(f"Capturas en {capturas}")
     print("PRUEBA CORRECTA")
 

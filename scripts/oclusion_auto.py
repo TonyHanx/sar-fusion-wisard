@@ -8,12 +8,9 @@ Calcular (por omisión), para cada persona térmica de los pares finales del vue
 - el nivel con los límites de `limites_nivel` (baja, moderada, severa).
 Guarda data/<salida> (ids iguales a los de data/<oclusion.personas>) y agrega una fila a la bitácora.
 
---comparar: compara el automático con la anotación manual de la muestra (data/<oclusion.anotaciones>, primer
-anotador, las personas de data/<oclusion.muestra_segundo>). Necesita las personas de la muestra terminadas. Las
-marcadas "no es persona" o "fuera de cuadro" se cuentan aparte y no entran en la comparación. Calcula el kappa de
-Cohen sobre el nivel (sin pesos; IC 95 % asintótico de statsmodels), la matriz de confusión y la diferencia de λ
-(automático − manual). Si kappa >= `kappa_minimo` se usa el automático; si no, se vuelve a la anotación manual.
-Escribe reports/<comparacion>.md y .csv y agrega una fila a la bitácora.
+La comparación con la anotación manual de la muestra (antes --comparar, con 3 niveles) está en
+scripts/fase4_validacion_auto.py: desde el 2026-11-01 el nivel tiene dos clases (se ve o no en la RGB) y el kappa de 3
+niveles solo se reporta.
 
 --revisar: antes de comparar, lista las personas de la muestra anotada con la completa RGB corrida más de
 `revision.mover_completa_px` respecto de la térmica (distancia entre centros), o con una visible RGB dibujada en un par
@@ -24,11 +21,9 @@ data/<oclusion.anotaciones> (la herramienta se arma sobre una copia temporal).
 Uso:
     .venv\Scripts\python.exe scripts\oclusion_auto.py --config configs\fase3.yaml --rutas configs\rutas.yaml
     .venv\Scripts\python.exe scripts\oclusion_auto.py --config configs\fase3.yaml --rutas configs\rutas.yaml --revisar
-    .venv\Scripts\python.exe scripts\oclusion_auto.py --config configs\fase3.yaml --rutas configs\rutas.yaml --comparar
 """
 import argparse
 import sys
-from datetime import date
 from pathlib import Path
 
 import numpy as np
@@ -134,116 +129,11 @@ def calcular(cfg, rutas):
     return df, res, compartidas
 
 
-def comparar(cfg, rutas, manual=None, carpeta=None, bitacora=True):
-    from statsmodels.stats.inter_rater import cohens_kappa
-
-    o, a = cfg["oclusion"], cfg["oclusion_auto"]
-    data = rutas["data"]
-    manual = Path(manual) if manual else data / o["anotaciones"]
-    carpeta = Path(carpeta) if carpeta else rutas["reports"]
-    auto = pd.read_csv(data / a["salida"], dtype={"id": str})
-    muestra = pd.read_csv(data / o["muestra_segundo"], dtype={"id": str}).id
-    man = pd.read_csv(manual, dtype={"id": str})
-    man = man[man.id.isin(set(muestra))]
-    hechas = set(man.id[man.terminada.astype(bool)])
-    faltan = [i for i in muestra if i not in hechas]
-    if faltan:
-        raise SystemExit(f"Faltan {len(faltan)} de {len(muestra)} personas de la muestra por terminar en {manual} "
-                         f"(la primera: {faltan[0]})")
-    aparte = man[man.no_es_persona.astype(bool) | man.fuera_de_cuadro.astype(bool)]
-    comp = man[~man.id.isin(set(aparte.id))][["id", "lambda_rgb"]].merge(
-        auto[["id", "lambda_rgb_auto", "nivel_auto", "sin_caja_rgb_cerca"]], on="id")
-    comp = comp.rename(columns={"lambda_rgb": "lambda_rgb_manual"})
-    comp["nivel_manual"] = nivel(comp.lambda_rgb_manual, a["limites_nivel"])
-    comp["diferencia"] = (comp.lambda_rgb_auto - comp.lambda_rgb_manual).round(4)
-
-    def matriz_de(x):
-        m = pd.crosstab(pd.Categorical(x.nivel_manual, NIVELES), pd.Categorical(x.nivel_auto, NIVELES), dropna=False)
-        m.index.name, m.columns.name = "manual", "automático"
-        return m
-
-    def kappa_de(x):
-        """Kappa e IC 95 %; NaN si no se puede calcular (p. ej. un solo nivel en los dos)."""
-        t = matriz_de(x).to_numpy()
-        pe = (t.sum(1) * t.sum(0)).sum() / t.sum() ** 2 if t.sum() else 1.0
-        if pe >= 1:
-            return np.nan, np.nan, np.nan
-        k = cohens_kappa(t)
-        return float(k.kappa), float(k.kappa_low), float(k.kappa_upp)
-
-    matriz = matriz_de(comp)
-    kappa, bajo, alto = kappa_de(comp)
-    acuerdo = float((comp.nivel_manual == comp.nivel_auto).mean())
-    # El acuerdo de las personas sin caja RGB cerca (automático = 1) es casi seguro si la RGB tampoco se ve a mano:
-    # se reporta aparte el de las que sí tienen caja RGB cerca. La decisión usa el kappa de todas.
-    sub = []
-    for nombre, x in (("con caja RGB cerca", comp[~comp.sin_caja_rgb_cerca]),
-                      ("sin caja RGB cerca (λ automático = 1)", comp[comp.sin_caja_rgb_cerca])):
-        ks = kappa_de(x)
-        sub.append(f"| {nombre} | {len(x)} | "
-                   + ("no se puede calcular" if np.isnan(ks[0]) else f"{ks[0]:.3f} ({ks[1]:.3f} a {ks[2]:.3f})")
-                   + f" | {(x.nivel_manual == x.nivel_auto).mean():.1%} | "
-                   + f"{(x.lambda_rgb_auto - x.lambda_rgb_manual).mean():+.3f} |")
-    dif = comp.diferencia
-    usar = "automático" if kappa >= a["kappa_minimo"] else "manual"
-
-    carpeta.mkdir(parents=True, exist_ok=True)
-    comp.to_csv(carpeta / f"{a['comparacion']}.csv", index=False, encoding="utf-8")
-    filas_md = "\n".join(f"| {n} | " + " | ".join(str(int(matriz.loc[n, c])) for c in NIVELES)
-                         + f" | {int(matriz.loc[n].sum())} |" for n in NIVELES)
-    texto = f"""# λ RGB automático contra la anotación manual
-
-Fecha: {date.today().isoformat()}. Muestra de {len(muestra)} personas de {o['vuelo']} (seed={cfg['seed']}),
-anotadas a mano por el primer anotador. Se generó con `scripts/oclusion_auto.py --comparar`.
-
-- Comparadas: **{len(comp)}**. Aparte: {int(aparte.no_es_persona.astype(bool).sum())} "no es persona" y
-  {int(aparte.fuera_de_cuadro.astype(bool).sum())} "fuera de cuadro"; no entran en la comparación.
-- Niveles con λ RGB: baja si λ <= {a['limites_nivel']['baja']:.2f}, moderada si λ <= {a['limites_nivel']['moderada']:.2f},
-  severa si es mayor.
-
-## Resultado
-
-| | Valor |
-|---|---|
-| **Kappa de Cohen (nivel)** | **{kappa:.3f}** (IC 95 % {bajo:.3f} a {alto:.3f}) |
-| Acuerdo en el nivel | {acuerdo:.1%} |
-| Diferencia media de λ (automático − manual) | {dif.mean():+.3f} (desviación estándar {dif.std():.3f}) |
-| Diferencia absoluta media de λ | {dif.abs().mean():.3f} |
-| Mediana de la diferencia | {dif.median():+.3f} |
-
-- **Decisión:** {'el kappa es de' if usar == 'automático' else 'el kappa no llega a'} {a['kappa_minimo']}{' o más' if usar == 'automático' else ''}, así que
-  **se usa el {'λ automático' if usar == 'automático' else 'λ de la anotación manual (se vuelve a anotar a mano)'}**.
-- El IC del kappa es asintótico: con {len(comp)} personas es ancho.
-
-## Por grupo (solo informativo; la decisión usa todas)
-
-| Grupo | Personas | Kappa (IC 95 %) | Acuerdo | Diferencia media de λ |
-|---|---:|---|---:|---:|
-{chr(10).join(sub)}
-
-## Matriz de confusión (filas: manual; columnas: automático)
-
-| Manual \\ automático | {' | '.join(NIVELES)} | Total |
-|---|{'---:|' * (len(NIVELES) + 1)}
-{filas_md}
-
-Detalle por persona: `reports/{a['comparacion']}.csv`.
-"""
-    (carpeta / f"{a['comparacion']}.md").write_text(texto, encoding="utf-8")
-    print(texto)
-    if bitacora:
-        agregar_a_bitacora(rutas["bitacora"], "3b", "lambda RGB automático contra manual (muestra)",
-                           f"{len(comp)} personas; kappa mínimo {a['kappa_minimo']}",
-                           f"kappa {kappa:.3f} (IC {bajo:.3f}-{alto:.3f}); acuerdo {acuerdo:.1%}; diferencia media "
-                           f"de λ {dif.mean():+.3f}; se usa el {usar}")
-    return {"kappa": kappa, "acuerdo": acuerdo, "matriz": matriz, "diferencia_media": float(dif.mean()),
-            "usar": usar, "comparadas": comp}
-
-
-def revisar(cfg, rutas, personas=None, nombre=None):
+def revisar(cfg, rutas, personas=None, nombre=None, base=None, criterio="pedida para revisar"):
     """Sin `personas`: las de los criterios de `revision`, en reports/<carpeta>/. Con `personas` (números en la
-    muestra): esas, en reports/<carpeta>/<nombre>/; si hay dos o más del mismo fotograma, también la superposición de
-    sus cajas térmicas de WiSARD y de sus completas (superposicion.csv) y la secuencia de térmicas vecinas."""
+    muestra): esas, en <base>/<nombre>/ (por omisión base = reports/<carpeta>), con `criterio` como motivo; si hay dos o
+    más del mismo fotograma, también la superposición de sus cajas térmicas de WiSARD y de sus completas
+    (superposicion.csv) y la secuencia de térmicas vecinas."""
     import shutil
     import tempfile
 
@@ -283,8 +173,8 @@ def revisar(cfg, rutas, personas=None, nombre=None):
             raise SystemExit(f"No están en la muestra: {faltan}")
         por_n = {int(n): i for i, n in x.n_muestra.items()}
         sel = x.loc[[por_n[n] for n in personas]].copy()
-        sel["criterio"] = "pedida para revisar"
-        carpeta = carpeta / nombre
+        sel["criterio"] = criterio
+        carpeta = (Path(base) if base else carpeta) / nombre
     cols = ["n_muestra", "posicion", "indice_caja", "criterio", "completa_rgb_dx", "completa_rgb_dy",
             "corrimiento_px", "rgb_estado", "termica_estado", "no_es_persona", "fuera_de_cuadro", "lambda_rgb",
             "lambda_termica", "nivel_manual", "lambda_rgb_auto", "nivel_auto"]
@@ -349,7 +239,7 @@ def revisar(cfg, rutas, personas=None, nombre=None):
             par = cv2.resize(par, (round(par.shape[1] * h / par.shape[0]), h), interpolation=cv2.INTER_AREA)
             rot = np.zeros((28, par.shape[1], 3), np.uint8)
             cv2.putText(rot, f"{f.n_muestra} de {len(muestra)} | fot. {f.posicion} caja {f.indice_caja + 1} | "
-                             f"{_motivo(f, corrida[i], dibujada[i])}"
+                             f"{_ascii(criterio) if personas else _motivo(f, corrida[i], dibujada[i])}"
                              f" | manual {f.lambda_rgb:.2f} / auto {f.lambda_rgb_auto:.2f}",
                         (6, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (255, 255, 255), 1, cv2.LINE_AA)
             losetas.append(np.vstack([rot, par]))
@@ -475,7 +365,6 @@ def main():
     ap.add_argument("--rutas", required=True)
     modo = ap.add_mutually_exclusive_group()
     modo.add_argument("--revisar", action="store_true", help="imágenes de las personas de la muestra a revisar")
-    modo.add_argument("--comparar", action="store_true", help="compara con la anotación manual de la muestra")
     ap.add_argument("--personas", type=int, nargs="+", help="con --revisar: estas personas (número en la muestra)")
     ap.add_argument("--nombre", help="con --personas: subcarpeta de la revisión")
     args = ap.parse_args()
@@ -486,8 +375,6 @@ def main():
     rutas = leer_rutas(args.rutas)
     if args.revisar:
         revisar(cfg, rutas, args.personas, args.nombre)
-    elif args.comparar:
-        comparar(cfg, rutas)
     else:
         calcular(cfg, rutas)
 

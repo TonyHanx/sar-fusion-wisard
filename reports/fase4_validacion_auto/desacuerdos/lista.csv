@@ -1,0 +1,3 @@
+id,n_muestra,posicion,indice_caja,criterio,completa_rgb_dx,completa_rgb_dy,corrimiento_px,rgb_estado,termica_estado,no_es_persona,fuera_de_cuadro,lambda_rgb,lambda_termica,nivel_manual,lambda_rgb_auto,nivel_auto
+210924_FHL_Enterprise_0405_0864_1,68,864,1,desacuerdo en dos niveles,-1.23,9.3,9.38,caja,caja,False,False,0.0,0.0,baja,1.0,severa
+210924_FHL_Enterprise_0405_0894_1,73,894,1,desacuerdo en dos niveles,0.0,0.0,0.0,no_visible,caja,False,False,1.0,0.0,severa,0.3437,baja

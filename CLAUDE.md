@@ -47,12 +47,14 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
   - `data\oclusion.csv`: anotaciones del primer anotador. Por persona guarda las dos completas, el corrimiento de la RGB
     respecto de la térmica, las visibles, las marcas y λ.
   - `data\oclusion_muestra_segundo.csv`: las 75 personas de la muestra.
-  - `data\oclusion_segundo.csv`: anotaciones del segundo anotador.
+  - `data\oclusion_segundo.csv`: anotaciones del segundo anotador con cajas (modo `--segundo`, ya no se usa).
+  - `data\oclusion_segundo_simple.csv`: respuestas del segundo anotador en modo simple (`--segundo-simple`).
 - Correcciones de la muestra: `configs\correcciones_oclusion.yaml` (las aplica `scripts/corregir_oclusion.py`).
   - Respaldo de las anotaciones antes de cada corrección: `data\respaldos\`.
   - Lista para ajustar la visible RGB (herramienta `--ajuste`): `data\oclusion_ajuste_visibles.csv`.
-- λ RGB automático (`scripts/oclusion_auto.py`): `data\oclusion_auto.csv`, con las 1 501 personas de FHL 0405. La
-  comparación con la anotación manual de la muestra va en `reports\oclusion_auto_vs_manual.md` (y `.csv`).
+- λ RGB automático (`scripts/oclusion_auto.py`): `data\oclusion_auto.csv`, con las 1 501 personas de FHL 0405.
+- Validación del nivel automático (`scripts/fase4_validacion_auto.py`): `reports\fase4_validacion_auto.md`, con tablas
+  e imágenes en `reports\fase4_validacion_auto\`.
 - Proyecto anterior, solo como consulta: `C:\Users\User\sar-fusion\reports\` (scripts `emparejamiento.py` y
   `analisis_pares.py`, y `resumen_wisard.md`). Se puede reutilizar código de ahí, pero los resultados se regeneran aquí.
 
@@ -151,8 +153,11 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
     aparte.
   - **Precarga del primer anotador:** la visible térmica es la caja de WiSARD, y la visible RGB es la caja RGB más
     cercana a 3 alturas o menos.
-  - **Segundo anotador:** anota una muestra al azar del 15 % (75 personas, seed=0), sin precarga y sin ver las cajas
-    del primero. La concordancia se mide en la fase 4.
+  - **Segundo anotador:** responde sobre una muestra al azar del 15 % (75 personas, seed=0), sin precarga y sin ver
+    las respuestas del primero. La concordancia se mide en la fase 4.
+    - Modo simple, decidido el 1 de noviembre de 2026 (`anotar_oclusion.py --segundo-simple`).
+    - Ve la RGB y la térmica con la caja térmica de WiSARD y responde con una tecla: `1` se ve en la RGB, `2` no se ve
+      en la RGB, `3` no es persona. No dibuja cajas.
 - **λ RGB automático, validado con la muestra:** decidido el 1 de noviembre de 2026.
   - **Automático, para las 1 501 personas de FHL 0405** (`data/oclusion_auto.csv`):
     - λ = 1 − área(caja RGB más cercana a 3 alturas o menos) / área(caja térmica), recortado entre 0 y 1.
@@ -165,11 +170,17 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
     - Las anota el primer anotador con la herramienta en modo `--muestra` (con la precarga) y se guardan en
       `data/oclusion.csv`.
     - La persona 1 (`..._0405_0000_0`), anotada antes y fuera de la muestra, se conserva en ese archivo.
-  - **Comparación** (`scripts/oclusion_auto.py --comparar`): kappa de Cohen sobre el nivel, matriz de confusión y
-    diferencia media de λ (automático − manual). Las personas "no es persona" o "fuera de cuadro" van aparte.
+  - **Comparación** (`scripts/fase4_validacion_auto.py`): kappa de Cohen sobre el nivel de **dos clases**, matriz de
+    confusión y desacuerdos con sus imágenes. Las personas "no es persona" o "fuera de cuadro" van aparte. El kappa de
+    3 niveles (λ por áreas) y la diferencia de λ solo se reportan.
   - **Regla de decisión:**
-    - Si el **kappa es de 0.61 o más**, se usa el λ automático.
+    - Si el **kappa binario es de 0.61 o más**, se usa el nivel automático.
     - Si no, se vuelve a la anotación manual (las 498 personas de 1 de cada 3).
+  - **Resultado** (1 de noviembre de 2026, 68 comparables):
+    - Kappa binario **0.940** (IC 95 % 0.858 a 1), acuerdo 97.1 %, 2 desacuerdos (68 y 73). **Se usa el nivel
+      automático.**
+    - Kappa de 3 niveles 0.675, solo informativo.
+    - Detalle en `reports/fase4_validacion_auto.md`.
   - **Revisión antes del kappa** (1 de noviembre de 2026):
     - Se revisaron a ojo las personas con la completa RGB corrida más de 12 px o con una visible RGB en un par
       "solo térmica" (`oclusion_auto.py --revisar`, imágenes en `reports/oclusion/revision_muestra/`).
@@ -187,8 +198,19 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
       - 63 y 64 son dos personas; la completa de la 63 se centró en su propia caja.
       - 21, 22 y 58: la visible térmica es la caja de WiSARD, y siguen en severa.
       - Los niveles no cambian.
-  - **Pendiente de decidir:** el papel del segundo anotador con este plan.
-- **Niveles** según λ en la imagen RGB: baja (0 a 35 %), moderada (35 a 70 %), severa (más de 70 %).
+  - **Pendiente de decidir** (ver `reports/fase4_validacion_auto.md`):
+    - si el fotograma 60 de FHL 0405 se excluye por desfase (y 71–72);
+    - si se confirman las 7 "no es persona" y qué se hace con la caja de WiSARD de ese objeto (fotogramas 429 a 474)
+      en las etiquetas de prueba;
+    - si las métricas por nivel van sobre los 310 fotogramas anotados o sobre los 928.
+- **Niveles: dos clases**, decidido el 1 de noviembre de 2026, porque en la muestra no hubo ninguna moderada (0 de 68).
+  - **Severa:** la persona no se ve en la RGB.
+    - Automático: no hay caja RGB de WiSARD a 3 alturas o menos (`sin_caja_rgb_cerca` en `data/oclusion_auto.csv`).
+    - Manual: visible RGB "no visible".
+  - **Baja:** se ve en la RGB.
+  - En FHL 0405: severa 976 y baja 525 de 1 501. En los 310 anotados: severa 323 y baja 175 de 498.
+  - Antes eran tres niveles según λ RGB: baja (0 a 35 %), moderada (35 a 70 %) y severa (más de 70 %). Solo se usan
+    para reportar la comparación.
 - **Configuración base:** 100 épocas, imagen de 640, lote 16 (bajar si no entra en 8 GB; el mismo para los tres),
   optimizador y tasa de aprendizaje por defecto de Ultralytics para YOLO26 (registrar cuáles fueron).
 - **Aumento de color (fase 5):** **`hsv_h=0`, `hsv_s=0`, `hsv_v=0` en los tres modelos**, para que entrenen igual.
