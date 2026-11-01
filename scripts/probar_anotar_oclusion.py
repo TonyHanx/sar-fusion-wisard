@@ -22,7 +22,10 @@ los mismos métodos que usa la ventana (raton y tecla) y comprueba:
 9. --segundo-simple: solo la muestra, sin leer los archivos de anotaciones (del primer anotador ni de otras rondas)
    ni usar la precarga RGB, escribe por defecto en el archivo de la ronda actual, solo la caja térmica de WiSARD
    dibujada (h la oculta), e no activa el realce, arrastrar no hace nada, teclas 1 / 2 / 3, b y x, CSV con solo las
-   respondidas, retomar, y con todas respondidas se queda en la persona.
+   respondidas, retomar, y con todas respondidas se queda en la persona;
+10. --primero-simple: las mismas personas en el mismo orden y la misma pantalla que --segundo-simple, sin leer ningún
+   archivo de respuestas (ni su anotación con cajas), escribe por defecto en su archivo de la ronda actual, e no
+   activa el realce, guarda con el anotador 'primero_simple' y no acepta un archivo del segundo.
 No toca los archivos de anotaciones de data/. Guarda capturas del lienzo de los modos en reports/oclusion/.
 
 Uso:
@@ -109,10 +112,11 @@ def main():
     o = cfg["oclusion"]
     capturas = rutas["reports"] / "oclusion"
     capturas.mkdir(parents=True, exist_ok=True)
-    rondas = o["segundo_simple"]["rondas"]
-    ronda_actual = o["segundo_simple"]["ronda_actual"]
+    rondas = o["modo_simple"]["rondas"]
+    ronda_actual = o["modo_simple"]["ronda_actual"]
+    archivos_simple = [f for r in rondas.values() for k, f in r.items() if k in ("primero", "segundo")]
     reales = ([rutas["data"] / o["anotaciones"], rutas["data"] / o["anotaciones_segundo"]]
-              + [rutas["data"] / r["archivo"] for r in rondas.values()])
+              + [rutas["data"] / f for f in archivos_simple])
     antes = {r: r.read_bytes() if r.exists() else None for r in reales}
     area = preparar_pantalla()
 
@@ -405,21 +409,21 @@ def main():
             return leer_csv(ruta, *args, **kw)
         pd.read_csv = espia
         try:
-            ss = crear_anotador(cfg, rutas, segundo=False, salida=salida5, area=area, simple=True)
+            ss = crear_anotador(cfg, rutas, segundo=False, salida=salida5, area=area, simple="segundo")
         finally:
             pd.read_csv = leer_csv
         comprobar(list(ss.ids) == list(muestra) and ss.i == 0 and not ss.primero,
                   f"simple: las {len(ss.ids)} personas de la muestra, abre en la primera")
-        otras = [r["archivo"] for k, r in rondas.items() if k != ronda_actual]
+        otras = [f for f in archivos_simple if f != rondas[ronda_actual]["segundo"]]
         comprobar(o["anotaciones"] not in leidos and o["anotaciones_segundo"] not in leidos
                   and not any(f in leidos for f in otras)
                   and not any(c.startswith("rgb_") for c in ss.todas.columns),
                   f"simple: no lee los archivos de anotaciones ni los de otras rondas (lee {sorted(set(leidos))}) ni "
                   "usa la precarga RGB")
-        s_def = crear_anotador(cfg, rutas, segundo=False, area=area, simple=True)  # sin responder: no escribe nada
-        comprobar(s_def.salida == rutas["data"] / rondas[ronda_actual]["archivo"] and s_def.ronda == ronda_actual,
+        s_def = crear_anotador(cfg, rutas, segundo=False, area=area, simple="segundo")  # sin responder: no escribe
+        comprobar(s_def.salida == rutas["data"] / rondas[ronda_actual]["segundo"] and s_def.ronda == ronda_actual,
                   f"simple: por defecto escribe en el archivo de la ronda {ronda_actual} "
-                  f"({rondas[ronda_actual]['archivo']})")
+                  f"({rondas[ronda_actual]['segundo']})")
         del s_def
         comprobar(pixeles_de(ss, COMPLETA) == 0 and pixeles_de(ss, COMPLETA_OTRA) == 0,
                   "simple: no se dibuja ninguna completa")
@@ -453,7 +457,7 @@ def main():
         comprobar(list(d5.columns) == COLUMNAS_SIMPLE and list(d5.id) == list(ss.ids[:2])
                   and list(d5.respuesta) == ["se_ve_rgb", "no_se_ve_rgb"] and set(d5.anotador) == {"segundo_simple"},
                   "simple: el CSV tiene solo las respondidas, con su respuesta y el anotador 'segundo_simple'")
-        ss2 = crear_anotador(cfg, rutas, segundo=False, salida=salida5, area=area, simple=True)
+        ss2 = crear_anotador(cfg, rutas, segundo=False, salida=salida5, area=area, simple="segundo")
         comprobar(ss2.i == 2 and ss2.resp[ss.ids[1]]["respuesta"] == "no_se_ve_rgb",
                   "simple: al retomar se recuperan las respuestas y abre en la primera sin responder")
         for k in range(len(ss2.ids)):
@@ -465,6 +469,47 @@ def main():
         tecla(ss2, "2")
         comprobar(ss2.i == 0 and "todas" in ss2.mensaje, "simple: con todas respondidas se queda en la persona")
         comprobar(len(pd.read_csv(salida5)) == len(ss2.ids), "simple: guarda las 75 respuestas")
+
+        # ---- --primero-simple: la misma pantalla y la misma regla que el segundo, sin leer ningún archivo de respuestas
+        salida6 = Path(tmp) / "oclusion_primero_simple.csv"
+        leidos = []
+        pd.read_csv = espia
+        try:
+            ps = crear_anotador(cfg, rutas, segundo=False, salida=salida6, area=area, simple="primero")
+        finally:
+            pd.read_csv = leer_csv
+        comprobar(list(ps.ids) == list(ss.ids) and ps.i == 0 and ps.modo == "primero_simple",
+                  f"primero simple: las {len(ps.ids)} personas de la muestra, en el orden del segundo")
+        comprobar(sorted(set(leidos)) == sorted({o["personas"], o["muestra_segundo"]})
+                  and not any(c.startswith("rgb_") for c in ps.todas.columns),
+                  f"primero simple: no lee ningún archivo de respuestas (lee {sorted(set(leidos))}) ni usa la precarga")
+        p_def = crear_anotador(cfg, rutas, segundo=False, area=area, simple="primero")  # sin responder: no escribe
+        comprobar(p_def.salida == rutas["data"] / rondas[ronda_actual]["primero"] and p_def.ronda == ronda_actual,
+                  f"primero simple: por defecto escribe en {rondas[ronda_actual]['primero']}")
+        del p_def
+        s_igual = crear_anotador(cfg, rutas, segundo=False, salida=Path(tmp) / "otro.csv", area=area, simple="segundo")
+        comprobar(np.array_equal(ps.dibujar()[:ps.ph], s_igual.dibujar()[:s_igual.ph])
+                  and pixeles_de(ps, COMPLETA) == 0 and pixeles_de(ps, CAJA_WISARD) > 0,
+                  "primero simple: los paneles son los mismos que los del segundo (solo la caja térmica de WiSARD)")
+        del s_igual
+        sin_e = ps.dibujar()[:ps.ph]
+        tecla(ps, "e")
+        comprobar(not ps.realce and "desactivado" in ps.mensaje and np.array_equal(ps.dibujar()[:ps.ph], sin_e),
+                  "primero simple: e no activa el realce")
+        ps.mensaje = ""
+        ps.raton(cv2.EVENT_MOUSEMOVE, ps.x_panel["rgb"] + ps.pw // 2 + 40, ps.ph // 2 - 30, 0)
+        cv2.imwrite(str(capturas / "herramienta_primero_simple.jpg"), ps.dibujar(), [cv2.IMWRITE_JPEG_QUALITY, 90])
+        tecla(ps, "2")
+        d6 = pd.read_csv(salida6, dtype={"id": str})
+        comprobar(ps.i == 1 and list(d6.columns) == COLUMNAS_SIMPLE and list(d6.respuesta) == ["no_se_ve_rgb"]
+                  and set(d6.anotador) == {"primero_simple"},
+                  "primero simple: guarda con el anotador 'primero_simple' y pasa a la siguiente")
+        try:
+            crear_anotador(cfg, rutas, segundo=False, salida=salida5, area=area, simple="primero")
+            rechaza = False
+        except SystemExit:
+            rechaza = True
+        comprobar(rechaza, "primero simple: no acepta un archivo de respuestas del segundo")
 
     despues_reales = {r: r.read_bytes() if r.exists() else None for r in reales}
     comprobar(despues_reales == antes, "los archivos reales de anotaciones de data/ no se tocaron")

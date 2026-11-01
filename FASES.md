@@ -150,9 +150,11 @@ El primer comando es para ti; el segundo, para el segundo anotador.
   automático; si no, anotas las 498. Dio 0.940: se usa el automático (`reports/fase4_validacion_auto.md`).
 - Segundo anotador: modo simple (`--segundo-simple`), una tecla por persona.
   - Ronda 1 (regla ambigua): kappa 0.507 entre anotadores, no se acepta tal cual.
-  - Ronda 2 (regla aclarada: "se ve" con el brillo normal, sin realce; si dudas, "no se ve"): las 75 completas en
-    `data/oclusion_segundo_simple_ronda2.csv`. Al terminar, el kappa con
-    `fase4_validacion_auto.py --partes entre_anotadores --ronda 2`.
+  - Ronda 2 (regla aclarada: "se ve" con el brillo normal, sin realce; si dudas, "no se ve"): los dos anotadores
+    responden las 75 completas en modo simple (`--primero-simple` y `--segundo-simple`), en
+    `data/oclusion_primero_simple_ronda2.csv` y `data/oclusion_segundo_simple_ronda2.csv`. Cuando estén las dos,
+    `fase4_validacion_auto.py --partes entre_anotadores --ronda 2`: el primero contra el segundo (decide), el
+    automático contra el primero en modo simple y los cambios del primero respecto de sus cajas.
 
 ---
 
