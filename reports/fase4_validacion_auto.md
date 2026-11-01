@@ -26,11 +26,14 @@ Por eso el nivel pasa a dos clases (decidido el 1 de noviembre de 2026):
 
 | Comparación (68 personas) | Kappa (IC 95 %) | Acuerdo | Desacuerdos |
 |---|---|---:|---:|
-| **Dos niveles (decide)** | **0.940** (0.858 a 1) | 97.1 % | 2 |
+| **Dos niveles (decidía; ver abajo)** | **0.940** (0.858 a 1) | 97.1 % | 2 |
 | Tres niveles, λ por áreas (solo se reporta) | 0.675 (0.536 a 0.814) | 82.4 % | 12 |
 
 - El IC es asintótico (statsmodels). En el binario, su límite superior da 1.022: se recorta a 1.
-- **Decisión: el kappa binario es de 0.61 o más, así que se usa el nivel automático.**
+- **Decisión con esta anotación:** el kappa binario es de 0.61 o más, así que se iba a usar el nivel automático.
+- **Ya no decide** (1 de noviembre de 2026): la decisión pasa al kappa del automático contra el primer anotador en modo
+  simple de la ronda 2, con la regla aclarada. El 0.940 queda como resultado de la primera anotación, con cajas. Ver
+  "Concordancia entre anotadores".
 
 **Matriz de confusión, dos niveles** (filas: manual; columnas: automático):
 
@@ -239,10 +242,10 @@ Tres anotaciones de "se ve en la RGB" sobre las mismas 75 personas:
 
 | Comparación | Ronda | Kappa (IC 95 %) | Acuerdo | Desacuerdos |
 |---|---|---|---:|---:|
-| Automático contra primero con cajas (la decisión de usar el automático) | — | 0.940 (0.858 a 1) | 97.1 % | 2 de 68 |
+| Automático contra primero con cajas (primera anotación; ya no decide) | — | 0.940 (0.858 a 1) | 97.1 % | 2 de 68 |
 | Primero con cajas contra segundo | 1 | 0.507 (0.312 a 0.701) | 74.6 % | 16 de 63 |
 | **Primero contra segundo, los dos en modo simple (decide la concordancia)** | 2 | pendiente | | |
-| Automático contra primero en modo simple | 2 | pendiente | | |
+| **Automático contra primero en modo simple (decide si se usa el automático)** | 2 | pendiente | | |
 | Respuestas del primero que cambian entre las cajas y el modo simple | 2 | pendiente | | |
 
 - **Primer anotador con cajas:** "se ve" si tiene visible RGB; "no se ve" si la visible RGB es "no visible".
@@ -368,9 +371,12 @@ Salidas en `entre_anotadores/ronda2/`:
 
 1. **Primero contra segundo, los dos en modo simple (el que decide):** `kappa.csv` (primera fila), `matriz.csv`,
    `tabla_completa.csv`, `desacuerdos.csv` e `imagenes/`. Van aparte las "no es persona" de cualquiera de los dos.
-2. **Automático contra el primero en modo simple:** `automatico.csv`, `automatico_matriz.csv`,
-   `automatico_desacuerdos.csv` e `imagenes_automatico/`.
+2. **Automático contra el primero en modo simple (decide si se usa el automático):** `automatico.csv`,
+   `automatico_matriz.csv`, `automatico_desacuerdos.csv` e `imagenes_automatico/`.
    - Se calcula sobre todas las personas que el primero no marca "no es persona", igual que el 0.940 con las cajas.
+   - **Regla de decisión**, fijada el 1 de noviembre de 2026 antes de la ronda 2: si el kappa es de 0.61 o más, se usa
+     el nivel automático; si no, el nivel binario de las 498 personas se anota a mano en modo simple. El script
+     escribe la decisión en `automatico.csv` y en la bitácora.
 3. **Respuestas del primero que cambian entre las cajas y el modo simple:** `cambios_primero.csv` (con lo que dijeron
    el segundo y el automático), `cambios_primero_tabla.csv` (cajas contra modo simple, con las "no es persona") e
    `imagenes_cambios_primero/`. Incluye el kappa del primero contra sí mismo, solo informativo.
@@ -423,6 +429,7 @@ anotador, si está incompleto o si es del otro anotador.
 6. **Concordancia entre anotadores:** la ronda 1 (0.507) no se acepta tal cual; la regla está aclarada ("se ve" = con
    el brillo normal) y los dos anotadores responden la ronda 2 en modo simple. Falta la ronda 2. Después:
    - ¿qué se hace si el primero contra el segundo queda por debajo de 0.61?
-   - la decisión de usar el automático salió del 0.940 contra las cajas: ¿se mantiene si el automático contra el
-     primero en modo simple queda por debajo de 0.61?
+   - Decidido el 1 de noviembre de 2026: si se usa el automático lo decide el kappa del automático contra el primero
+     en modo simple de la ronda 2 (0.61 o más: el automático; si no, las 498 a mano en modo simple). El 0.940 con
+     cajas queda como resultado de la primera anotación.
 7. **La 47** (0.0 s en la ronda 1): se vuelve a responder en la ronda 2.

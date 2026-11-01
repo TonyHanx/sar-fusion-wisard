@@ -178,8 +178,9 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
       - El primero usa `anotar_oclusion.py --primero-simple`. No revisa a mano solo la 72 y la 75.
       - Pendiente.
     - **Al terminar los dos** (`fase4_validacion_auto.py --partes entre_anotadores --ronda 2`):
-      - kappa del primero contra el segundo, los dos en modo simple: **el que decide**;
-      - kappa del automático contra el primero en modo simple;
+      - kappa del primero contra el segundo, los dos en modo simple: **decide la concordancia entre anotadores**;
+      - kappa del automático contra el primero en modo simple: **decide si se usa el nivel automático** (ver "Regla de
+        decisión" abajo);
       - cuántas respuestas del primero cambian entre su anotación con cajas y el modo simple.
     - El reporte deja las dos rondas y la anotación con cajas del primero, y explica qué cambió en la regla. Detalle en
       `reports/fase4_validacion_auto.md`.
@@ -198,14 +199,18 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
   - **Comparación** (`scripts/fase4_validacion_auto.py`): kappa de Cohen sobre el nivel de **dos clases**, matriz de
     confusión y desacuerdos con sus imágenes. Las personas "no es persona" o "fuera de cuadro" van aparte. El kappa de
     3 niveles (λ por áreas) y la diferencia de λ solo se reportan.
-  - **Regla de decisión:**
-    - Si el **kappa binario es de 0.61 o más**, se usa el nivel automático.
-    - Si no, se vuelve a la anotación manual (las 498 personas de 1 de cada 3).
-  - **Resultado** (1 de noviembre de 2026, 68 comparables):
-    - Kappa binario **0.940** (IC 95 % 0.858 a 1), acuerdo 97.1 %, 2 desacuerdos (68 y 73). **Se usa el nivel
-      automático.**
+  - **Regla de decisión** (fijada el 1 de noviembre de 2026, antes de la ronda 2):
+    - Se decide con el **kappa binario del automático contra el primer anotador en modo simple de la ronda 2**, porque
+      es la regla aclarada (`entre_anotadores/ronda2/automatico.csv`). Entran las personas que el primero no marca
+      "no es persona".
+    - Si es de **0.61 o más**, se usa el nivel automático.
+    - Si no, el nivel binario de las **498 personas** (1 de cada 3) se anota a mano en modo simple.
+  - **Resultado de la primera anotación, con cajas** (1 de noviembre de 2026, 68 comparables). Ya no decide; queda en
+    el reporte como resultado de la primera anotación:
+    - Kappa binario **0.940** (IC 95 % 0.858 a 1), acuerdo 97.1 %, 2 desacuerdos (68 y 73).
     - Kappa de 3 niveles 0.675, solo informativo.
     - Detalle en `reports/fase4_validacion_auto.md`.
+  - **Resultado de la ronda 2:** pendiente. Hasta entonces no está decidido si se usa el nivel automático.
   - **Revisión antes del kappa** (1 de noviembre de 2026):
     - Se revisaron a ojo las personas con la completa RGB corrida más de 12 px o con una visible RGB en un par
       "solo térmica" (`oclusion_auto.py --revisar`, imágenes en `reports/oclusion/revision_muestra/`).
@@ -231,7 +236,7 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
 - **Niveles: dos clases**, decidido el 1 de noviembre de 2026, porque en la muestra no hubo ninguna moderada (0 de 68).
   - **Severa:** la persona no se ve en la RGB.
     - Automático: no hay caja RGB de WiSARD a 3 alturas o menos (`sin_caja_rgb_cerca` en `data/oclusion_auto.csv`).
-    - Manual: visible RGB "no visible".
+    - Manual: visible RGB "no visible" (con cajas) o "no se ve en la RGB" (modo simple).
   - **Baja:** se ve en la RGB.
   - En FHL 0405: severa 976 y baja 525 de 1 501. En los 310 anotados: severa 323 y baja 175 de 498.
   - Antes eran tres niveles según λ RGB: baja (0 a 35 %), moderada (35 a 70 %) y severa (más de 70 %). Solo se usan

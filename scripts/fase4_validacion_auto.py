@@ -9,8 +9,11 @@ en la RGB; baja = se ve.
 
 Partes (por omisión, todas), con salidas en reports/<validacion_auto.carpeta>/:
   comparar       kappa de Cohen binario (sin pesos, IC 95 % asintótico de statsmodels), matriz de confusión y lista de
-                 desacuerdos con sus imágenes (las de oclusion_auto.revisar, en desacuerdos/). Se usa el automático si
-                 el kappa binario es de `kappa_minimo` o más. Aparte, solo para reportar, el kappa de 3 niveles con λ por
+                 desacuerdos con sus imágenes (las de oclusion_auto.revisar, en desacuerdos/), con la anotación con
+                 cajas del primero (primera anotación: dio 0.940). Ya no decide: desde el 2026-11-01 decide el
+                 automático contra el primero en modo simple de la ronda 2 (entre_anotadores). Lo que imprime sobre
+                 `kappa_minimo` es el resultado de esa primera anotación. Aparte, solo para reportar, el kappa de 3
+                 niveles con λ por
                  áreas (`oclusion_auto.limites_nivel`) y la diferencia de λ. Las "no es persona" y "fuera de cuadro" no
                  entran. Agrega una fila a la bitácora.
   no_es_persona  mosaico de las "no es persona" de la muestra: RGB alineada, térmica, térmica con el realce de la
@@ -486,14 +489,23 @@ def entre_anotadores(cfg, rutas, carpeta, ronda=None):
 
 def automatico_contra_primero_simple(cfg, rutas, sub, x, auto_todas, texto):
     """Nivel automático contra el primero en modo simple, sobre todas las personas que el primero no marca "no es
-    persona" (como la comparación con su anotación con cajas, que dio el kappa de la decisión). Escribe automatico.csv,
-    automatico_matriz.csv, automatico_desacuerdos.csv e imagenes_automatico/."""
+    persona" (como la comparación con su anotación con cajas). Decide si se usa el automático (regla fijada el
+    2026-11-01, antes de la ronda 2): con kappa de `kappa_minimo` o más, sí; si no, el nivel binario de las 498
+    personas se anota a mano en modo simple. Escribe automatico.csv (con la decisión), automatico_matriz.csv,
+    automatico_desacuerdos.csv e imagenes_automatico/."""
     va = cfg["validacion_auto"]
     niveles = va["niveles"]
     a = x[x.primero_simple.isin(niveles)].assign(automatico=auto_todas)
     fila, m = fila_kappa("automático contra primero (modo simple)", a, "primero_simple", "automatico", niveles)
     r = pd.DataFrame([fila]).round(4)
     r["kappa_minimo"] = va["kappa_minimo"]
+    if np.isnan(fila["kappa"]):
+        decision = "sin decidir: el kappa no se puede calcular"
+    elif fila["kappa"] >= va["kappa_minimo"]:
+        decision = "se usa el nivel automático"
+    else:
+        decision = "el nivel binario de las 498 personas se anota a mano en modo simple"
+    r["decision"] = decision
     r.to_csv(sub / "automatico.csv", index=False, encoding="utf-8")
     m.to_csv(sub / "automatico_matriz.csv", encoding="utf-8")
     des = a[a.primero_simple != a.automatico]
@@ -504,9 +516,11 @@ def automatico_contra_primero_simple(cfg, rutas, sub, x, auto_todas, texto):
                 for f in des.itertuples()}
         revisar(cfg, rutas, personas=sorted(crit), nombre="imagenes_automatico", base=sub, criterio=crit)
     print(f"\nAutomático contra el primero en modo simple ({len(a)} personas sin 'no es persona' del primero)\n"
-          f"{r.to_string(index=False)}\n{m}\nDesacuerdos: {', '.join(map(str, des.n_muestra)) or 'ninguno'}")
+          f"{r.to_string(index=False)}\n{m}\nDesacuerdos: {', '.join(map(str, des.n_muestra)) or 'ninguno'}\n"
+          f"DECISIÓN (kappa mínimo {va['kappa_minimo']}): {decision}")
     return (f"; automático contra primero (modo simple): kappa {fila['kappa']:.3f} (IC {fila['ic95_bajo']:.3f}-"
-            f"{fila['ic95_alto']:.3f}), {fila['desacuerdos']} desacuerdos en {len(a)}")
+            f"{fila['ic95_alto']:.3f}), {fila['desacuerdos']} desacuerdos en {len(a)}, mínimo {va['kappa_minimo']}: "
+            f"{decision}")
 
 
 def cambios_primero(cfg, rutas, sub, x, auto_todas, texto):

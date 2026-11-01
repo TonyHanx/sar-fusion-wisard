@@ -15,8 +15,9 @@ Fase 3b, 1 de noviembre de 2026. Estas reglas valen para los dos anotadores.
   - El nivel sale de un λ RGB automático (`scripts/oclusion_auto.py`).
   - Para validarlo, el primer anotador anota a mano solo esas mismas 75 personas, con la herramienta en modo
     `--muestra`.
-  - Si el kappa de Cohen entre el nivel automático y el manual (dos clases) es menor que 0.61, se vuelve a anotar a
-    mano las 498. Dio 0.940: se usa el automático.
+  - Primera anotación, con cajas: el kappa de Cohen entre el nivel automático y el manual (dos clases) dio 0.940.
+  - Desde el 1 de noviembre de 2026 decide el kappa del automático contra el primer anotador **en modo simple, ronda
+    2** (regla aclarada). Si es menor que 0.61, el nivel binario de las 498 se anota a mano en modo simple.
   - Las reglas de abajo no cambian.
 
 ## Cajas
