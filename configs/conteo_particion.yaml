@@ -1,0 +1,14 @@
+# Conteos para planear la partición y la anotación de oclusión (scripts/conteo_particion.py), antes de la Fase 3.
+# No crea la partición: solo cuenta sobre los pares finales (anotados y no excluidos).
+pares: pares.csv                                   # dentro de data/
+transformaciones: configs/homografias_cajas.yaml   # semejanza congelada (relativo a la raíz del repositorio)
+tam_termica: [640, 512]
+# Una persona térmica "tiene caja RGB" si hay alguna caja RGB llevada a la térmica a `radio_cerca_alturas` alturas de
+# su caja o menos (el mismo radio de la regla de desfase). Si no, se cuenta como "sin caja RGB".
+radio_cerca_alturas: 3
+# Vuelo propuesto como prueba y submuestreos de la anotación: 1 de cada k fotogramas, por posición (posición % k == 0,
+# y también los otros k - 1 desfases para ver cuánto cambia).
+vuelo_prueba: 210924_FHL_Enterprise_0405
+pasos_anotacion: [1, 3, 5]
+salida_vuelos: conteo_particion_vuelos.csv          # dentro de reports/
+salida_prueba: conteo_particion_prueba.csv          # dentro de reports/
