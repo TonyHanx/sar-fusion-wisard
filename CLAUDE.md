@@ -55,10 +55,14 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
       `data\oclusion_segundo_simple_ronda2.csv` (`--segundo-simple`).
   - Nivel a mano de las 498: las 423 que faltan, del primero (`--primero-simple-resto`, `oclusion.modo_simple.resto`),
     en `data\oclusion_primero_simple_resto.csv`. Las 75 de la muestra son las suyas de la ronda 2.
-- Cajas dudosas de la prueba (las 10 "no es persona" de los dos en la ronda 2): `configs\cajas_dudosas.yaml`.
+- Reanotación de la escena en sombra (fotogramas 468 a 588, `--primero-simple-reanotar escena_sombra`):
+  `data\oclusion_primero_simple_escena_sombra.csv`.
+- Cajas dudosas de la prueba: `configs\cajas_dudosas.yaml`, generado por `scripts/fase4_cajas_dudosas.py` (sección
+  `cajas_dudosas` de `configs/fase3.yaml`); no se edita a mano. Tablas y mosaico en
+  `reports\fase4_validacion_auto\cajas_dudosas\`.
 - **Nivel final de oclusión** (cierre de la fase 4, `scripts/fase4_nivel.py`, sección `nivel_final` de
   `configs/fase3.yaml`): `data\oclusion_nivel.csv`. Es el que usa la fase 6. Tablas en
-  `reports\fase4_validacion_auto\nivel_final\`.
+  `reports\fase4_validacion_auto\nivel_final\`. Antes de reescribirlo guarda una copia en `data\respaldos\`.
 - Correcciones de la muestra: `configs\correcciones_oclusion.yaml` (las aplica `scripts/corregir_oclusion.py`).
   - Respaldo de las anotaciones antes de cada corrección: `data\respaldos\`.
   - Lista para ajustar la visible RGB (herramienta `--ajuste`): `data\oclusion_ajuste_visibles.csv`.
@@ -260,13 +264,26 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
       - 21, 22 y 58: la visible térmica es la caja de WiSARD, y siguen en severa.
       - Los niveles no cambian.
   - **Pendiente de decidir** (ver `reports/fase4_validacion_auto.md`):
-    - si el fotograma 60 de FHL 0405 se excluye por desfase (y 71–72);
-    - las 56 "no es persona" del primero que no están en las cajas dudosas (6 de la muestra y 50 del resto; quedan
-      sin nivel): ¿van también a `configs/cajas_dudosas.yaml`?
-    - si el "sin ellas" de la fase 6 se extiende a las cajas de esos mismos objetos en los fotogramas no anotados (las
-      métricas globales van sobre los 928);
-    - la escena en sombra en el nivel final: las 8 "se ve" de la muestra tienen un criterio distinto del resto en los
-      mismos fotogramas (8 de 13 contra 1 de 56). No se revisaron, como se decidió;
+    - cómo se tratan en el "sin ellas" las 78 cajas en conflicto (39 pares): cajas de fotogramas no anotados que
+      siguen a una caja dudosa y, del otro lado, a una persona con nivel. Conviene decidirlo después de la
+      reanotación de la escena en sombra.
+  - **Decidido el 1 de noviembre de 2026, tras el cierre:**
+    - **Fotograma 60: no se excluye** (tampoco 71–72): el desfase residual está bajo los límites de la regla.
+    - **Cajas dudosas:** las 66 "no es persona" van todas a `configs/cajas_dudosas.yaml`, y las etiquetas de prueba
+      no se tocan.
+      - Para el "sin ellas", cada caja se sigue por los fotogramas no anotados. Se toma la caja de WiSARD más
+        cercana, mutua y a 1 altura o menos, fotograma a fotograma, hasta el fotograma anotado siguiente.
+      - Resultado antes de la reanotación: 66 anotadas + 78 seguidas = **144**, más 78 en conflicto (222 con ellas),
+        de 1 501 cajas.
+    - **Escena en sombra:** se reanotan de una vez todas sus personas (94: 20 de la muestra y 74 del resto), en
+      orden de fotograma, con la misma regla.
+      - Herramienta: `anotar_oclusion.py --primero-simple-reanotar escena_sombra`.
+      - Esas respuestas reemplazan el nivel final de la escena, y los kappas de la ronda 2 no cambian.
+      - Las anteriores quedan en sus archivos y en `respuesta_anterior`. Pendiente de anotar.
+    - **Limitaciones del reporte:**
+      - la mediana de 0.9 s por persona en el resto;
+      - que el resto se anotó después de conocer los resultados de la ronda 2;
+      - el IC de la concordancia, ya declarado antes.
     - Las métricas por nivel van sobre los 310 fotogramas anotados: con el nivel a mano, el nivel solo existe ahí.
 - **Niveles: dos clases**, decidido el 1 de noviembre de 2026, porque en la muestra no hubo ninguna moderada (0 de 68).
   - **Severa:** la persona no se ve en la RGB.
@@ -276,8 +293,10 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
   - **Desde la ronda 2 se usa el manual en modo simple** de las 498 personas de los 310 fotogramas anotados.
     - Son las 75 de la muestra del primero en la ronda 2 más las 423 de `--primero-simple-resto`.
     - Las 10 cajas dudosas quedan sin nivel.
-  - **Nivel final (fase 4 cerrada el 1 de noviembre de 2026):** `data/oclusion_nivel.csv`.
-    - **Baja 190, severa 242 y sin nivel ("no es persona") 66** de 498. Las 66 incluyen las 10 cajas dudosas.
+  - **Nivel final (fase 4 cerrada el 1 de noviembre de 2026; la escena en sombra se está reanotando):**
+    `data/oclusion_nivel.csv`.
+    - Antes de la reanotación: **baja 190, severa 242 y sin nivel ("no es persona") 66** de 498. Las 66 incluyen las
+      10 de los dos.
     - 259 de los 310 fotogramas tienen alguna persona.
     - Mediana de 1.0 s por persona: 1.4 s en la muestra y 0.9 s en el resto.
     - Informativo, contra el automático: kappa 0.716 (IC 0.649 a 0.782) en 432 comparables. No reabre la decisión,
@@ -301,7 +320,8 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
   - **Por nivel de oclusión** sobre los **310 anotados**, los únicos con nivel. Al evaluar un nivel, las personas de los
     otros niveles se marcan como ignoradas.
   - **Con y sin las cajas dudosas** (`configs/cajas_dudosas.yaml`), decidido el 1 de noviembre de 2026. "Sin ellas" =
-    esas cajas se marcan como ignoradas. Las etiquetas de prueba no se tocan.
+    esas cajas se marcan como ignoradas. Son las anotadas y las seguidas por los fotogramas no anotados; las "en
+    conflicto" están pendientes. Las etiquetas de prueba no se tocan.
 - **Prueba estadística:** McNemar (statsmodels) entre modelos dentro de cada nivel, corrección de Bonferroni, α = 0.05.
 - **Bootstrap por episodio (fase 6):** los intervalos de confianza se calculan remuestreando episodios completos, no
   fotogramas, porque los fotogramas seguidos de un episodio no son independientes. Usa seed=0.

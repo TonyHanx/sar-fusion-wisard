@@ -29,7 +29,11 @@ los mismos métodos que usa la ventana (raton y tecla) y comprueba:
 11. --primero-simple-resto: las personas de la lista que no son de la muestra (con ellas suman la lista), en su orden,
    con el mismo modo simple del primero y la regla de la ronda de `modo_simple.resto`, sin leer ningún archivo de
    respuestas; escribe por defecto en su propio archivo, la cabecera lo dice, muestra la regla, e no activa el realce,
-   guarda con 'primero_simple', retoma, y no acepta las respuestas de la muestra ni un archivo del segundo.
+   guarda con 'primero_simple', retoma, y no acepta las respuestas de la muestra ni un archivo del segundo;
+12. --primero-simple-reanotar NOMBRE (cada tramo de `modo_simple.reanotaciones`): todas las personas de la lista con
+   fotograma en el tramo (muestra y resto), en orden de fotograma, con el mismo modo simple del primero, sin leer
+   ningún archivo de respuestas; escribe por defecto en su archivo, la cabecera lo dice, muestra la regla, e no activa
+   el realce, guarda y retoma, no acepta otros archivos y rechaza un nombre que no está en la configuración.
 No toca los archivos de anotaciones de data/. Guarda capturas del lienzo de los modos en reports/oclusion/.
 
 Uso:
@@ -120,8 +124,10 @@ def main():
     ronda_actual = o["modo_simple"]["ronda_actual"]
     archivos_simple = [f for r in rondas.values() for k, f in r.items() if k in ("primero", "segundo")]
     resto = o["modo_simple"]["resto"]
+    reanotaciones = o["modo_simple"].get("reanotaciones", {})
     reales = ([rutas["data"] / o["anotaciones"], rutas["data"] / o["anotaciones_segundo"]]
-              + [rutas["data"] / f for f in archivos_simple] + [rutas["data"] / resto["archivo"]])
+              + [rutas["data"] / f for f in archivos_simple] + [rutas["data"] / resto["archivo"]]
+              + [rutas["data"] / r["archivo"] for r in reanotaciones.values()])
     antes = {r: r.read_bytes() if r.exists() else None for r in reales}
     area = preparar_pantalla()
 
@@ -582,6 +588,74 @@ def main():
         except SystemExit:
             rechaza = True
         comprobar(rechaza, "resto: es solo del primer anotador")
+
+        # ---- --primero-simple-reanotar NOMBRE: todas las personas de un tramo de fotogramas, en orden de fotograma
+        for nombre, rr in reanotaciones.items():
+            salida8 = Path(tmp) / f"reanotar_{nombre}.csv"
+            leidos = []
+            pd.read_csv = espia
+            try:
+                pn = crear_anotador(cfg, rutas, segundo=False, salida=salida8, area=area, simple="primero",
+                                    reanotar=nombre)
+            finally:
+                pd.read_csv = leer_csv
+            pos_de = dict(zip(pn.todas.id, pn.todas.posicion))
+            esperados = [i for i in a.ids if rr["desde"] <= pos_de[i] <= rr["hasta"]]
+            comprobar(list(pn.ids) == esperados and len(esperados) > 0 and set(pn.ids) & de_muestra
+                      and set(pn.ids) - de_muestra and pn.i == 0,
+                      f"reanotar {nombre}: las {len(pn.ids)} personas de los fotogramas {rr['desde']} a {rr['hasta']} "
+                      f"({len(set(pn.ids) & de_muestra)} de la muestra y {len(set(pn.ids) - de_muestra)} del resto), "
+                      "en orden de fotograma")
+            comprobar(type(pn) is type(ps) and pn.modo == "primero_simple" and pn.ronda == rr["ronda"],
+                      f"reanotar {nombre}: el mismo modo simple del primero, con la regla de la ronda {rr['ronda']}")
+            comprobar(sorted(set(leidos)) == [o["personas"]] and not any(c.startswith("rgb_") for c in pn.todas.columns),
+                      f"reanotar {nombre}: no lee ningún archivo de respuestas (lee {sorted(set(leidos))}) ni usa "
+                      "la precarga")
+            n_def = crear_anotador(cfg, rutas, segundo=False, area=area, simple="primero", reanotar=nombre)
+            comprobar(n_def.salida == rutas["data"] / rr["archivo"],
+                      f"reanotar {nombre}: por defecto escribe en su propio archivo ({rr['archivo']})")
+            del n_def
+            textos = []
+            texto_orig = pn.texto
+
+            def texto_espia2(img, s, *args, **kw):
+                textos.append(s)
+                return texto_orig(img, s, *args, **kw)
+            pn.texto = texto_espia2
+            pn.dibujar()
+            del pn.texto
+            cabecera = f"reanotacion {nombre} {rr['desde']}-{rr['hasta']}, regla de la ronda {rr['ronda']}"
+            comprobar(any(cabecera in s for s in textos) and any(REGLA_SIMPLE[0] in s for s in textos),
+                      f"reanotar {nombre}: la cabecera lo dice y muestra la regla aclarada")
+            sin_e = pn.dibujar()[:pn.ph]
+            tecla(pn, "e")
+            comprobar(not pn.realce and np.array_equal(pn.dibujar()[:pn.ph], sin_e)
+                      and pixeles_de(pn, COMPLETA) == 0 and pixeles_de(pn, CAJA_WISARD) > 0,
+                      f"reanotar {nombre}: solo la caja térmica de WiSARD y e no activa el realce")
+            pn.mensaje = ""
+            pn.raton(cv2.EVENT_MOUSEMOVE, pn.x_panel["rgb"] + pn.pw // 2 + 40, pn.ph // 2 - 30, 0)
+            cv2.imwrite(str(capturas / f"herramienta_primero_simple_reanotar_{nombre}.jpg"), pn.dibujar(),
+                        [cv2.IMWRITE_JPEG_QUALITY, 90])
+            tecla(pn, "2")
+            d8 = pd.read_csv(salida8, dtype={"id": str})
+            pn2 = crear_anotador(cfg, rutas, segundo=False, salida=salida8, area=area, simple="primero",
+                                 reanotar=nombre)
+            comprobar(list(d8.id) == esperados[:1] and set(d8.anotador) == {"primero_simple"} and pn2.i == 1,
+                      f"reanotar {nombre}: guarda en su archivo con 'primero_simple' y retoma")
+            for otro, cual in ((salida7, "las respuestas del resto"), (salida5, "un archivo del segundo")):
+                try:
+                    crear_anotador(cfg, rutas, segundo=False, salida=otro, area=area, simple="primero",
+                                   reanotar=nombre)
+                    rechaza = False
+                except SystemExit:
+                    rechaza = True
+                comprobar(rechaza, f"reanotar {nombre}: no acepta {cual}")
+        try:
+            crear_anotador(cfg, rutas, segundo=False, area=area, simple="primero", reanotar="no_existe")
+            rechaza = False
+        except SystemExit:
+            rechaza = True
+        comprobar(rechaza, "reanotar: rechaza un nombre que no está en la configuración")
 
     despues_reales = {r: r.read_bytes() if r.exists() else None for r in reales}
     comprobar(despues_reales == antes, "los archivos reales de anotaciones de data/ no se tocaron")

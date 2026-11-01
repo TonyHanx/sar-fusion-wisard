@@ -1,0 +1,4 @@
+max_dist_alturas,usado,anotadas,seguidas,en_conflicto,total_sin_conflicto,total_con_conflicto,cajas_en_fotogramas_no_anotados,cajas_del_vuelo
+0.5,False,66,60,64,126,190,1003,1501
+1.0,True,66,78,78,144,222,1003,1501
+1.5,False,66,80,84,146,230,1003,1501

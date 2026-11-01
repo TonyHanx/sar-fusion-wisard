@@ -106,9 +106,14 @@ El nivel automático no pasó la validación de la ronda 2 (kappa 0.427 contra e
 - **Las 423 que faltan:** `--primero-simple-resto`, en el orden de la lista (por fotograma).
   - Guarda en `data/oclusion_primero_simple_resto.csv`.
   - La ronda de la regla está en `oclusion.modo_simple.resto` (`configs/fase3.yaml`).
-- **"No es persona":** las 10 en que coinciden los dos en la ronda 2 están en `configs/cajas_dudosas.yaml`.
+- **"No es persona":** quedan sin nivel. Todas, también las 10 en que coinciden los dos en la ronda 2, van a
+  `configs/cajas_dudosas.yaml`.
   - Las etiquetas de prueba no se tocan.
-  - Esas personas quedan sin nivel.
+- **Reanotación de la escena en sombra** (fotogramas 468 a 588), decidida el 1 de noviembre de 2026:
+  - el primero vuelve a responder de una vez todas sus personas (muestra y resto, 94), en orden de fotograma y con la
+    misma regla;
+  - usa `--primero-simple-reanotar escena_sombra` y guarda en `data/oclusion_primero_simple_escena_sombra.csv`;
+  - esas respuestas reemplazan las anteriores en el nivel final, y las anteriores se conservan.
 
 ## Cómo se aplican en la herramienta
 
@@ -174,6 +179,7 @@ La herramienta es `scripts/anotar_oclusion.py`.
   `data/oclusion_segundo_simple_ronda2.csv`), solo las personas respondidas, después de cada respuesta. Al abrir de
   nuevo, sigue en la primera sin responder.
   - Con `--primero-simple-resto`, igual, en `data/oclusion_primero_simple_resto.csv`.
+  - Con `--primero-simple-reanotar escena_sombra`, igual, en `data/oclusion_primero_simple_escena_sombra.csv`.
 - Se guarda después de cada cambio y al pasar de persona. Al abrir de nuevo, la herramienta sigue en la primera persona
   sin terminar.
 - **No abras el CSV en Excel mientras anotas.** Excel bloquea el archivo y la herramienta no puede guardar. Si pasa,
@@ -192,6 +198,7 @@ La herramienta es `scripts/anotar_oclusion.py`.
 .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --segundo-simple
 .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --primero-simple
 .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --primero-simple-resto
+.venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --primero-simple-reanotar escena_sombra
 ```
 
 - **Con `--ajuste`:** primer anotador.
@@ -206,5 +213,8 @@ La herramienta es `scripts/anotar_oclusion.py`.
   arriba).
 - **Con `--primero-simple-resto`:** primer anotador, modo simple, las 423 personas que faltan de las 498 (ver "Las 498
   personas"). "Persona N de 423" cuenta dentro de esa lista; `--persona N` también.
+- **Con `--primero-simple-reanotar NOMBRE`:** primer anotador, modo simple, todas las personas de un tramo de
+  `oclusion.modo_simple.reanotaciones` (hoy, `escena_sombra`: fotogramas 468 a 588, 94 personas), en orden de
+  fotograma.
 - **Sin opciones:** abre en la primera persona sin terminar.
 - **Con `--persona N`:** abre en la persona N.
