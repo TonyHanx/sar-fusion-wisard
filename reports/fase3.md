@@ -343,7 +343,11 @@ con realce de contraste, sin cajas.
 - **λ RGB manual:** queda prácticamente en 0 o 1. No hay ninguna persona en nivel moderado.
 - **Visibles térmicas:** las 65 son las cajas de WiSARD y se salen más del 10 % de la completa térmica. Eso no afecta
   el nivel, que se calcula con la RGB.
-- **Pendiente antes del kappa:**
-  - Si 63 y 64 son una o dos personas.
-  - Qué hacer con 21, 22 y 58 (fotogramas 258, 321 y 588). Tienen la RGB y la térmica "no visible" y una mancha
-    tenue en la térmica. No hubo confusión de `t` y `r`.
+- **Decidido después** (1 de noviembre de 2026; está en `configs/correcciones_oclusion.yaml`):
+  - **63 y 64 son dos personas.** La completa de la 63 (14.5 × 10.5 px) se centró en su propia caja de WiSARD, con el
+    mismo tamaño. Antes caía en un 87 % sobre la caja de la 64; ahora cae en un 97 % sobre la suya. Su λ térmica pasa de
+    0.74 a 0.03.
+  - **21, 22 y 58:** la visible térmica es la caja de WiSARD, sobre la mancha tenue, y su λ térmica pasa a 0. La RGB
+    sigue "no visible", así que siguen en severa.
+  - Solo cambiaron esas 4 filas; hay respaldo en `data/respaldos/`. Los niveles no cambian: 68 comparables, baja 29,
+    moderada 0 y severa 39. Las 68 tienen visible térmica.

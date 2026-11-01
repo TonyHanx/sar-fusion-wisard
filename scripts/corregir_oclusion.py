@@ -2,12 +2,14 @@ r"""Fase 3b: aplica a data/<oclusion.anotaciones> las correcciones de configs/<o
 de personas para ajustar la visible RGB.
 
 1. Correcciones (decididas a ojo por el primer anotador): visible "no visible", visible = caja térmica de WiSARD,
-   visible borrada o "no es persona". Usa las mismas funciones que la herramienta (la completa RGB vuelve a la
+   visible borrada, "no es persona" o completa centrada en la caja térmica de WiSARD (mismo tamaño; la completa RGB se
+   mueve lo mismo). Usa las mismas funciones que la herramienta (la completa RGB vuelve a la
    semejanza si la RGB queda "no visible", λ recalculado). Aplicarlas de nuevo no cambia nada. Antes de escribir guarda
    una copia en data/<respaldos>/. Las demás filas (la persona 1 y las de la muestra sin corrección) no cambian.
 2. Lista de ajuste (data/<oclusion.lista_ajuste>): personas de la muestra con visible RGB (dibujada o precargada),
    sin "no es persona" ni "fuera de cuadro", ordenadas de mayor a menor según la fracción del área de la visible RGB que
-   queda fuera de la completa RGB. La herramienta la abre con --ajuste.
+   queda fuera de la completa RGB. La herramienta la abre con --ajuste. Se arma una sola vez (si no existe); con
+   --rehacer-lista se vuelve a armar con el estado actual.
 
 Uso:
     .venv\Scripts\python.exe scripts\corregir_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml
@@ -20,7 +22,8 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 
-from anotar_oclusion import (COLUMNAS, a_fila, area, desde_fila, interseccion, normalizar, terminada, vacia)
+from anotar_oclusion import (COLUMNAS, a_fila, area, centro, con_centro, desde_fila, interseccion, normalizar,
+                             terminada, vacia)
 from comun import RAIZ, leer_rutas, leer_yaml
 
 
@@ -41,6 +44,13 @@ def aplicar(r, p, c):
             raise SystemExit(f"{c['id']}: corrección desconocida {clave}: {accion}")
     if "no_es_persona" in c:
         r["no_es_persona"] = bool(c["no_es_persona"])
+    if c.get("completa") is not None:
+        if c["completa"] != "centrar_en_wisard" or r["completa"] is None:
+            raise SystemExit(f"{c['id']}: corrección de la completa no aplicable ({c['completa']})")
+        (xt, yt), (xr, yr) = centro(r["completa"]["ter"]), centro(r["completa"]["rgb"])
+        cx, cy = (float(p.ter_x0) + float(p.ter_x1)) / 2, (float(p.ter_y0) + float(p.ter_y1)) / 2
+        r["completa"] = {"ter": con_centro(r["completa"]["ter"], cx, cy),
+                         "rgb": con_centro(r["completa"]["rgb"], cx + xr - xt, cy + yr - yt)}
     normalizar(r)
     return r
 
@@ -56,6 +66,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--config", required=True)
     ap.add_argument("--rutas", required=True)
+    ap.add_argument("--rehacer-lista", action="store_true", help="vuelve a armar la lista de ajuste aunque exista")
     args = ap.parse_args()
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     cfg = leer_yaml(args.config)
@@ -111,7 +122,10 @@ def main():
     else:
         print(f"Nada que corregir en {ruta}")
 
-    # lista para ajustar la visible RGB
+    # lista para ajustar la visible RGB (una sola vez, para que no cambie el orden con que se ajustó)
+    if (data / o["lista_ajuste"]).exists() and not args.rehacer_lista:
+        print(f"La lista de ajuste ya existe ({data / o['lista_ajuste']}); no se rehace")
+        return
     df = pd.read_csv(ruta, dtype={"id": str})
     m = df[df.id.isin(set(muestra)) & (df.rgb_estado == "caja") & ~df.no_es_persona.astype(bool)
            & ~df.fuera_de_cuadro.astype(bool)].copy()
