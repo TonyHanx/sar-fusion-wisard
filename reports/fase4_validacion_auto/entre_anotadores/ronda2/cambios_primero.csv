@@ -1,0 +1,27 @@
+id,n_muestra,posicion,indice_caja,primero_cajas,primero_simple,segundo,automatico,cambio,con_el_automatico
+210924_FHL_Enterprise_0405_0144_1,15,144,1,severa,baja,baja,severa,True,deja de coincidir
+210924_FHL_Enterprise_0405_0258_1,21,258,1,severa,baja,no_es_persona,severa,True,deja de coincidir
+210924_FHL_Enterprise_0405_0321_0,22,321,0,severa,no_es_persona,no_es_persona,severa,True,deja de coincidir
+210924_FHL_Enterprise_0405_0339_1,26,339,1,severa,no_es_persona,no_es_persona,severa,True,deja de coincidir
+210924_FHL_Enterprise_0405_0378_0,27,378,0,severa,no_es_persona,no_es_persona,severa,True,deja de coincidir
+210924_FHL_Enterprise_0405_0420_0,28,420,0,severa,baja,severa,severa,True,deja de coincidir
+210924_FHL_Enterprise_0405_0426_2,29,426,2,severa,no_es_persona,no_es_persona,severa,True,deja de coincidir
+210924_FHL_Enterprise_0405_0444_2,32,444,2,severa,baja,severa,severa,True,deja de coincidir
+210924_FHL_Enterprise_0405_0468_0,39,468,0,severa,baja,severa,severa,True,deja de coincidir
+210924_FHL_Enterprise_0405_0474_0,40,474,0,severa,baja,baja,severa,True,deja de coincidir
+210924_FHL_Enterprise_0405_0477_1,42,477,1,severa,baja,baja,severa,True,deja de coincidir
+210924_FHL_Enterprise_0405_0483_1,43,483,1,severa,baja,baja,severa,True,deja de coincidir
+210924_FHL_Enterprise_0405_0489_1,44,489,1,severa,baja,baja,severa,True,deja de coincidir
+210924_FHL_Enterprise_0405_0501_0,46,501,0,no_es_persona,severa,baja,severa,True,pasa a coincidir
+210924_FHL_Enterprise_0405_0513_1,48,513,1,severa,no_es_persona,severa,severa,True,deja de coincidir
+210924_FHL_Enterprise_0405_0555_0,51,555,0,severa,no_es_persona,severa,severa,True,deja de coincidir
+210924_FHL_Enterprise_0405_0561_0,52,561,0,severa,no_es_persona,severa,severa,True,deja de coincidir
+210924_FHL_Enterprise_0405_0573_0,53,573,0,severa,baja,severa,severa,True,deja de coincidir
+210924_FHL_Enterprise_0405_0576_0,54,576,0,severa,no_es_persona,baja,severa,True,deja de coincidir
+210924_FHL_Enterprise_0405_0579_1,55,579,1,severa,no_es_persona,severa,severa,True,deja de coincidir
+210924_FHL_Enterprise_0405_0585_0,56,585,0,severa,baja,baja,severa,True,deja de coincidir
+210924_FHL_Enterprise_0405_0588_0,57,588,0,severa,baja,baja,severa,True,deja de coincidir
+210924_FHL_Enterprise_0405_0588_1,58,588,1,severa,no_es_persona,severa,severa,True,deja de coincidir
+210924_FHL_Enterprise_0405_0636_0,59,636,0,baja,severa,no_es_persona,baja,True,deja de coincidir
+210924_FHL_Enterprise_0405_0894_0,72,894,0,baja,severa,baja,baja,True,deja de coincidir
+210924_FHL_Enterprise_0405_0900_0,75,900,0,baja,severa,severa,baja,True,deja de coincidir
