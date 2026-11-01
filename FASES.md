@@ -146,8 +146,10 @@ El primer comando es para ti; el segundo, para el segundo anotador.
 **Revisa:**
 - Anota las 75 personas de la muestra con `--muestra`: avanzas con espacio y la herramienta guarda sola.
 - La comparación (antes `--comparar`) ahora es de dos niveles, "se ve o no en la RGB", con
-  `scripts/fase4_validacion_auto.py` (decidido el 1 de noviembre de 2026). Con kappa binario de 0.61 o más se usa el
-  automático; si no, anotas las 498. Dio 0.940: se usa el automático (`reports/fase4_validacion_auto.md`).
+  `scripts/fase4_validacion_auto.py` (decidido el 1 de noviembre de 2026). Con tu anotación con cajas dio 0.940.
+  Desde el 1 de noviembre de 2026 decide el kappa del automático contra tu modo simple de la ronda 2 (regla aclarada):
+  con 0.61 o más se usa el automático; si no, el nivel binario de las 498 se anota a mano en modo simple. El 0.940
+  queda como resultado de la primera anotación (`reports/fase4_validacion_auto.md`).
 - Segundo anotador: modo simple (`--segundo-simple`), una tecla por persona.
   - Ronda 1 (regla ambigua): kappa 0.507 entre anotadores, no se acepta tal cual.
   - Ronda 2 (regla aclarada: "se ve" con el brillo normal, sin realce; si dudas, "no se ve"): los dos anotadores

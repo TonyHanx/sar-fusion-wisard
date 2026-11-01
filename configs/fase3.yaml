@@ -97,7 +97,10 @@ oclusion_auto:
 # ninguna persona moderada (0 de 68), el nivel pasa a dos clases: severa = la persona no se ve en la RGB; baja = se ve.
 # - Manual (primer anotador, muestra): severa si su visible RGB es "no visible"; baja si tiene caja.
 # - Automático: severa si no hay caja RGB de WiSARD a `oclusion_auto.radio_alturas` alturas o menos; baja si la hay.
-# Se usa el automático si el kappa de Cohen binario es de `kappa_minimo` o más. El kappa de 3 niveles (λ con áreas y
+# Se usa el automático si el kappa de Cohen binario es de `kappa_minimo` o más. Desde el 2026-11-01 (antes de la ronda
+# 2) ese kappa es el del automático contra el primer anotador en modo simple de la ronda 2 (entre_anotadores); si es
+# menor, el nivel binario de las 498 personas se anota a mano en modo simple. El de la anotación con cajas (comparar,
+# 0.940) queda como resultado de la primera anotación. El kappa de 3 niveles (λ con áreas y
 # `oclusion_auto.limites_nivel`) solo se reporta. Las "no es persona" y "fuera de cuadro" van aparte.
 validacion_auto:
   niveles: [baja, severa]
