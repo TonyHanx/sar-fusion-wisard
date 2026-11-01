@@ -1,8 +1,92 @@
-# Fase 4: validación del nivel de oclusión automático
+# Fase 4: nivel de oclusión (validación del automático y nivel final)
 
 Fecha: 1 de noviembre de 2026. Generado con `scripts/fase4_validacion_auto.py` (configuración en `configs/fase3.yaml`,
-sección `validacion_auto`). Tablas e imágenes en `reports/fase4_validacion_auto/`. No se tocó `data/` ni el dataset
-original. Cada cálculo agrega una fila a la bitácora.
+sección `validacion_auto`) y, el nivel final, con `scripts/fase4_nivel.py` (sección `nivel_final`). Tablas e imágenes
+en `reports/fase4_validacion_auto/`. La validación no tocó `data/`. El nivel final solo escribe
+`data/oclusion_nivel.csv`. No se tocó el dataset original. Cada cálculo agrega una fila a la bitácora.
+
+## Cierre de la fase 4: nivel final
+
+**Fase 4 cerrada el 1 de noviembre de 2026.** El nivel que usa la fase 6 es el del primer anotador en modo simple, con la
+regla aclarada, para las 498 personas de los 310 fotogramas anotados de FHL 0405 (1 de cada 3):
+- las 75 de la muestra salen de su ronda 2 (`data/oclusion_primero_simple_ronda2.csv`);
+- las 423 restantes salen de `--primero-simple-resto` (`data/oclusion_primero_simple_resto.csv`).
+
+El nivel está en **`data/oclusion_nivel.csv`**, generado con `scripts/fase4_nivel.py` (configuración en la sección
+`nivel_final` de `configs/fase3.yaml`). Las tablas están en `reports/fase4_validacion_auto/nivel_final/`, y la ejecución
+agrega una fila a la bitácora. El script solo lee las respuestas: comprueba que las dos fuentes cubren las 498 sin
+solaparse y que las 10 cajas dudosas son "no es persona".
+
+```
+.venv\Scripts\python.exe scripts\fase4_nivel.py --config configs\fase3.yaml --rutas configs\rutas.yaml
+```
+
+| Nivel | Muestra | Resto | Total | % | Fotogramas con alguna |
+|---|---:|---:|---:|---:|---:|
+| **Baja** (se ve en la RGB) | 38 | 152 | **190** | 38.2 % | 141 |
+| **Severa** (no se ve en la RGB) | 21 | 221 | **242** | 48.6 % | 151 |
+| **Sin nivel** ("no es persona") | 16 | 50 | **66** | 13.3 % | 60 |
+| Total | 75 | 423 | 498 | 100 % | 259 |
+
+- 259 de los 310 fotogramas anotados tienen alguna persona. Los otros 51 no tienen cajas térmicas.
+- **Las 66 "no es persona"** incluyen las 10 cajas dudosas de `configs/cajas_dudosas.yaml`. Las otras 56 las marcó
+  solo el primero: 6 de la muestra y 50 del resto.
+  - Están entre los fotogramas 102 y 714. 35 están entre 423 y 525, casi en cada fotograma anotado.
+  - 52 están en pares "solo térmica", y para 65 el automático da severa.
+  - Lista en `nivel_final/no_es_persona.csv`.
+- **Columnas de `data/oclusion_nivel.csv`:**
+  - la persona: `orden`, `id`, `vuelo`, `posicion`, `indice_caja` y `cajas_en_fotograma`;
+  - su caja térmica de WiSARD en px: `ter_x0` a `ter_y1`. `indice_caja` es la línea de
+    `data/etiquetas/termica/<vuelo>/<vuelo>_<posicion>.txt`;
+  - `en_muestra`, `respuesta` y **`nivel`** (`baja`, `severa`, o vacío si es "no es persona");
+  - `no_es_persona`, `caja_dudosa`, `archivo_respuesta` y `tiempo_s`.
+
+**Tiempo por persona** (`tiempo_s`: el tiempo con la persona en pantalla, sumando las veces que se volvió a ella):
+
+| Personas | N | Mediana | P25 a P75 | P90 | Menos de 0.5 s |
+|---|---:|---:|---|---:|---:|
+| Muestra (ronda 2) | 75 | 1.4 s | 0.7 a 2.3 s | 3.2 s | 9 (todas "se ve") |
+| Resto | 423 | **0.9 s** | 0.6 a 1.4 s | 2.9 s | 51 (31 "se ve", 20 "no se ve") |
+| Total | 498 | **1.0 s** | 0.6 a 1.6 s | 3.1 s | 60 |
+
+- El máximo, 3 068 s, es la primera persona del resto (fotograma 0). La herramienta quedó abierta en ella desde que
+  la abrí hasta que empezaste a anotar: no es tiempo de anotación. La mediana no cambia.
+- El máximo de la muestra, 153 s, también es su primera persona.
+- Las respuestas en menos de 0.5 s son informativas.
+
+**Comparación con el automático** (solo informativa; no cambia nada). Comparables = sin las "no es persona":
+
+| Personas | Comparables | Kappa (IC 95 %) | Acuerdo | Desacuerdos |
+|---|---:|---|---:|---:|
+| **Las 498** | 432 | **0.716** (0.649 a 0.782) | 86.1 % | 60 |
+| Muestra (ronda 2) | 59 | 0.427 (0.207 a 0.646) | 71.2 % | 17 |
+| Resto | 373 | 0.760 (0.692 a 0.827) | 88.5 % | 43 |
+
+| A mano \ automático | baja (caja RGB de WiSARD cerca) | severa (sin caja RGB cerca) | Total |
+|---|---:|---:|---:|
+| baja | 152 | 38 | 190 |
+| severa | 22 | 220 | 242 |
+| sin nivel ("no es persona") | 1 | 65 | 66 |
+| Total | 175 | 323 | 498 |
+
+- De los 60 desacuerdos, 38 son personas que se ven sin caja RGB de WiSARD cerca. Las otras 22 no se ven, pero
+  WiSARD tiene caja RGB.
+- En las 498, el kappa (0.716) pasa de 0.61, y en la muestra (0.427) no. La regla, fijada antes de la ronda 2,
+  decidía con la muestra, así que el nivel final sigue siendo el manual. Este dato no reabre esa decisión.
+- **La muestra y el resto difieren en la escena en sombra** (fotogramas 468 a 588), donde WiSARD no tiene caja RGB
+  para ninguna persona (`nivel_final/automatico_por_tramo.csv`):
+
+  | Escena en sombra (468 a 588) | Personas | Se ve | No se ve | No es persona |
+  |---|---:|---:|---:|---:|
+  | Muestra (ronda 2) | 20 | **8** | 5 | 7 |
+  | Resto | 74 | **1** | 55 | 18 |
+
+  - Son los mismos fotogramas, intercalados: en la muestra, 8 de 13 comparables "se ven"; en el resto, 1 de 56.
+  - Fuera de esa escena, el kappa contra el automático es 0.575 en la muestra (46) y 0.734 en el resto (317).
+  - Las 8 de la muestra no se revisaron, tal como se decidió. Quedan en el nivel final como "baja", con un criterio
+    distinto del resto en la misma escena.
+  - Si se cambiaran, la baja bajaría de 190 a 182 y la severa subiría de 242 a 250 (ver "Pendiente de decidir").
+  - El resto se anotó después de conocer los resultados de la ronda 2, así que no es independiente de ellos.
 
 ## Decisión sobre el nivel automático
 
@@ -601,24 +685,33 @@ En `entre_anotadores/rondas.csv`.
 
 ## Pendiente de decidir
 
-Ya decidido el 1 de noviembre de 2026 (ver "Decisiones tras la ronda 2"):
+Ya decidido el 1 de noviembre de 2026 (ver "Decisiones tras la ronda 2" y "Cierre de la fase 4"):
 - la escena en sombra no se revisa;
-- las 423 que faltan las anota el primero con `--primero-simple-resto`;
+- las 423 que faltan las anota el primero con `--primero-simple-resto`, y ya están anotadas;
 - las 10 "no es persona" de los dos van a `configs/cajas_dudosas.yaml`;
-- se acepta la concordancia de 0.623, con el IC como limitación.
+- se acepta la concordancia de 0.623, con el IC como limitación;
+- el nivel final está en `data/oclusion_nivel.csv`.
+
+Lo que sigue abierto afecta a la fase 6, no al nivel:
 
 1. **Fotograma 60:** ¿se excluye por desfase? Si se excluye, ¿también 71–72, que se corren lo mismo?
-2. **Las "no es persona" de un solo anotador:** 6 solo del primero (48, 51, 52, 54, 55 y 58) y 4 solo del segundo
-   (21, 35, 59 y 66).
-   - El nivel es el del primero, así que sus 6 quedan sin nivel. ¿Van también a `configs/cajas_dudosas.yaml`?
-   - Lo mismo vale para las "no es persona" que el primero marque en las 423.
-   - Las 4 del segundo tienen nivel del primero ("se ve" o "no se ve").
+2. **Las "no es persona" que no están en las cajas dudosas:** 56 del primero, que quedan sin nivel.
+   - 6 son de la muestra (48, 51, 52, 54, 55 y 58) y 50 del resto. 35 de las 66 están entre los fotogramas 423 y 525.
+   - Las 4 "no es persona" solo del segundo (21, 35, 59 y 66) tienen nivel del primero.
+   - ¿Van también a `configs/cajas_dudosas.yaml`, para el "sin ellas" de la fase 6?
 3. **Las cajas dudosas en los fotogramas no anotados:** `configs/cajas_dudosas.yaml` solo tiene las 10 cajas de los
    fotogramas anotados.
    - Los mismos objetos probablemente tienen caja de WiSARD en los fotogramas vecinos, que no se anotan (2 de cada 3).
      Por ejemplo, el objeto marrón de 429 a 474.
    - Las métricas globales van sobre los 928. ¿El "sin ellas" se extiende a esas cajas?
-4. **La 73:** en la ronda 2, el primero no la ve y el segundo sí.
-5. **Dónde se evalúa por nivel:** con el nivel a mano, el nivel solo existe en los 310 fotogramas anotados, así que
-   las métricas por nivel van sobre los 310, como ya dice CLAUDE.md. Las globales siguen sobre los 928 y los 310.
-6. **FASES.md:** el mensaje de la fase 4 sigue hablando de λ y de tres niveles.
+4. **Escena en sombra en el nivel final:** las 8 "se ve" de la muestra quedaron con un criterio distinto del resto en
+   los mismos fotogramas (8 de 13 contra 1 de 56; ver "Cierre de la fase 4").
+   - No se revisaron, como se decidió.
+   - Si se quisiera un nivel final coherente, habría que revisarlas solo para el nivel final. Los kappas de la ronda 2
+     no cambiarían.
+5. **FASES.md:** el mensaje de la fase 4 sigue hablando de λ y de tres niveles. Lo hecho está en este reporte.
+
+Cerrados:
+- La 73 queda con la respuesta del primero ("no se ve", severa).
+- Las métricas por nivel van sobre los 310 fotogramas anotados, los únicos con nivel, como dice CLAUDE.md. Las
+  globales van sobre los 928 y sobre los 310.

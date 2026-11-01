@@ -56,6 +56,9 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
   - Nivel a mano de las 498: las 423 que faltan, del primero (`--primero-simple-resto`, `oclusion.modo_simple.resto`),
     en `data\oclusion_primero_simple_resto.csv`. Las 75 de la muestra son las suyas de la ronda 2.
 - Cajas dudosas de la prueba (las 10 "no es persona" de los dos en la ronda 2): `configs\cajas_dudosas.yaml`.
+- **Nivel final de oclusión** (cierre de la fase 4, `scripts/fase4_nivel.py`, sección `nivel_final` de
+  `configs/fase3.yaml`): `data\oclusion_nivel.csv`. Es el que usa la fase 6. Tablas en
+  `reports\fase4_validacion_auto\nivel_final\`.
 - Correcciones de la muestra: `configs\correcciones_oclusion.yaml` (las aplica `scripts/corregir_oclusion.py`).
   - Respaldo de las anotaciones antes de cada corrección: `data\respaldos\`.
   - Lista para ajustar la visible RGB (herramienta `--ajuste`): `data\oclusion_ajuste_visibles.csv`.
@@ -236,7 +239,7 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
     - **Nivel a mano:** lo anota el primero en modo simple, con la pantalla y la regla de la ronda 2.
       - Las 75 de la muestra son las suyas de la ronda 2.
       - Las 423 que faltan, con `anotar_oclusion.py --primero-simple-resto`, en un archivo propio; retoma si se cierra.
-      - Pendiente de anotar.
+      - Hecho el 1 de noviembre de 2026; resultado en "Niveles" abajo.
     - **El 0.940 con cajas:** posible sesgo de anclaje por la precarga, porque la visible RGB venía con la caja RGB de
       WiSARD, la misma del automático. Está en el reporte.
   - **Revisión antes del kappa** (1 de noviembre de 2026):
@@ -258,20 +261,29 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
       - Los niveles no cambian.
   - **Pendiente de decidir** (ver `reports/fase4_validacion_auto.md`):
     - si el fotograma 60 de FHL 0405 se excluye por desfase (y 71–72);
-    - las "no es persona" de un solo anotador: 6 del primero, que quedan sin nivel, y 4 del segundo. Lo mismo para las
-      que el primero marque en las 423. ¿Van también a `configs/cajas_dudosas.yaml`?
+    - las 56 "no es persona" del primero que no están en las cajas dudosas (6 de la muestra y 50 del resto; quedan
+      sin nivel): ¿van también a `configs/cajas_dudosas.yaml`?
     - si el "sin ellas" de la fase 6 se extiende a las cajas de esos mismos objetos en los fotogramas no anotados (las
       métricas globales van sobre los 928);
+    - la escena en sombra en el nivel final: las 8 "se ve" de la muestra tienen un criterio distinto del resto en los
+      mismos fotogramas (8 de 13 contra 1 de 56). No se revisaron, como se decidió;
     - Las métricas por nivel van sobre los 310 fotogramas anotados: con el nivel a mano, el nivel solo existe ahí.
 - **Niveles: dos clases**, decidido el 1 de noviembre de 2026, porque en la muestra no hubo ninguna moderada (0 de 68).
   - **Severa:** la persona no se ve en la RGB.
     - Automático: no hay caja RGB de WiSARD a 3 alturas o menos (`sin_caja_rgb_cerca` en `data/oclusion_auto.csv`).
     - Manual: visible RGB "no visible" (con cajas) o "no se ve en la RGB" (modo simple).
   - **Baja:** se ve en la RGB.
-  - **Desde la ronda 2 se usa el manual en modo simple** de las 498 personas de los 310 fotogramas anotados (pendiente
-    de anotar).
+  - **Desde la ronda 2 se usa el manual en modo simple** de las 498 personas de los 310 fotogramas anotados.
     - Son las 75 de la muestra del primero en la ronda 2 más las 423 de `--primero-simple-resto`.
     - Las 10 cajas dudosas quedan sin nivel.
+  - **Nivel final (fase 4 cerrada el 1 de noviembre de 2026):** `data/oclusion_nivel.csv`.
+    - **Baja 190, severa 242 y sin nivel ("no es persona") 66** de 498. Las 66 incluyen las 10 cajas dudosas.
+    - 259 de los 310 fotogramas tienen alguna persona.
+    - Mediana de 1.0 s por persona: 1.4 s en la muestra y 0.9 s en el resto.
+    - Informativo, contra el automático: kappa 0.716 (IC 0.649 a 0.782) en 432 comparables. No reabre la decisión,
+      que se tomó con la muestra (0.427).
+    - En la escena en sombra (468 a 588), la muestra tiene 8 "se ve" de 13 y el resto 1 de 56. Detalle en
+      `reports/fase4_validacion_auto.md`, "Cierre de la fase 4".
   - Automático, solo como referencia: en FHL 0405, severa 976 y baja 525 de 1 501. En los 310 anotados, severa 323 y
     baja 175 de 498.
   - Antes eran tres niveles según λ RGB: baja (0 a 35 %), moderada (35 a 70 %) y severa (más de 70 %). Solo se usan

@@ -134,3 +134,15 @@ validacion_auto:
     # Además, como el fondo RGB-térmica no es fiable en el bosque, el movimiento desde el fotograma anterior dentro de
     # cada cámara (misma medida, RGB con RGB y térmica con térmica): un desfase solo en p da un salto en p y otro al revés
     # en p + 1.
+
+# Nivel final (scripts/fase4_nivel.py), cierre de la fase 4 (2026-11-01). Como el automático no pasó la validación de
+# la ronda 2, el nivel es el del primer anotador en modo simple, con la regla aclarada, de las 498 personas de los 310
+# fotogramas anotados: las de la muestra, de su ronda `oclusion.modo_simple.resto.ronda`; las demás, de
+# `oclusion.modo_simple.resto.archivo`. Se ve en la RGB = baja; no se ve = severa (`validacion_auto.niveles`); "no es
+# persona" = sin nivel (entre ellas, las de `oclusion.cajas_dudosas`). La comparación con el automático es informativa.
+nivel_final:
+  salida: oclusion_nivel.csv                     # dentro de data/: el nivel que usa la fase 6
+  carpeta: fase4_validacion_auto/nivel_final     # dentro de reports/: tablas
+  # Informativo: respuestas y kappa contra el automático dentro y fuera de estos tramos de fotogramas, en la muestra y en
+  # el resto por separado. La escena en sombra es la de la ronda 2 (8 "se ve" del primero en la muestra).
+  tramos: {escena_sombra: [468, 588]}

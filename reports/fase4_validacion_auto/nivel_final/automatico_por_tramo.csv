@@ -1,0 +1,5 @@
+tramo,personas,n,se_ve,no_se_ve,no_es_persona,automatico_severa,comparables,kappa,se_ve_y_auto_severa
+escena_sombra (468-588),muestra,20,8,5,7,20,13,0.0,8
+escena_sombra (468-588),resto,74,1,55,18,74,56,0.0,1
+fuera de escena_sombra,muestra,55,30,16,9,26,46,0.5749486652977412,5
+fuera de escena_sombra,resto,349,151,166,32,203,317,0.7339434874705248,24
