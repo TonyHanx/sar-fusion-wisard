@@ -44,7 +44,8 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
   - Yaml de los datasets: `configs\fusion.yaml`, `configs\rgb.yaml` y `configs\termico.yaml`.
 - Anotación de oclusión (fase 3b, `scripts/anotar_oclusion.py`):
   - `data\oclusion_personas.csv`: lista fija de 498 personas, con la precarga.
-  - `data\oclusion.csv`: anotaciones del primer anotador.
+  - `data\oclusion.csv`: anotaciones del primer anotador. Por persona guarda las dos completas, el corrimiento de la RGB
+    respecto de la térmica, las visibles, las marcas y λ.
   - `data\oclusion_muestra_segundo.csv`: las 75 personas de la muestra.
   - `data\oclusion_segundo.csv`: anotaciones del segundo anotador.
 - Proyecto anterior, solo como consulta: `C:\Users\User\sar-fusion\reports\` (scripts `emparejamiento.py` y
@@ -134,9 +135,13 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
   - **Qué se anota:** la prueba (FHL 0405), solo los fotogramas con posición múltiplo de 3 (1 de cada 3). Son 310
     fotogramas y 498 personas, y cubren los 18 episodios.
   - **Cajas por persona:**
-    - **Una sola caja completa**: el cuerpo entero estimado, la misma para las dos imágenes alineadas.
+    - **Una sola caja completa** (cuerpo entero estimado), **del mismo tamaño en las dos imágenes**. Se puede **mover
+      en cada imagen** para centrarla sobre la persona, porque el error de alineación en FHL 0405 es de unos 4 px en
+      personas de 14 px.
+    - Si la persona no se ve en la RGB, la completa RGB queda donde la pone la semejanza, en el lugar de la térmica.
+    - Opción (a), decidida el 1 de noviembre de 2026.
     - Una caja visible en cada imagen, o "no visible" (λ = 1).
-  - **λ = 1 − área (visible ∩ completa) / área completa**, en cada imagen.
+  - **λ = 1 − área (visible ∩ completa) / área completa**, en cada imagen y con la completa de esa imagen.
   - **"Fuera de cuadro"** no cuenta como oclusión. **"No es persona"** (caja térmica de WiSARD mal puesta) se reporta
     aparte.
   - **Precarga del primer anotador:** la visible térmica es la caja de WiSARD, y la visible RGB es la caja RGB más
@@ -146,8 +151,16 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
 - **Niveles** según λ en la imagen RGB: baja (0 a 35 %), moderada (35 a 70 %), severa (más de 70 %).
 - **Configuración base:** 100 épocas, imagen de 640, lote 16 (bajar si no entra en 8 GB; el mismo para los tres),
   optimizador y tasa de aprendizaje por defecto de Ultralytics para YOLO26 (registrar cuáles fueron).
-- **Métricas:** recall, precisión (umbral de confianza 0.5), F2 y mAP@0.5, por nivel de oclusión, con script propio
-  sobre pycocotools. Al evaluar un nivel, las personas de los otros niveles se marcan como ignoradas.
+- **Aumento de color (fase 5):** **`hsv_h=0`, `hsv_s=0`, `hsv_v=0` en los tres modelos**, para que entrenen igual.
+  - Ultralytics no aplica el aumento HSV a imágenes de 4 canales (`RandomHSV` sale si la imagen no tiene 3), así que
+    la fusión no lo recibiría.
+  - Al modelo solo térmica solo le cambiaría el brillo.
+  - Decidido el 1 de noviembre de 2026.
+- **Métricas:** recall, precisión (umbral de confianza 0.5), F2 y mAP@0.5, con script propio sobre pycocotools.
+  Decidido el 1 de noviembre de 2026.
+  - **Globales** sobre los **928 fotogramas** de prueba, y también sobre los **310 anotados**.
+  - **Por nivel de oclusión** sobre los **310 anotados**, los únicos con nivel. Al evaluar un nivel, las personas de los
+    otros niveles se marcan como ignoradas.
 - **Prueba estadística:** McNemar (statsmodels) entre modelos dentro de cada nivel, corrección de Bonferroni, α = 0.05.
 - **Bootstrap por episodio (fase 6):** los intervalos de confianza se calculan remuestreando episodios completos, no
   fotogramas, porque los fotogramas seguidos de un episodio no son independientes. Usa seed=0.

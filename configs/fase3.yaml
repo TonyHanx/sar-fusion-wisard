@@ -37,7 +37,10 @@ oclusion:
   # agranda) y se recorta al área de trabajo (sin la barra de tareas). En 1920 x 1140 queda de 1800 x 1085.
   ancho_max: 1800                          # el mismo ancho que entró en pantalla con scripts/marcar_puntos.py
   alto_max: 1100
-  margen_pantalla_px: 10
+  margen_pantalla_px: 10                   # margen a la derecha y abajo
+  # Borde izquierdo del marco visible respecto del área de trabajo. OpenCV pega la ventana al borde del monitor si
+  # queda a 15 px o menos (y Windows suma un borde invisible de unos 8 px): con menos de ~24 px queda en x = 0.
+  ventana_x_px: 30
   reserva_titulo_px: 45                    # barra de título de la ventana
   separacion_px: 10
   barra_px: 74                             # barra de ayuda (3 líneas)
