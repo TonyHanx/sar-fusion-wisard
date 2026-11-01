@@ -48,6 +48,9 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
     respecto de la térmica, las visibles, las marcas y λ.
   - `data\oclusion_muestra_segundo.csv`: las 75 personas de la muestra.
   - `data\oclusion_segundo.csv`: anotaciones del segundo anotador.
+- Correcciones de la muestra: `configs\correcciones_oclusion.yaml` (las aplica `scripts/corregir_oclusion.py`).
+  - Respaldo de las anotaciones antes de cada corrección: `data\respaldos\`.
+  - Lista para ajustar la visible RGB (herramienta `--ajuste`): `data\oclusion_ajuste_visibles.csv`.
 - λ RGB automático (`scripts/oclusion_auto.py`): `data\oclusion_auto.csv`, con las 1 501 personas de FHL 0405. La
   comparación con la anotación manual de la muestra va en `reports\oclusion_auto_vs_manual.md` (y `.csv`).
 - Proyecto anterior, solo como consulta: `C:\Users\User\sar-fusion\reports\` (scripts `emparejamiento.py` y
@@ -167,6 +170,16 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
   - **Regla de decisión:**
     - Si el **kappa es de 0.61 o más**, se usa el λ automático.
     - Si no, se vuelve a la anotación manual (las 498 personas de 1 de cada 3).
+  - **Revisión antes del kappa** (1 de noviembre de 2026):
+    - Se revisaron a ojo las personas con la completa RGB corrida más de 12 px o con una visible RGB en un par
+      "solo térmica" (`oclusion_auto.py --revisar`, imágenes en `reports/oclusion/revision_muestra/`).
+    - Correcciones del primer anotador en `configs/correcciones_oclusion.yaml`, aplicadas con
+      `scripts/corregir_oclusion.py`, que guarda un respaldo en `data\respaldos\`:
+      - 8 RGB pasan a "no visible".
+      - La 63 tenía cambiadas las teclas `t` y `r`.
+      - La 46 y la 38 pasan a "no es persona".
+    - Luego el primer anotador ajusta la visible RGB de las 29 con visible (herramienta `--ajuste`), porque las
+      visibles se salían de la completa y daban λ = 0.
   - **Pendiente de decidir:** el papel del segundo anotador con este plan.
 - **Niveles** según λ en la imagen RGB: baja (0 a 35 %), moderada (35 a 70 %), severa (más de 70 %).
 - **Configuración base:** 100 épocas, imagen de 640, lote 16 (bajar si no entra en 8 GB; el mismo para los tres),

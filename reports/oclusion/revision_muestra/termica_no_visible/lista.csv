@@ -1,0 +1,4 @@
+id,n_muestra,posicion,indice_caja,criterio,completa_rgb_dx,completa_rgb_dy,corrimiento_px,rgb_estado,termica_estado,no_es_persona,fuera_de_cuadro,lambda_rgb,lambda_termica,nivel_manual,lambda_rgb_auto,nivel_auto
+210924_FHL_Enterprise_0405_0258_1,21,258,1,pedida para revisar,0.0,0.0,0.0,no_visible,no_visible,False,False,1.0,1.0,severa,1.0,severa
+210924_FHL_Enterprise_0405_0321_0,22,321,0,pedida para revisar,0.0,0.0,0.0,no_visible,no_visible,False,False,1.0,1.0,severa,1.0,severa
+210924_FHL_Enterprise_0405_0588_1,58,588,1,pedida para revisar,0.0,0.0,0.0,no_visible,no_visible,False,False,1.0,1.0,severa,1.0,severa

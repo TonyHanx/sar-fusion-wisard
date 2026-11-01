@@ -1,0 +1,2 @@
+posicion,persona_a,persona_b,iou_wisard,inter_sobre_menor_wisard,iou_completas,inter_sobre_menor_completas,completa_63_sobre_wisard_63,completa_63_sobre_wisard_64,completa_64_sobre_wisard_64,completa_64_sobre_wisard_63
+711,63,64,0.077,0.154,0.502,0.759,0.259,0.87,1.0,0.0

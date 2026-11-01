@@ -266,3 +266,55 @@ Plan decidido el 1 de noviembre de 2026; está en CLAUDE.md.
   - Se detiene si falta alguna persona.
   - Deja fuera la persona 1 y las marcadas.
   - La decisión sale bien con un kappa alto y con uno bajo.
+
+### Revisión de la muestra antes del kappa
+
+1 de noviembre de 2026. El primer anotador terminó las 75 personas de la muestra con `--muestra`; la persona 1 se
+conservó. Antes de calcular el kappa se revisaron a ojo las imágenes de `reports/oclusion/revision_muestra/`
+(`oclusion_auto.py --revisar`). Cada imagen muestra la vista de la herramienta y, debajo, la RGB, la térmica y la RGB
+con realce de contraste, sin cajas.
+
+**Personas revisadas (12):**
+
+- **Completa RGB corrida más de 12 px:** solo la 10 (fotograma 60). Se movió 17.1 px hacia arriba; en la RGB la persona
+  se ve entera. Queda como estaba: el error de alineación ahí es grande.
+- **Visible RGB dibujada en un par "solo térmica":** 11 personas (28, 38, 39, 42, 44, 45, 46, 47, 63, 64 y 65).
+
+**Correcciones** (`configs/correcciones_oclusion.yaml`, aplicadas con `scripts/corregir_oclusion.py`; respaldo en
+`data/respaldos/`):
+
+- **RGB "no visible" (λ = 1):** 28, 39, 42, 44, 45, 47, 64 y 65. Si la completa RGB estaba movida, vuelve a la
+  semejanza.
+- **63:** la térmica deja de ser "no visible" y su visible es la caja de WiSARD; la RGB pasa a "no visible". Las teclas
+  `t` y `r` se habían confundido.
+- **46:** "no es persona".
+- **38:** ya era "no es persona"; se borró su visible RGB de 9 × 2 px.
+- Solo cambiaron esas 11 filas. Aplicar las correcciones de nuevo no cambia nada.
+
+**63 y 64** (`revision_muestra/personas_63_64/`):
+
+- **Cajas térmicas de WiSARD:** se superponen poco. IoU 0.077; la intersección es el 15 % de la caja más chica.
+- **Completas:** se superponen mucho. IoU 0.50; la intersección es el 76 % de la más chica.
+  - La completa de la 63 cae en un 87 % sobre la caja de WiSARD de la 64, y solo en un 26 % sobre la suya.
+- **Secuencia de térmicas (posiciones 695 a 727):**
+  - WiSARD pone dos cajas lado a lado en casi todos los fotogramas de 709 a 727.
+  - En 714 y de 717 a 722 pone una sola.
+  - En 716 y 723 se ven dos manchas de calor separadas.
+- Si son una o dos personas queda por decidir.
+
+**Térmica "no visible" sin "no es persona"** (`revision_muestra/termica_no_visible/`): 21 (fotograma 258), 22 (321) y
+58 (588).
+
+- No hay confusión de `t` y `r`: las tres tienen la RGB y la térmica "no visible".
+- En la térmica, dentro de la completa, hay una mancha tenue: muy débil en la 22, más clara en la 58.
+
+**Ajuste de la visible RGB:**
+
+- Las visibles RGB se salían de la completa en todas las personas con visible: las precargadas son las cajas de
+  WiSARD, más holgadas que la completa. Por eso λ RGB daba 0.
+- `scripts/corregir_oclusion.py` arma `data/oclusion_ajuste_visibles.csv`: 29 personas, de mayor a menor según cuánto
+  se sale la visible. La que más, un 74 %; la mediana, 40 %; la que menos, 14 %. De ellas, 23 tienen λ RGB = 0.
+- La herramienta las abre con `--ajuste`. Las personas parcialmente tapadas se ajustan; las que se ven enteras quedan
+  igual.
+- **Prueba de la herramienta:** 59 comprobaciones. Las 4 nuevas son de `--ajuste`: el orden de la lista, las demás
+  filas apartadas, la barra espaciadora con todas terminadas y que al guardar se conservan todas las filas.

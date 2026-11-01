@@ -1,0 +1,22 @@
+# Correcciones de la anotación manual de la muestra (data/oclusion.csv, primer anotador), decididas por el primer
+# anotador el 2026-11-01 al revisar a ojo las imágenes de reports/oclusion/revision_muestra/ (antes del kappa).
+# Las aplica scripts/corregir_oclusion.py; aplicarlas de nuevo no cambia nada. n = número de la persona en la muestra.
+#   rgb / termica: no_visible  -> "no visible" (λ = 1; si es la RGB, la completa RGB vuelve a donde la pone la semejanza)
+#                  wisard      -> la visible es la caja térmica de WiSARD (solo termica)
+#                  borrar      -> sin visible (estado pendiente)
+#   no_es_persona: true
+correcciones:
+  - {n: 28, id: 210924_FHL_Enterprise_0405_0420_0, rgb: no_visible, motivo: par solo térmica; no se ve en la RGB}
+  - {n: 39, id: 210924_FHL_Enterprise_0405_0468_0, rgb: no_visible, motivo: par solo térmica; no se ve en la RGB}
+  - {n: 42, id: 210924_FHL_Enterprise_0405_0477_1, rgb: no_visible, motivo: par solo térmica; no se ve en la RGB}
+  - {n: 44, id: 210924_FHL_Enterprise_0405_0489_1, rgb: no_visible, motivo: par solo térmica; no se ve en la RGB}
+  - {n: 45, id: 210924_FHL_Enterprise_0405_0492_2, rgb: no_visible, motivo: par solo térmica; no se ve en la RGB}
+  - {n: 47, id: 210924_FHL_Enterprise_0405_0504_2, rgb: no_visible, motivo: par solo térmica; no se ve en la RGB}
+  - {n: 64, id: 210924_FHL_Enterprise_0405_0711_2, rgb: no_visible, motivo: par solo térmica; no se ve en la RGB}
+  - {n: 65, id: 210924_FHL_Enterprise_0405_0726_0, rgb: no_visible, motivo: par solo térmica; no se ve en la RGB}
+  - {n: 63, id: 210924_FHL_Enterprise_0405_0711_1, rgb: no_visible, termica: wisard,
+     motivo: "teclas t y r confundidas: el no visible iba en la RGB; la térmica se ve (caja de WiSARD)"}
+  - {n: 46, id: 210924_FHL_Enterprise_0405_0501_0, no_es_persona: true,
+     motivo: "sin calor donde está la caja térmica de WiSARD; en la RGB, una forma marrón"}
+  - {n: 38, id: 210924_FHL_Enterprise_0405_0462_3, no_es_persona: true, rgb: borrar,
+     motivo: "ya era no es persona; se borra la visible RGB de 9 × 2 px que había quedado"}

@@ -33,6 +33,9 @@ oclusion:
   fraccion_segundo: 0.15                   # muestra al azar (seed) para el segundo anotador
   muestra_segundo: oclusion_muestra_segundo.csv   # dentro de data/
   anotaciones_segundo: oclusion_segundo.csv       # dentro de data/
+  correcciones: configs/correcciones_oclusion.yaml   # correcciones a ojo de la muestra (scripts/corregir_oclusion.py)
+  respaldos: respaldos                     # dentro de data/: copia de las anotaciones antes de cada corrección
+  lista_ajuste: oclusion_ajuste_visibles.csv      # dentro de data/: personas para ajustar la visible RGB (--ajuste)
   # Ventana, en px físicos de pantalla: la herramienta es consciente del DPI (la escala de Windows al 125 % no la
   # agranda) y se recorta al área de trabajo (sin la barra de tareas). En 1920 x 1140 queda de 1800 x 1085.
   ancho_max: 1800                          # el mismo ancho que entró en pantalla con scripts/marcar_puntos.py
@@ -66,3 +69,15 @@ oclusion_auto:
   salida: oclusion_auto.csv                 # dentro de data/
   kappa_minimo: 0.61                        # kappa de Cohen (nivel) >= esto: se usa el automático
   comparacion: oclusion_auto_vs_manual      # dentro de reports/: <comparacion>.md y <comparacion>.csv
+  # Revisión a ojo antes de comparar (--revisar), pedida el 2026-11-01: personas de la muestra con la completa RGB
+  # corrida más de `mover_completa_px` respecto de la térmica (distancia entre centros), o con una visible RGB dibujada
+  # en un par "solo térmica" (sin ninguna caja RGB de WiSARD).
+  revision:
+    mover_completa_px: 12
+    carpeta: oclusion/revision_muestra      # dentro de reports/: una imagen por persona, mosaico y lista
+    escala_sin_cajas: 0.5                   # paneles ampliados sin cajas, debajo de la vista de la herramienta
+    alto_mosaico_px: 300                    # alto de cada persona en el mosaico
+    columnas_mosaico: 2
+    # Con --personas de un mismo fotograma: térmicas de los pares finales a `posiciones` o menos, zona de `lado_px`
+    # alrededor de sus cajas, ampliada `escala` veces, en `columnas` columnas.
+    secuencia: {posiciones: 16, lado_px: 90, escala: 2.5, columnas: 11}
