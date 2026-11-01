@@ -1,0 +1,6 @@
+vuelo,posicion,forma_tensor,dif_max_RGBT,dif_max_BGRT,dif_max_prediccion_RGBT
+210924_FHL_Enterprise_0401,337,"(4, 640, 640)",0,127,0
+210924_FHL_Enterprise_0401,525,"(4, 640, 640)",0,111,0
+210924_FHL_Enterprise_0405,655,"(4, 640, 640)",0,119,0
+220109_Baker_Enterprise_1,313,"(4, 640, 640)",0,105,0
+220109_Baker_Enterprise_1,1337,"(4, 640, 640)",0,112,0

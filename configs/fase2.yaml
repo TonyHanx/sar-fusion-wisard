@@ -205,3 +205,25 @@ revision_desfases:
   semillas_manuales:
     - {vuelo: 210417_MtErie_Enterprise_0005, desde: 160, hasta: 162}
     - {vuelo: 220109_Baker_Enterprise_1, desde: 620, hasta: 626}
+
+# Imágenes finales alineadas (scripts/alinear.py), de los pares anotados y no excluidos, con la semejanza congelada de
+# `homografias_cajas.salida`. Por par: RGB alineada (PNG, 3 canales), térmica en gris (PNG, 1 canal) y TIFF de 4
+# canales uint8 con las muestras en el orden B, G, R, térmica (fotométrica RGB + 1 muestra extra sin especificar).
+alinear:
+  carpeta: alineados                  # dentro de data/: rgb/<vuelo>/, termica/<vuelo>/, fusion/<vuelo>/ e indice.csv
+  # Antes de la deformación, la RGB se reduce con INTER_AREA a la escala de la semejanza (0.25 en MtErie, 0.5 en FHL y
+  # Baker), para evitar el aliasing de deformarla directamente. La deformación que queda (escala cerca de 1, giro y
+  # traslación) se hace con interpolación bicúbica: con la bilineal la imagen queda más blanda (comparado el
+  # 2026-11-01; la geometría es la misma, a 0.02 px).
+  prerreducir_area: true
+  interpolacion: cubica               # lineal, cubica o lanczos
+  nivel_png: 1                        # compresión zlib de los PNG (OpenCV)
+  tiff_compresion: zlib               # deflate (Adobe)
+  tiff_nivel: 6
+  tiff_predictor: true                # predictor horizontal
+  procesos: 6                         # procesos en paralelo; cada uno procesa un par a la vez
+  superposiciones_por_vuelo: 10       # repartidas a lo largo del vuelo, entre los pares con alguna caja térmica
+  carpeta_superposiciones: alineacion/final   # dentro de reports/
+  alto_panel: 320
+  calidad_jpg: 88
+  tiff_verificacion: 5                # TIFF al azar (seed) que se leen con el lector de Ultralytics

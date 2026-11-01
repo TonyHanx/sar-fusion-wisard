@@ -34,6 +34,9 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
 
 - Dataset original: `C:\Users\User\Downloads\WiSARDv1` (solo lectura).
 - Proyecto: esta carpeta. Datos procesados en `data\` (no van a GitHub).
+- Imágenes alineadas de los 4 617 pares (fase 2, `scripts/alinear.py`): `data\alineados\` con `rgb\`, `termica\`
+  (gris, 1 canal), `fusion\` (TIFF con muestras B, G, R, T, que Ultralytics entrega al modelo como R, G, B, T) e
+  `indice.csv`.
 - Proyecto anterior, solo como consulta: `C:\Users\User\sar-fusion\reports\` (scripts `emparejamiento.py` y
   `analisis_pares.py`, y `resumen_wisard.md`). Se puede reutilizar código de ahí, pero los resultados se regeneran aquí.
 

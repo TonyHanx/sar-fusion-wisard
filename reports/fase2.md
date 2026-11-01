@@ -1,15 +1,114 @@
-# Fase 2. Alineación de la RGB con la térmica (en curso)
+# Fase 2. Alineación de la RGB con la térmica (cerrada)
 
-Fecha: 2026-10-31, actualizado el 2026-11-01 · Estado: **desfases cerrados y validación manual hecha**. El modelo es la **semejanza por vuelo**, estimada una vez con un
-reparto por bloques fijos de 20 posiciones y **congelada**. Salen por desfase 158 pares:
+Fecha: 2026-10-31, cerrada el 2026-11-01 · Estado: **cerrada**, a la espera de tu confirmación para pasar a la Fase 3.
 
-- 135 de la regla relativa revisada a ojo (41 de 45 tramos);
-- 2 de FHL 0401 371–372;
-- 18 de la extensión por el fondo;
-- 3 al cerrar: MtErie 0005 207 (a mano) y FHL 0405 160–161 (revisado a ojo).
+## Resumen de cierre
 
-Quedan **4 617 pares** (471 "solo térmica"); en FHL 0405, **928**. La validación con puntos manuales en FHL 0405 está
-hecha (2026-11-01): 13.2 px de media en los 3 puntos seguros del fotograma 930. Lo que queda de la fase son los TIFF.
+### Pares finales por vuelo
+
+| Vuelo | Sitio | RGB original | Pares anotados | Excluidos | **Pares finales** | "Solo térmica" |
+|---|---|---|---:|---:|---:|---:|
+| MtErie 0003/0004 | MtErie | 3840 × 2160 | 264 | 28 | **236** | 0 |
+| MtErie 0005/0006 | MtErie | 3840 × 2160 | 272 | 15 | **257** | 8 |
+| MtErie 0007/0008 | MtErie | 3840 × 2160 | 172 | 3 | **169** | 7 |
+| Carnation 0023/0024 | Carnation | — | 739 | 739 | **0** | 0 |
+| FHL 0134/0135 | FHL | 1920 × 1080 | 273 | 0 | **273** | 61 |
+| FHL 0401/0402 | FHL | 1920 × 1080 | 896 | 113 | **783** | 0 |
+| FHL 0405/0406 | FHL | 1920 × 1080 | 943 | 15 | **928** | 394 |
+| Baker VIS_1/IR_1 | Baker | 1920 × 1080 | 2 180 | 209 | **1 971** | 1 |
+| **Total** | | | **5 739** | **1 122** | **4 617** | **471** |
+
+Quedan 7 vuelos de 3 sitios. Los 1 122 pares excluidos son:
+
+- Carnation completo (739): la RGB tiene zoom variable;
+- el final de Baker, con personas sin caja en la térmica (149);
+- despegue, cambio de zoom y aterrizaje (66);
+- desfases entre cámaras (168): 11 puestos a mano y 157 de la regla relativa revisada a ojo, con los tramos
+  adicionales y la extensión por el fondo (158 salieron en esta fase).
+
+Cada exclusión tiene su motivo en `configs/fase1.yaml` y `configs/exclusiones_desfase.yaml`. La tabla por vuelo está en
+`reports/tabla_pares_por_vuelo.csv`.
+
+### Método de alineación
+
+- La RGB se lleva a la geometría de la térmica (640 × 512) con una **semejanza por vuelo**: escala, giro y
+  traslación, con `cv2.estimateAffinePartial2D`.
+- **Cómo se estima:** con los centros de las cajas de personas de los pares que tienen personas en las dos imágenes.
+  Las personas de las dos cámaras se emparejan con el algoritmo húngaro, empezando por la franja nominal. El ajuste
+  usa RANSAC con umbral de 8 px y tres vueltas de emparejar y estimar, con seed=0.
+- **Reparto:** los pares se reparten en bloques fijos de 20 posiciones alternados. Una mitad estima la
+  transformación y la otra mide el error.
+- **Congelada:** la semejanza se estimó una vez, con 4 640 pares, y no se vuelve a estimar
+  (`configs/homografias_cajas.yaml`).
+- **Por qué semejanza:** la homografía se descartó porque se deforma donde las personas ocupan poco espacio (FHL
+  0134, MtErie 0007).
+- **Imágenes finales:** la RGB se reduce con INTER_AREA a la escala de la semejanza y se deforma con interpolación
+  bicúbica (ver "Imágenes finales").
+
+### Distancia entre centros por vuelo
+
+Es la distancia entre el centro de cada caja térmica y el de su caja RGB llevada a la térmica, en px térmicos
+(640 × 512). Se mide en los pares de evaluación (la mitad que no se usó para estimar), con la semejanza congelada y
+los 4 617 pares.
+
+| Vuelo | Pares | Personas | Media (px) | Mediana (px) | p95 (px) | Máximo (px) | Mediana / alto de la caja | Mediana con la franja nominal (px) |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| MtErie 0003 | 122 | 486 | 6.6 | 3.6 | 22.9 | 64 | 0.18 | 4.6 |
+| MtErie 0005 | 113 | 181 | 11.6 | 7.8 | 29.2 | 213 | 0.10 | 9.2 |
+| MtErie 0007 | 75 | 104 | 9.8 | 7.7 | 19.8 | 151 | 0.19 | 8.1 |
+| FHL 0134 | 31 | 50 | 2.7 | 2.6 | 5.3 | 7 | 0.25 | 4.5 |
+| FHL 0401 | 340 | 1 319 | 8.5 | 4.7 | 25.1 | 246 | 0.22 | 6.1 |
+| FHL 0405 | 175 | 222 | 5.8 | 4.6 | 13.6 | 32 | 0.27 | 5.0 |
+| Baker | 926 | 2 183 | 6.9 | 4.6 | 19.0 | 72 | 0.09 | 5.8 |
+| **Los 7 vuelos** | **1 782** | **4 545** | **7.5** | **4.6** | **22.0** | **246** | **0.13** | |
+
+- Las medianas van de 2.6 a 7.8 px.
+- El 80 % de las personas está a menos de 10 px.
+- Los máximos altos vienen de personas mal emparejadas (una persona tapada en la RGB cuya caja más cercana es la de
+  otra) o de desfases cortos que quedan dentro (ver "Lo que queda sin excluir").
+- En todos los vuelos, la semejanza mejora a la franja nominal.
+
+### Validación manual
+
+| Vuelo | Fotograma | Puntos | Error medio (px) | Error máximo (px) | Franja nominal, media (px) |
+|---|---|---:|---:|---:|---:|
+| MtErie 0003 | 132 (mitad) | 8 | 10.6 | 29.2 | 8.9 |
+| FHL 0405 | 930 (final) | 3 | 13.2 | 21.7 | 9.2 |
+
+Con los puntos manuales el error es de 10 a 13 px, frente a la mediana de 4.6 px que dan las cajas. Hay dos razones:
+
+- los puntos tienen una coherencia propia de unos 10 px;
+- el error crece hacia los bordes (ver "Limitaciones").
+
+Con 11 puntos la validación no distingue entre modelos. Se descartaron estos puntos (ver "Validación con los puntos
+manuales"):
+
+- en MtErie 0003, los de inicio y final, marcados con la térmica cortada;
+- en FHL 0405, los del fotograma 30, con dos puntos mal marcados;
+- en FHL 0405, el clic accidental del 440.
+
+### Limitaciones
+
+1. **El error crece hacia los bordes de la imagen, por la distorsión del lente**, que una semejanza no corrige. En
+   FHL 0405 el punto del centro está a 5 px y el de la punta del tronco, cerca del borde, a 22 px. En MtErie 0003 el
+   peor punto (29 px) está en el borde inferior. Con 11 puntos no se puede modelar la distorsión: las personas cerca
+   del borde pueden quedar más corridas de lo que indica la mediana.
+2. **Una sola transformación fija por vuelo.** No sigue los cambios de zoom: por eso salieron Carnation 0023/0024
+   entero y FHL 0401 0–10. Tampoco sigue el desfase de tiempo entre las dos cámaras. Los desfases se excluyeron por
+   tramos, pero quedan dentro:
+   - vecinos corridos que la extensión no alcanzó, por ejemplo MtErie 0005 206, a +32 px;
+   - 5 tramos que la regla marcaría (19 pares).
+
+   Ver "Lo que queda sin excluir".
+3. **La distancia entre centros mezcla el error de alineación con el de anotación.** Las cajas RGB y térmicas se
+   anotaron por separado, y una persona tapada en la RGB puede quedar emparejada con la caja de otra.
+4. **Validación manual escasa:** 11 puntos en 2 de los 7 vuelos, con una coherencia propia de unos 10 px.
+5. **La semejanza está menos restringida en dos vuelos:**
+   - en MtErie 0007, que tiene la cámara de frente, las personas cubren el 9 % de la térmica;
+   - en FHL 0134 cubren el 2 %.
+
+   MtErie 0007 va en validación.
+6. **Quedan 3 sitios (MtErie, FHL, Baker):** Carnation salió entero.
 
 ## Decisiones tomadas el 2026-10-31
 
@@ -43,9 +142,12 @@ hecha (2026-11-01): 13.2 px de media en los 3 puntos seguros del fotograma 930. 
 - **Validación manual:** en MtErie 0003 se descartan los puntos de inicio y final, porque se marcaron con la térmica
   cortada. Se conservan los de mitad. En FHL 0405 solo cuenta el final (930, 3 puntos seguros), decidido el
   2026-11-01: el 440 son solo copas y el 30 tiene dos puntos mal marcados.
-- **TIFF de 4 canales con compresión deflate** (zlib con predictor), con los canales en el orden B, G, R, térmica.
-  Ultralytics lee el TIFF con OpenCV, que devuelve los canales en el orden del archivo. Con 4 canales no invierte BGR
-  a RGB, así que el modelo recibe R, G, B, térmica, igual que con 3 canales.
+- **TIFF de 4 canales con compresión deflate** (zlib con predictor), con las muestras del archivo en el orden B, G,
+  R, térmica (fotométrica RGB + 1 muestra extra). Ultralytics lo lee con OpenCV, que interpreta las tres primeras como
+  RGB y las devuelve invertidas: R, G, B, térmica. Con 4 canales Ultralytics no invierte nada más, ni al entrenar ni al
+  predecir, así que el modelo recibe R, G, B, térmica, igual que con 3 canales. (Aquí decía antes que OpenCV devolvía
+  el orden del archivo; no es así, pero el resultado es el mismo. Comprobado el 2026-11-01 con valores conocidos y
+  con 5 TIFF finales; ver "Imágenes finales".)
 - **Las 46 cajas duplicadas** se eliminan en la Fase 3a, antes de crear los yaml de entrenamiento. Se anota cuántas
   había en cada vuelo.
 
@@ -132,7 +234,7 @@ con los mismos 4 640 pares, se mueve en promedio:
 | MtErie 0003 | 233 | 122 | 486 | 6.6 | 3.6 | 64 | 34 % | x 0.19–0.84, y 0.06–0.98 |
 | MtErie 0005 | 249 | 113 | 181 | 11.6 | 7.8 | 213 | 26 % | x 0.19–0.83, y 0.07–0.98 |
 | MtErie 0007 | 162 | 75 | 104 | 9.8 | 7.7 | 151 | 9 % | x 0.18–0.84, y 0.05–0.99 |
-| FHL 0134 | 75 | 31 | 50 | 2.8 | 2.6 | 7 | 2 % | x 0.18–0.83, y 0.05–0.98 |
+| FHL 0134 | 75 | 31 | 50 | 2.7 | 2.6 | 7 | 2 % | x 0.18–0.83, y 0.05–0.98 |
 | FHL 0401 | 683 | 340 | 1 319 | 8.5 | 4.7 | 246 | 54 % | x 0.19–0.82, y 0.06–0.97 |
 | FHL 0405 | 385 | 175 | 222 | 5.8 | 4.6 | 32 | 52 % | x 0.18–0.84, y 0.05–0.98 |
 | Baker | 1 887 | 926 | 2 183 | 6.9 | 4.6 | 72 | 57 % | x 0.19–0.83, y 0.06–0.97 |
@@ -542,16 +644,71 @@ caben completas.
 | FHL 0405/0406 | 30 | 440 | 930 |
 | Baker VIS_1/IR_1 | 80 | 1040 | 1990 |
 
-## Espacio en disco previsto
+## Imágenes finales (2026-11-01)
 
-Por par: RGB alineada en PNG (0.74 MB), térmica en gris en PNG (0.18 MB) y TIFF de 4 canales con deflate (0.92 MB).
-Son estimaciones hechas con muestras de cada vuelo. Con los 4 617 pares finales serían unos **7.9 GiB**. Libres en
-C: 110 GB (medido el 2026-10-31).
+Script: `scripts/alinear.py`, con la configuración en `alinear` de `configs/fase2.yaml`. Los datos están en
+`data/alineados/`, fuera de git. Cada par usa el mismo nombre en las tres carpetas:
+`<vuelo>_<posición con 4 dígitos>`, por ejemplo `210924_FHL_Enterprise_0405_0930`.
 
-## Pendiente
+| Carpeta | Contenido | Formato | Por par | Total |
+|---|---|---|---:|---:|
+| `rgb/<vuelo>/` | RGB alineada | PNG de 3 canales, 640 × 512 | 0.47 MB | 2.04 GiB |
+| `termica/<vuelo>/` | Térmica | PNG gris de 1 canal, 640 × 512 | 0.14 MB | 0.59 GiB |
+| `fusion/<vuelo>/` | Fusión temprana | TIFF de 4 canales uint8, 640 × 512; deflate con predictor horizontal; muestras B, G, R, térmica | 0.67 MB | 2.90 GiB |
+| `indice.csv` | Una fila por par: vuelo, posición, rutas originales, rutas generadas y número de cajas | | | |
 
-1. **Generar los PNG y los TIFF** de los 4 617 pares, por partes, con 10 superposiciones por vuelo.
-2. Para la Fase 3: la propuesta de partición de `FASES.md` incluye Carnation 0023, que ya está excluido.
+**Espacio y tiempo**
 
-La validación en FHL 0405 ya está hecha (13.2 px; ver "Validación con los puntos manuales"). La transformación sigue
-congelada. Volver a estimarla es decisión tuya.
+- **Espacio:** 4 617 pares y 13 851 archivos, **5.53 GiB** (5.6 G con `du`). Quedan 93 GB libres en C.
+- **Por vuelo:** el tamaño por par cambia mucho de un vuelo a otro: de 0.74 MB en Baker (nieve, que se comprime
+  bien; es el 43 % de los pares) a 1.99 MB en MtErie 0005. Por eso el total sale menos que los 7.9 GiB estimados con
+  muestras de cada vuelo. La reducción por área achica la RGB solo un 6 % (medido en 28 pares). El espacio por vuelo
+  está en `reports/alineacion/final/espacio_por_vuelo.csv`.
+- **Tiempo:** generar los 4 617 pares tardó **1 min 40 s**, con 6 procesos (22 ms por par). Las superposiciones
+  tardaron 3 s y la verificación 1 s. Cada proceso tiene un solo par en memoria.
+
+**Cómo se generan**
+
+- **RGB:** primero se reduce con INTER_AREA a la escala de la semejanza (0.25 en MtErie, 0.5 en FHL y Baker), y
+  después se deforma con interpolación bicúbica. Lo comparé con deformar la imagen original directamente con
+  interpolación bilineal: la geometría es la misma (diferencia de 0.02 px como mucho, por correlación de fase), pero
+  sin el aliasing de la deformación directa. Con bilineal en el segundo paso, la imagen quedaba más blanda.
+- **Térmica:** se pasa a gris con `cv2.COLOR_BGR2GRAY`. Las térmicas de MtErie son grises exactos (R = G = B). Las de
+  FHL y Baker traen un tinte constante: R y B están de 2 a 5 niveles por debajo de G, con correlación de 1.000 entre
+  canales. Por eso el gris no pierde información.
+
+**Orden de los canales (verificado)**
+
+Tomé 5 TIFF al azar (seed=0): FHL 0401 337 y 525, FHL 0405 655, y Baker 313 y 1337. Los leí con el dataset de
+Ultralytics con `channels: 4`, que es el que se usa al entrenar y al validar, y con su cargador de predicción.
+
+- El tensor que entra al modelo (4 × 640 × 640, tras el LetterBox) es idéntico a R, G, B de la RGB alineada más la
+  térmica: diferencia 0.
+- Con el orden B, G, R, T la diferencia es de 105 a 127 niveles.
+- El cargador de predicción también da R, G, B, T.
+- El dataset leyó los 5 TIFF sin marcar ninguno como corrupto.
+
+Los resultados están en `reports/alineacion/final/verificacion_tiff.csv`.
+
+**Superposiciones**
+
+Hay una hoja por vuelo en `reports/alineacion/final/superposiciones_<vuelo>.jpg`.
+
+- **Qué pares:** 10 por vuelo, repartidos a lo largo del vuelo entre los que tienen alguna caja térmica.
+- **Cómo se hacen:** con los TIFF ya generados, leídos con el lector de Ultralytics.
+- **Qué muestran:** la RGB alineada, la térmica y la mezcla de las dos, con las cajas térmicas en rojo y las RGB
+  llevadas en verde.
+
+Revisé las de MtErie 0003, FHL 0401 y FHL 0405: las cajas de las dos cámaras coinciden. En el bosque de FHL 0405
+muchas personas solo tienen caja térmica.
+
+## Para la Fase 3
+
+1. La propuesta de partición de `FASES.md` incluye Carnation 0023, que ya está excluido.
+2. Las 46 cajas duplicadas se eliminan en la Fase 3a.
+3. Las etiquetas de referencia (las de la térmica) no se copiaron a `data/alineados/`. Se arman con los yaml de la
+   Fase 3, junto con `indice.csv`.
+4. Falta decidir cómo entra la térmica al modelo "solo térmica": con 1 canal (el PNG gris) o repetida en 3 canales
+   para aprovechar todos los pesos preentrenados de la primera capa.
+
+La transformación sigue congelada; volver a estimarla es decisión tuya.
