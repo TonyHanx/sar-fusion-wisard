@@ -15,7 +15,9 @@ los mismos métodos que usa la ventana (raton y tecla) y comprueba:
 4. persona C: "no es persona" y "fuera de cuadro" (deshecho); volver a B con "anterior";
 5. el CSV (completas de las dos imágenes, corrimiento, λ) y que al abrir de nuevo se retoma en la primera persona sin
    terminar;
-6. modo del segundo anotador: solo la muestra, nada precargado ni dibujado, guarda en su propio archivo.
+6. modo del segundo anotador: solo la muestra, nada precargado ni dibujado, guarda en su propio archivo;
+7. --muestra (primer anotador, solo la muestra, con precarga): las personas ya anotadas fuera de la muestra (la persona
+   1 del archivo real) se conservan idénticas al guardar, y el modo completo sigue leyendo el archivo.
 Guarda capturas del lienzo de los dos modos en reports/oclusion/.
 
 Uso:
@@ -331,6 +333,41 @@ def main():
                   and abs(d2.completa_rgb_dx.iloc[0] + 3) <= 1 / s.vista[2] + 0.02,
                   "segundo: guarda en su propio archivo, anotador 'segundo', con su completa RGB movida")
         comprobar(hashlib.md5(salida1.read_bytes()).hexdigest() == huella, "segundo: el archivo del primero no cambia")
+
+        # ---- primer anotador, solo la muestra (--muestra): conserva las personas ya anotadas fuera de la muestra
+        salida3 = Path(tmp) / "oclusion_muestra.csv"
+        base = reales[0] if reales[0].exists() else salida1  # el archivo real (con la persona 1 ya anotada)
+        previas = pd.read_csv(base, dtype={"id": str})
+        previas = previas[~previas.id.isin(set(muestra))]
+        previas.to_csv(salida3, index=False, encoding="utf-8")
+        texto_previas = salida3.read_text(encoding="utf-8").splitlines()[1:]
+        m = crear_anotador(cfg, rutas, segundo=False, salida=salida3, area=area, muestra=True)
+        comprobar(list(m.ids) == list(muestra) and m.primero and len(m.ajenas) == len(previas) > 0,
+                  f"muestra: las {len(m.ids)} personas de la muestra en modo primer anotador; "
+                  f"{len(previas)} anotadas fuera de la muestra apartadas ({', '.join(previas.id)})")
+        comprobar(all(m.anot[i]["ter"]["estado"] == "caja" for i in m.ids)
+                  and all((m.anot[i]["rgb"]["estado"] == "caja") == (not np.isnan(m.todas.loc[i].rgb_x0))
+                          for i in m.ids), "muestra: con la precarga del primer anotador")
+        comprobar(m.i == 0, "muestra: abre en la primera persona de la muestra")
+        p = m.p
+        dibujar_caja(m, "ter", [p.ter_x0 - 1, p.ter_y0 - 2, p.ter_x1 + 1, p.ter_y1 + 1])
+        if m.r["rgb"]["estado"] == "pendiente":
+            tecla(m, "r")  # sin precarga RGB: "no visible" en la RGB
+        tecla(m, "n")
+        d3 = pd.read_csv(salida3, dtype={"id": str})
+        lineas = salida3.read_text(encoding="utf-8").splitlines()[1:]
+        comprobar(len(d3) == len(previas) + 1 and set(d3.id) == set(previas.id) | {m.ids[0]}
+                  and set(d3.anotador) == {"primero"},
+                  "muestra: guarda la persona anotada junto con las de fuera de la muestra")
+        comprobar(all(l in lineas for l in texto_previas),
+                  "muestra: las filas de fuera de la muestra (la persona 1) quedan idénticas, texto por texto")
+        orden = list(m.todas.index.get_indexer(d3.id))
+        comprobar(orden == sorted(orden), "muestra: el archivo queda en el orden de la lista de personas")
+        m2 = crear_anotador(cfg, rutas, segundo=False, salida=salida3, area=area, muestra=True)
+        comprobar(m2.i == 1 and len(m2.ajenas) == len(previas), "muestra: al retomar sigue en la segunda de la muestra")
+        completo = crear_anotador(cfg, rutas, segundo=False, salida=salida3, area=area)
+        comprobar(len(completo.ajenas) == 0 and completo.tocadas == set(d3.id),
+                  "muestra: el modo completo lee el mismo archivo con todas sus personas")
 
     despues_reales = {r: r.read_bytes() if r.exists() else None for r in reales}
     comprobar(despues_reales == antes, "data/oclusion.csv y data/oclusion_segundo.csv no se tocaron")

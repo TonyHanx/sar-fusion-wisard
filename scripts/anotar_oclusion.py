@@ -15,6 +15,9 @@ Tres usos:
   (nada)      primer anotador: la visible térmica viene con la caja de WiSARD y la visible RGB con la caja RGB más
               cercana (llevada a la térmica con la semejanza congelada) a `radio_precarga_alturas` alturas o menos, si
               hay. Guarda en data/<anotaciones>.
+  --muestra   primer anotador (con la precarga), solo las personas de la muestra (data/<muestra_segundo>), para
+              validar el λ automático (scripts/oclusion_auto.py). Guarda en data/<anotaciones>; las personas de ese
+              archivo que no son de la muestra se conservan sin cambios.
   --segundo   segundo anotador: solo las personas de la muestra, sin precarga, sin las cajas de WiSARD y sin las del
               primer anotador (no lee su archivo). La persona a anotar se señala con triángulos amarillos en los bordes
               de la vista. Guarda en data/<anotaciones_segundo>.
@@ -23,6 +26,7 @@ Tres usos:
 Uso:
     .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --preparar
     .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml
+    .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --muestra
     .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --segundo
 
 Ventana: arriba, la RGB alineada y la térmica lado a lado, ampliadas alrededor de la persona y con la misma vista (el
@@ -305,9 +309,9 @@ def preparar(cfg, rutas, forzar=False):
 
 # ---------------------------------------------------------------------------------------------------- herramienta
 class Anotador:
-    def __init__(self, o, personas, ids, alineados, salida, modo, tam_ter, area=None, inicio=None):
+    def __init__(self, o, personas, ids, alineados, salida, modo, tam_ter, area=None, inicio=None, muestra=False):
         self.o, self.modo, self.salida = o, modo, Path(salida)
-        self.primero = modo == "primero"
+        self.primero, self.muestra = modo == "primero", muestra
         self.alineados = Path(alineados)
         self.tw, self.th = tam_ter
         self.todas = personas.set_index("id", drop=False)
@@ -316,6 +320,7 @@ class Anotador:
         self.disponer(area)
         self.anot = {i: registro_inicial(self.todas.loc[i], self.primero) for i in self.ids}
         self.tocadas, self.pilas = set(), {}
+        self.ajenas = pd.DataFrame(columns=COLUMNAS)  # filas del archivo de personas fuera de esta lista
         self.cargar()
         self.mensaje, self.aviso_guardado = "", ""
         self.arrastre, self.raton_pos = None, None
@@ -368,28 +373,36 @@ class Anotador:
         if not self.salida.exists():
             return
         df = pd.read_csv(self.salida, dtype={"id": str})
-        ajenos = sorted(set(df.id) - set(self.ids))
-        if ajenos:
-            raise SystemExit(f"{self.salida}: {len(ajenos)} personas que no están en la lista ({ajenos[:3]}...)")
+        desconocidas = sorted(set(df.id) - set(self.todas.index))
+        if desconocidas:
+            raise SystemExit(f"{self.salida}: {len(desconocidas)} personas que no están en la lista "
+                             f"({desconocidas[:3]}...)")
         if len(df) and set(df.anotador) != {self.modo}:
             raise SystemExit(f"{self.salida}: anotaciones de {sorted(set(df.anotador))}, se esperaba {self.modo}")
         faltan = [c for c in COLUMNAS if c not in df.columns]
         if faltan:
             raise SystemExit(f"{self.salida}: faltan las columnas {faltan} (¿archivo de otra versión de la herramienta?)")
-        for f in df.to_dict("records"):
+        propias = df.id.isin(set(self.ids))
+        self.ajenas = df.loc[~propias, COLUMNAS]  # p. ej. con --muestra, las anotadas fuera de la muestra
+        for f in df[propias].to_dict("records"):
             self.anot[f["id"]] = desde_fila(f)
             self.tocadas.add(f["id"])
-        print(f"Retomando {self.salida}: {len(df)} personas guardadas, "
-              f"{sum(terminada(self.anot[i]) for i in self.tocadas)} terminadas")
+        print(f"Retomando {self.salida}: {int(propias.sum())} personas de esta lista guardadas, "
+              f"{sum(terminada(self.anot[i]) for i in self.tocadas)} terminadas"
+              + (f"; {len(self.ajenas)} de fuera de la lista se conservan sin cambios" if len(self.ajenas) else ""))
 
     def guardar(self):
         ahora = time.monotonic()
         self.r["tiempo_s"] += ahora - self.t0
         self.t0 = ahora
         filas = [a_fila(self.todas.loc[i], self.anot[i], self.modo) for i in self.ids if i in self.tocadas]
+        df = pd.DataFrame(filas, columns=COLUMNAS)
+        if len(self.ajenas):  # se escriben tal como se leyeron, en el orden de la lista de personas
+            df = pd.concat([self.ajenas, df], ignore_index=True)
+            df = df.iloc[np.argsort(self.todas.index.get_indexer(df.id), kind="stable")]
         tmp = self.salida.with_name(self.salida.name + ".tmp")
         self.salida.parent.mkdir(parents=True, exist_ok=True)
-        pd.DataFrame(filas, columns=COLUMNAS).to_csv(tmp, index=False, encoding="utf-8")
+        df.to_csv(tmp, index=False, encoding="utf-8")
         try:
             os.replace(tmp, self.salida)
             self.aviso_guardado = ""
@@ -667,7 +680,8 @@ class Anotador:
         x = 2 * (self.gw + self.sep) + self.sep
         y = self.y_general + 16
         n_term = sum(terminada(self.anot[i]) for i in self.ids)
-        modo = "PRIMER ANOTADOR" if self.primero else "SEGUNDO ANOTADOR (sin precarga)"
+        modo = ("PRIMER ANOTADOR" + (" (muestra)" if self.muestra else "") if self.primero
+                else "SEGUNDO ANOTADOR (sin precarga)")
         self.texto(L, f"{modo} | persona {self.i + 1} de {len(self.ids)} | terminadas {n_term} de {len(self.ids)} | "
                       f"fotograma {p.posicion}, caja {p.indice_caja + 1} de {p.cajas_en_fotograma}", x, y, BLANCO, 0.55)
         if self.primero:
@@ -866,21 +880,27 @@ class Anotador:
         print(f"{n} de {len(self.ids)} personas terminadas; guardado en {self.salida}")
 
 
-def crear_anotador(cfg, rutas, segundo, salida=None, area=None, inicio=None):
-    """Anotador del primer o del segundo anotador. `salida` permite escribir en otro archivo (para pruebas)."""
+def crear_anotador(cfg, rutas, segundo, salida=None, area=None, inicio=None, muestra=False):
+    """Anotador del primer o del segundo anotador. `salida` permite escribir en otro archivo (para pruebas). Con
+    `muestra`, el primer anotador (con precarga) anota solo las personas de la muestra."""
+    if segundo and muestra:
+        raise SystemExit("--muestra es para el primer anotador; el segundo ya anota solo la muestra")
     o, data = cfg["oclusion"], rutas["data"]
     ruta_personas = data / o["personas"]
     if not ruta_personas.exists():
         raise SystemExit(f"No existe {ruta_personas}: corre antes con --preparar")
     personas = pd.read_csv(ruta_personas, dtype={"id": str})
-    if segundo:
+    if segundo or muestra:
         ids = pd.read_csv(data / o["muestra_segundo"], dtype={"id": str}).id
+    if segundo:
         salida = salida or data / o["anotaciones_segundo"]
+    elif muestra:
+        salida = salida or data / o["anotaciones"]
     else:
         ids = personas.id
         salida = salida or data / o["anotaciones"]
     return Anotador(o, personas, ids, data / cfg["datasets"]["alineados"], salida,
-                    "segundo" if segundo else "primero", tuple(cfg["tam_termica"]), area, inicio)
+                    "segundo" if segundo else "primero", tuple(cfg["tam_termica"]), area, inicio, muestra)
 
 
 def main():
@@ -889,6 +909,7 @@ def main():
     ap.add_argument("--rutas", required=True)
     ap.add_argument("--preparar", action="store_true", help="arma la lista de personas y la muestra del segundo")
     ap.add_argument("--forzar", action="store_true", help="con --preparar, sobrescribe una lista distinta")
+    ap.add_argument("--muestra", action="store_true", help="primer anotador, solo las personas de la muestra")
     ap.add_argument("--segundo", action="store_true", help="modo del segundo anotador")
     ap.add_argument("--persona", type=int, help="abre en la persona N (desde 1)")
     args = ap.parse_args()
@@ -899,7 +920,7 @@ def main():
         return
     from marcar_puntos import preparar_pantalla
     area = preparar_pantalla()  # antes de crear cualquier ventana
-    crear_anotador(cfg, rutas, args.segundo, area=area, inicio=args.persona).ejecutar()
+    crear_anotador(cfg, rutas, args.segundo, area=area, inicio=args.persona, muestra=args.muestra).ejecutar()
 
 
 if __name__ == "__main__":

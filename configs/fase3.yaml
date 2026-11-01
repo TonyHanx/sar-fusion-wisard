@@ -55,3 +55,14 @@ oclusion:
   caja_min_px: 4                           # arrastres más cortos (px de pantalla) no crean caja
   aviso_visible_fuera: 0.10                # avisa si más de esta fracción de una visible queda fuera de la completa
   clahe: {limite: 2.0, rejilla: 8}         # realce de contraste opcional (tecla e)
+
+# λ RGB automático (scripts/oclusion_auto.py), decidido el 2026-11-01: para cada persona térmica del vuelo de prueba,
+# λ = 1 − área(caja RGB más cercana a `radio_alturas` alturas o menos, llevada a la térmica) / área(caja térmica),
+# recortado a [0, 1]; sin caja RGB cerca, λ = 1. Se valida contra la anotación manual de la muestra de 75 personas.
+oclusion_auto:
+  radio_alturas: 3
+  # Niveles de CLAUDE.md: baja si λ <= 0.35; moderada si 0.35 < λ <= 0.70; severa si λ > 0.70
+  limites_nivel: {baja: 0.35, moderada: 0.70}
+  salida: oclusion_auto.csv                 # dentro de data/
+  kappa_minimo: 0.61                        # kappa de Cohen (nivel) >= esto: se usa el automático
+  comparacion: oclusion_auto_vs_manual      # dentro de reports/: <comparacion>.md y <comparacion>.csv

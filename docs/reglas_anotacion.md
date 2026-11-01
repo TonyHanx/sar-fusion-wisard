@@ -11,6 +11,12 @@ Fase 3b, 1 de noviembre de 2026. Estas reglas valen para los dos anotadores.
   en la etiqueta térmica.
 - **Segundo anotador:** anota una muestra al azar del 15 % (75 personas, seed=0), listada en
   `data/oclusion_muestra_segundo.csv`.
+- **Plan del 1 de noviembre de 2026:**
+  - El nivel sale de un λ RGB automático (`scripts/oclusion_auto.py`).
+  - Para validarlo, el primer anotador anota a mano solo esas mismas 75 personas, con la herramienta en modo
+    `--muestra`.
+  - Si el kappa de Cohen entre los dos es menor que 0.61, se vuelve a anotar a mano las 498.
+  - Las reglas de abajo no cambian.
 
 ## Cajas
 
@@ -95,7 +101,8 @@ La herramienta es `scripts/anotar_oclusion.py`.
 
 ### Guardado
 
-- **Primer anotador:** guarda en `data/oclusion.csv`.
+- **Primer anotador:** guarda en `data/oclusion.csv`, también con `--muestra`. Las personas que ya están en ese archivo
+  y no son de la muestra (la persona 1) se conservan sin cambios.
 - **Segundo anotador:** guarda en `data/oclusion_segundo.csv`.
 - Se guarda después de cada cambio y al pasar de persona. Al abrir de nuevo, la herramienta sigue en la primera persona
   sin terminar.
@@ -110,8 +117,12 @@ La herramienta es `scripts/anotar_oclusion.py`.
 ```
 .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml
 .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --persona 1
+.venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --muestra
 .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --segundo
 ```
+
+- **Con `--muestra`:** primer anotador, con la precarga, solo las 75 personas de la muestra. "Persona N de 75" cuenta
+  dentro de la muestra; `--persona N` también.
 
 - **Sin opciones:** abre en la primera persona sin terminar.
 - **Con `--persona N`:** abre en la persona N.
