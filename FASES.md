@@ -157,6 +157,11 @@ El primer comando es para ti; el segundo, para el segundo anotador.
     `data/oclusion_primero_simple_ronda2.csv` y `data/oclusion_segundo_simple_ronda2.csv`. Cuando estén las dos,
     `fase4_validacion_auto.py --partes entre_anotadores --ronda 2`: el primero contra el segundo (decide), el
     automático contra el primero en modo simple y los cambios del primero respecto de sus cajas.
+  - Resultado de la ronda 2: concordancia 0.623 (se acepta; el IC va como limitación) y automático contra el primero
+    0.427, así que no se usa el automático.
+- Nivel a mano de las 498: tus 75 de la ronda 2 más las 423 que faltan, con `--primero-simple-resto` (guarda en
+  `data/oclusion_primero_simple_resto.csv` y retoma si cierras). Las 10 "no es persona" de los dos están en
+  `configs/cajas_dudosas.yaml`: no se tocan las etiquetas y quedan sin nivel.
 
 ---
 
@@ -216,6 +221,8 @@ El primer comando es para ti; el segundo, para el segundo anotador.
 >    - Métricas globales sobre los 928 fotogramas de prueba y también sobre los 310 anotados.
 >    - Métricas por nivel de oclusión sobre los 310 anotados. Al evaluar un nivel, las personas de los otros niveles van
 >      como `iscrowd=1`.
+>    - Todas, con y sin las cajas dudosas de `configs/cajas_dudosas.yaml`. "Sin ellas" = esas cajas van como
+>      `iscrowd=1`. Las etiquetas no se tocan.
 > 2. Para cada nivel, aplica McNemar entre los modelos sobre si cada persona fue detectada, con corrección de Bonferroni.
 > 3. Calcula intervalos de confianza con bootstrap por episodio. Se remuestrean episodios completos (tramos seguidos
 >    con persona), no fotogramas, con seed=0. Hazlo para las métricas de cada modelo y para las diferencias entre

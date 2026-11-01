@@ -25,7 +25,11 @@ los mismos métodos que usa la ventana (raton y tecla) y comprueba:
    respondidas, retomar, y con todas respondidas se queda en la persona;
 10. --primero-simple: las mismas personas en el mismo orden y la misma pantalla que --segundo-simple, sin leer ningún
    archivo de respuestas (ni su anotación con cajas), escribe por defecto en su archivo de la ronda actual, e no
-   activa el realce, guarda con el anotador 'primero_simple' y no acepta un archivo del segundo.
+   activa el realce, guarda con el anotador 'primero_simple' y no acepta un archivo del segundo;
+11. --primero-simple-resto: las personas de la lista que no son de la muestra (con ellas suman la lista), en su orden,
+   con el mismo modo simple del primero y la regla de la ronda de `modo_simple.resto`, sin leer ningún archivo de
+   respuestas; escribe por defecto en su propio archivo, la cabecera lo dice, muestra la regla, e no activa el realce,
+   guarda con 'primero_simple', retoma, y no acepta las respuestas de la muestra ni un archivo del segundo.
 No toca los archivos de anotaciones de data/. Guarda capturas del lienzo de los modos en reports/oclusion/.
 
 Uso:
@@ -40,8 +44,8 @@ import cv2
 import numpy as np
 import pandas as pd
 
-from anotar_oclusion import (CAJA_WISARD, COLUMNAS_SIMPLE, COMPLETA, COMPLETA_OTRA, VISIBLE, centro, crear_anotador,
-                             terminada)
+from anotar_oclusion import (CAJA_WISARD, COLUMNAS_SIMPLE, COMPLETA, COMPLETA_OTRA, REGLA_SIMPLE, VISIBLE, centro,
+                             crear_anotador, terminada)
 from comun import leer_rutas, leer_yaml
 from marcar_puntos import preparar_pantalla
 
@@ -115,8 +119,9 @@ def main():
     rondas = o["modo_simple"]["rondas"]
     ronda_actual = o["modo_simple"]["ronda_actual"]
     archivos_simple = [f for r in rondas.values() for k, f in r.items() if k in ("primero", "segundo")]
+    resto = o["modo_simple"]["resto"]
     reales = ([rutas["data"] / o["anotaciones"], rutas["data"] / o["anotaciones_segundo"]]
-              + [rutas["data"] / f for f in archivos_simple])
+              + [rutas["data"] / f for f in archivos_simple] + [rutas["data"] / resto["archivo"]])
     antes = {r: r.read_bytes() if r.exists() else None for r in reales}
     area = preparar_pantalla()
 
@@ -510,6 +515,73 @@ def main():
         except SystemExit:
             rechaza = True
         comprobar(rechaza, "primero simple: no acepta un archivo de respuestas del segundo")
+
+        # ---- --primero-simple-resto: las personas de la lista que no son de la muestra, en modo simple (nivel a mano)
+        salida7 = Path(tmp) / "oclusion_primero_simple_resto.csv"
+        leidos = []
+        pd.read_csv = espia
+        try:
+            pr = crear_anotador(cfg, rutas, segundo=False, salida=salida7, area=area, simple="primero", resto=True)
+        finally:
+            pd.read_csv = leer_csv
+        de_muestra = set(muestra)
+        esperados = [i for i in a.ids if i not in de_muestra]
+        comprobar(list(pr.ids) == esperados and not set(pr.ids) & de_muestra
+                  and len(pr.ids) + len(de_muestra) == len(a.ids) and pr.i == 0,
+                  f"resto: las {len(pr.ids)} personas de la lista que no son de la muestra, en el orden de la lista; "
+                  f"con las {len(de_muestra)} de la muestra suman {len(a.ids)}")
+        comprobar(type(pr) is type(ps) and pr.modo == "primero_simple" and pr.ronda == resto["ronda"],
+                  f"resto: el mismo modo simple del primero, con la regla de la ronda {resto['ronda']}")
+        comprobar(sorted(set(leidos)) == sorted({o["personas"], o["muestra_segundo"]})
+                  and not any(c.startswith("rgb_") for c in pr.todas.columns),
+                  f"resto: no lee ningún archivo de respuestas (lee {sorted(set(leidos))}) ni usa la precarga")
+        r_def = crear_anotador(cfg, rutas, segundo=False, area=area, simple="primero", resto=True)  # no escribe
+        comprobar(r_def.salida == rutas["data"] / resto["archivo"],
+                  f"resto: por defecto escribe en su propio archivo ({resto['archivo']})")
+        del r_def
+        textos = []
+        texto_orig = pr.texto
+
+        def texto_espia(img, s, *args, **kw):
+            textos.append(s)
+            return texto_orig(img, s, *args, **kw)
+        pr.texto = texto_espia
+        pr.dibujar()
+        del pr.texto
+        comprobar(any(f"resto de las {len(a.ids)}, regla de la ronda {resto['ronda']}" in s for s in textos)
+                  and any(REGLA_SIMPLE[0] in s for s in textos),
+                  "resto: la pantalla lo dice en la cabecera y muestra la regla aclarada")
+        comprobar(pixeles_de(pr, COMPLETA) == 0 and pixeles_de(pr, CAJA_WISARD) > 0,
+                  "resto: solo la caja térmica de WiSARD, sin completas")
+        sin_e = pr.dibujar()[:pr.ph]
+        tecla(pr, "e")
+        comprobar(not pr.realce and np.array_equal(pr.dibujar()[:pr.ph], sin_e), "resto: e no activa el realce")
+        pr.mensaje = ""
+        pr.raton(cv2.EVENT_MOUSEMOVE, pr.x_panel["rgb"] + pr.pw // 2 + 40, pr.ph // 2 - 30, 0)
+        cv2.imwrite(str(capturas / "herramienta_primero_simple_resto.jpg"), pr.dibujar(),
+                    [cv2.IMWRITE_JPEG_QUALITY, 90])
+        tecla(pr, "1")
+        tecla(pr, "3")
+        d7 = pd.read_csv(salida7, dtype={"id": str})
+        comprobar(list(d7.columns) == COLUMNAS_SIMPLE and list(d7.id) == esperados[:2]
+                  and list(d7.respuesta) == ["se_ve_rgb", "no_es_persona"] and set(d7.anotador) == {"primero_simple"},
+                  "resto: guarda en su archivo con el anotador 'primero_simple'")
+        pr2 = crear_anotador(cfg, rutas, segundo=False, salida=salida7, area=area, simple="primero", resto=True)
+        comprobar(pr2.i == 2 and pr2.resp[esperados[1]]["respuesta"] == "no_es_persona",
+                  "resto: al cerrar y volver a abrir retoma en la primera sin responder")
+        for otro, cual in ((salida6, "las respuestas de la muestra (ronda 2)"), (salida5, "un archivo del segundo")):
+            try:
+                crear_anotador(cfg, rutas, segundo=False, salida=otro, area=area, simple="primero", resto=True)
+                rechaza = False
+            except SystemExit:
+                rechaza = True
+            comprobar(rechaza, f"resto: no acepta {cual}")
+        try:
+            crear_anotador(cfg, rutas, segundo=False, salida=salida7, area=area, simple="segundo", resto=True)
+            rechaza = False
+        except SystemExit:
+            rechaza = True
+        comprobar(rechaza, "resto: es solo del primer anotador")
 
     despues_reales = {r: r.read_bytes() if r.exists() else None for r in reales}
     comprobar(despues_reales == antes, "los archivos reales de anotaciones de data/ no se tocaron")

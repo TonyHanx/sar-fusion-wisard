@@ -46,6 +46,13 @@ oclusion:
     rondas:
       1: {regla: ambigua, segundo: oclusion_segundo_simple_ronda1.csv}
       2: {regla: aclarada, primero: oclusion_primero_simple_ronda2.csv, segundo: oclusion_segundo_simple_ronda2.csv}
+    # Nivel a mano de las 498 (decidido el 2026-11-01, tras la ronda 2: el automático no pasó): el primero anota en modo
+    # simple las personas que no son de la muestra (--primero-simple-resto), en el orden de la lista de personas, con la
+    # pantalla y la regla de la ronda `ronda`. Las de la muestra son las suyas de esa ronda (rondas[ronda].primero).
+    resto: {ronda: 2, archivo: oclusion_primero_simple_resto.csv}
+  # Cajas térmicas de WiSARD dudosas de la prueba ("no es persona" para los dos anotadores en la ronda 2): no se tocan
+  # las etiquetas; quedan sin nivel y en la fase 6 las métricas se calculan con y sin ellas.
+  cajas_dudosas: configs/cajas_dudosas.yaml
   correcciones: configs/correcciones_oclusion.yaml   # correcciones a ojo de la muestra (scripts/corregir_oclusion.py)
   respaldos: respaldos                     # dentro de data/: copia de las anotaciones antes de cada corrección
   lista_ajuste: oclusion_ajuste_visibles.csv      # dentro de data/: personas para ajustar la visible RGB (--ajuste)

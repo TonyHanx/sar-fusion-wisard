@@ -35,6 +35,10 @@ Tres usos:
   --primero-simple  primer anotador, modo simple (pedido el 2026-11-01, desde la ronda 2): igual que --segundo-simple
               (la misma pantalla, la misma regla, sin realce, sin precarga ni cajas RGB) y no lee su anotación con
               cajas ni las respuestas del segundo. Guarda en data/<modo_simple.rondas[ronda_actual].primero>.
+  --primero-simple-resto  primer anotador, modo simple, para el nivel a mano de las 498 (decidido el 2026-11-01, tras
+              la ronda 2): las personas de la lista que no son de la muestra (423), en el orden de la lista, con la
+              misma pantalla y la regla de la ronda `modo_simple.resto.ronda`. Las de la muestra son las suyas de esa
+              ronda. Guarda en data/<modo_simple.resto.archivo> y retoma desde ahí; no lee otro archivo de respuestas.
   --persona N abre en la persona N (desde 1); si no, en la primera sin terminar.
 
 Uso:
@@ -45,6 +49,7 @@ Uso:
     .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --segundo
     .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --segundo-simple
     .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --primero-simple
+    .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --primero-simple-resto
 
 Ventana: arriba, la RGB alineada y la térmica lado a lado, ampliadas alrededor de la persona y con la misma vista (el
 cursor se repite en las dos). La vista se centra en la persona; cerca del borde del fotograma se corre lo justo para
@@ -953,12 +958,12 @@ class AnotadorSimple(Anotador):
     muestra en pantalla y el realce (e) está desactivado: "se ve" es con el brillo normal."""
 
     def __init__(self, o, personas, ids, alineados, salida, tam_ter, area=None, inicio=None, ronda=None,
-                 quien="segundo"):
+                 quien="segundo", lista=None):
         if quien not in ("primero", "segundo"):
             raise ValueError(quien)
         self.o, self.modo, self.salida, self.ronda = o, f"{quien}_simple", Path(salida), ronda
         self.quien = quien
-        self.primero, self.muestra, self.nombre_lista = False, False, None
+        self.primero, self.muestra, self.nombre_lista = False, False, lista
         self.alineados = Path(alineados)
         self.tw, self.th = tam_ter
         self.todas = personas[COLUMNAS_WISARD].set_index("id", drop=False)
@@ -990,7 +995,8 @@ class AnotadorSimple(Anotador):
             raise SystemExit(f"{self.salida}: faltan las columnas {faltan}")
         ajenas = sorted(set(df.id) - set(self.ids))
         if ajenas:
-            raise SystemExit(f"{self.salida}: {len(ajenas)} personas que no son de la muestra ({ajenas[:3]}...)")
+            raise SystemExit(f"{self.salida}: {len(ajenas)} personas que no son de la lista de este modo "
+                             f"({ajenas[:3]}...)")
         if len(df) and set(df.anotador) != {self.modo}:
             raise SystemExit(f"{self.salida}: anotaciones de {sorted(set(df.anotador))}, se esperaba {self.modo}")
         malas = sorted(set(df.respuesta) - set(RESPUESTAS.values()))
@@ -1068,6 +1074,8 @@ class AnotadorSimple(Anotador):
         x = 2 * (self.gw + self.sep) + self.sep
         y = self.y_general + 16
         ronda = "" if self.ronda is None else f", ronda {self.ronda}"
+        if self.nombre_lista:
+            ronda = f", {self.nombre_lista}" + ("" if self.ronda is None else f", regla de la ronda {self.ronda}")
         quien = "PRIMER" if self.quien == "primero" else "SEGUNDO"
         self.texto(L, f"{quien} ANOTADOR (modo simple{ronda}) | persona {self.i + 1} de {len(self.ids)} | respondidas "
                       f"{self.n_terminadas()} de {len(self.ids)} | fotograma {p.posicion}, caja {p.indice_caja + 1} de "
@@ -1138,12 +1146,16 @@ class AnotadorSimple(Anotador):
 
 
 def crear_anotador(cfg, rutas, segundo, salida=None, area=None, inicio=None, muestra=False, ajuste=False,
-                   simple=None):
+                   simple=None, resto=False):
     """Anotador del primer o del segundo anotador. `salida` permite escribir en otro archivo (para pruebas). Con
     `muestra`, el primer anotador (con precarga) anota solo las personas de la muestra; con `ajuste`, solo las de la
     lista de ajuste de la visible RGB, en su orden. Con `simple` ("primero" o "segundo"), ese anotador en modo simple
     (una tecla por persona de la muestra; escribe en su archivo de la ronda `modo_simple.ronda_actual` y no lee ningún
-    otro archivo de respuestas)."""
+    otro archivo de respuestas). Con `simple="primero"` y `resto`, el primero en modo simple sobre las personas de la
+    lista que no son de la muestra, con la regla de la ronda `modo_simple.resto.ronda` (escribe en
+    `modo_simple.resto.archivo`)."""
+    if resto and simple != "primero":
+        raise SystemExit("--primero-simple-resto es solo del primer anotador, en modo simple")
     if segundo and (muestra or ajuste):
         raise SystemExit("--muestra y --ajuste son para el primer anotador")
     if muestra and ajuste:
@@ -1155,6 +1167,14 @@ def crear_anotador(cfg, rutas, segundo, salida=None, area=None, inicio=None, mue
     if not ruta_personas.exists():
         raise SystemExit(f"No existe {ruta_personas}: corre antes con --preparar")
     personas = pd.read_csv(ruta_personas, dtype={"id": str})
+    if simple and resto:
+        r = o["modo_simple"]["resto"]
+        de_muestra = set(pd.read_csv(data / o["muestra_segundo"], dtype={"id": str}).id)
+        ids = personas.sort_values("orden").id
+        ids = ids[~ids.isin(de_muestra)]
+        lista = f"resto de las {len(personas)}"
+        return AnotadorSimple(o, personas, ids, data / cfg["datasets"]["alineados"], salida or data / r["archivo"],
+                              tuple(cfg["tam_termica"]), area, inicio, r["ronda"], "primero", lista)
     if simple:
         ms = o["modo_simple"]
         ronda = ms["ronda_actual"]
@@ -1198,6 +1218,8 @@ def main():
                          "persona)")
     ap.add_argument("--primero-simple", action="store_true",
                     help="primer anotador, modo simple: la misma pantalla y la misma regla que --segundo-simple")
+    ap.add_argument("--primero-simple-resto", action="store_true",
+                    help="primer anotador, modo simple, las personas de la lista que no son de la muestra")
     ap.add_argument("--persona", type=int, help="abre en la persona N (desde 1)")
     args = ap.parse_args()
     cfg = leer_yaml(args.config)
@@ -1205,13 +1227,14 @@ def main():
     if args.preparar:
         preparar(cfg, rutas, args.forzar)
         return
-    if args.primero_simple and args.segundo_simple:
-        raise SystemExit("--primero-simple y --segundo-simple no van juntos")
-    simple = "primero" if args.primero_simple else "segundo" if args.segundo_simple else None
+    if args.primero_simple + args.segundo_simple + args.primero_simple_resto > 1:
+        raise SystemExit("--primero-simple, --segundo-simple y --primero-simple-resto no van juntos")
+    simple = ("primero" if args.primero_simple or args.primero_simple_resto
+              else "segundo" if args.segundo_simple else None)
     from marcar_puntos import preparar_pantalla
     area = preparar_pantalla()  # antes de crear cualquier ventana
     crear_anotador(cfg, rutas, args.segundo, area=area, inicio=args.persona, muestra=args.muestra,
-                   ajuste=args.ajuste, simple=simple).ejecutar()
+                   ajuste=args.ajuste, simple=simple, resto=args.primero_simple_resto).ejecutar()
 
 
 if __name__ == "__main__":
