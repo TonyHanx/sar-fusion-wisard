@@ -1,0 +1,8 @@
+n_muestra,id,posicion,indice_caja,cajas_en_fotograma,alto_caja_termica_px,rgb_estado_manual,termica_estado_manual,sin_caja_rgb_cerca,rgb_dist_alturas,nivel_auto_dos,motivo
+30,210924_FHL_Enterprise_0405_0429_1,429,1,4,17.0,no_visible,no_visible,True,,severa,
+33,210924_FHL_Enterprise_0405_0447_0,447,0,4,23.0,no_visible,no_visible,True,,severa,
+36,210924_FHL_Enterprise_0405_0453_0,453,0,4,21.0,no_visible,no_visible,True,,severa,
+37,210924_FHL_Enterprise_0405_0459_0,459,0,4,18.0,no_visible,no_visible,True,,severa,
+38,210924_FHL_Enterprise_0405_0462_3,462,3,4,18.0,pendiente,caja,True,,severa,ya era no es persona; se borra la visible RGB de 9 × 2 px que había quedado
+41,210924_FHL_Enterprise_0405_0474_3,474,3,4,21.0,no_visible,no_visible,True,,severa,
+46,210924_FHL_Enterprise_0405_0501_0,501,0,4,10.0,caja,no_visible,True,,severa,"sin calor donde está la caja térmica de WiSARD; en la RGB, una forma marrón"

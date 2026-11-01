@@ -139,13 +139,16 @@ El primer comando es para ti; el segundo, para el segundo anotador.
 ```
 .venv\Scripts\python.exe scripts\oclusion_auto.py --config configs\fase3.yaml --rutas configs\rutas.yaml
 .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --muestra
-.venv\Scripts\python.exe scripts\oclusion_auto.py --config configs\fase3.yaml --rutas configs\rutas.yaml --comparar
+.venv\Scripts\python.exe scripts\fase4_validacion_auto.py --config configs\fase3.yaml --rutas configs\rutas.yaml
+.venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --segundo-simple
 ```
 
 **Revisa:**
 - Anota las 75 personas de la muestra con `--muestra`: avanzas con espacio y la herramienta guarda sola.
-- Luego pide la comparación (`--comparar`). Con kappa de 0.61 o más se usa el automático; si no, anotas las 498.
-- El papel del segundo anotador con este plan está pendiente de decidir.
+- La comparación (antes `--comparar`) ahora es de dos niveles, "se ve o no en la RGB", con
+  `scripts/fase4_validacion_auto.py` (decidido el 1 de noviembre de 2026). Con kappa binario de 0.61 o más se usa el
+  automático; si no, anotas las 498. Dio 0.940: se usa el automático (`reports/fase4_validacion_auto.md`).
+- Segundo anotador: modo simple (`--segundo-simple`), una tecla por persona.
 
 ---
 

@@ -1,0 +1,3 @@
+id,n_muestra,posicion,indice_caja,rgb_estado,lambda_rgb,nivel2_manual,nivel3_manual,sin_caja_rgb_cerca,rgb_dist_alturas,cajas_rgb_en_par,lambda_rgb_auto,nivel2_auto,nivel3_auto,diferencia_lambda,desacuerdo2,desacuerdo3
+210924_FHL_Enterprise_0405_0864_1,68,864,1,caja,0.0,baja,baja,True,23.915,1,1.0,severa,severa,1.0,True,True
+210924_FHL_Enterprise_0405_0894_1,73,894,1,no_visible,1.0,severa,severa,False,0.468,3,0.3437,baja,baja,-0.6563,True,True

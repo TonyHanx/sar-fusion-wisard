@@ -33,6 +33,9 @@ oclusion:
   fraccion_segundo: 0.15                   # muestra al azar (seed) para el segundo anotador
   muestra_segundo: oclusion_muestra_segundo.csv   # dentro de data/
   anotaciones_segundo: oclusion_segundo.csv       # dentro de data/
+  # Segundo anotador, modo simple (--segundo-simple, decidido el 2026-11-01): una tecla por persona de la muestra
+  # (se ve en la RGB / no se ve en la RGB / no es persona).
+  anotaciones_segundo_simple: oclusion_segundo_simple.csv   # dentro de data/
   correcciones: configs/correcciones_oclusion.yaml   # correcciones a ojo de la muestra (scripts/corregir_oclusion.py)
   respaldos: respaldos                     # dentro de data/: copia de las anotaciones antes de cada corrección
   lista_ajuste: oclusion_ajuste_visibles.csv      # dentro de data/: personas para ajustar la visible RGB (--ajuste)
@@ -67,8 +70,6 @@ oclusion_auto:
   # Niveles de CLAUDE.md: baja si λ <= 0.35; moderada si 0.35 < λ <= 0.70; severa si λ > 0.70
   limites_nivel: {baja: 0.35, moderada: 0.70}
   salida: oclusion_auto.csv                 # dentro de data/
-  kappa_minimo: 0.61                        # kappa de Cohen (nivel) >= esto: se usa el automático
-  comparacion: oclusion_auto_vs_manual      # dentro de reports/: <comparacion>.md y <comparacion>.csv
   # Revisión a ojo antes de comparar (--revisar), pedida el 2026-11-01: personas de la muestra con la completa RGB
   # corrida más de `mover_completa_px` respecto de la térmica (distancia entre centros), o con una visible RGB dibujada
   # en un par "solo térmica" (sin ninguna caja RGB de WiSARD).
@@ -81,3 +82,30 @@ oclusion_auto:
     # Con --personas de un mismo fotograma: térmicas de los pares finales a `posiciones` o menos, zona de `lado_px`
     # alrededor de sus cajas, ampliada `escala` veces, en `columnas` columnas.
     secuencia: {posiciones: 16, lado_px: 90, escala: 2.5, columnas: 11}
+
+# Validación del nivel automático (scripts/fase4_validacion_auto.py), decidida el 2026-11-01. Como en la muestra no hay
+# ninguna persona moderada (0 de 68), el nivel pasa a dos clases: severa = la persona no se ve en la RGB; baja = se ve.
+# - Manual (primer anotador, muestra): severa si su visible RGB es "no visible"; baja si tiene caja.
+# - Automático: severa si no hay caja RGB de WiSARD a `oclusion_auto.radio_alturas` alturas o menos; baja si la hay.
+# Se usa el automático si el kappa de Cohen binario es de `kappa_minimo` o más. El kappa de 3 niveles (λ con áreas y
+# `oclusion_auto.limites_nivel`) solo se reporta. Las "no es persona" y "fuera de cuadro" van aparte.
+validacion_auto:
+  niveles: [baja, severa]
+  kappa_minimo: 0.61
+  carpeta: fase4_validacion_auto          # dentro de reports/: tablas e imágenes
+  # Mosaico de las "no es persona" de la muestra: por persona, RGB, térmica, térmica con el realce de la herramienta
+  # (CLAHE, `oclusion.clahe`), térmica con el contraste estirado en la zona (percentiles) y esta última con las cajas.
+  no_es_persona:
+    alto_panel_px: 300
+    percentiles_estirado: [1, 99]
+  # Revisión con la medida del fondo de la fase 2 (correlación de fase de los gradientes, fiable si la respuesta es de
+  # `revision_desfases.fondo_respuesta_min` o más; la extensión por el fondo usaba > `extension_fondo_min_px`).
+  revision_fondo:
+    config_fase2: configs/fase2.yaml      # homografias_cajas, revision_desfases y la fuente
+    desde: 58                             # FHL 0405: posible desfase en el 60 (pedido el 2026-11-01)
+    hasta: 64
+    contexto: 8                           # posiciones antes y después en la tabla (también los pares excluidos)
+    detalle: 60                           # posición que la imagen muestra entera y por separado (RGB, térmica)
+    # Además, como el fondo RGB-térmica no es fiable en el bosque, el movimiento desde el fotograma anterior dentro de
+    # cada cámara (misma medida, RGB con RGB y térmica con térmica): un desfase solo en p da un salto en p y otro al revés
+    # en p + 1.

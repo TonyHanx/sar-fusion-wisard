@@ -24,6 +24,12 @@ Tres usos:
   --segundo   segundo anotador: solo las personas de la muestra, sin precarga, sin las cajas de WiSARD y sin las del
               primer anotador (no lee su archivo). La persona a anotar se señala con triángulos amarillos en los bordes
               de la vista. Guarda en data/<anotaciones_segundo>.
+  --segundo-simple  segundo anotador, modo simple (decidido el 2026-11-01, para los dos niveles): las personas de la
+              muestra, con la RGB alineada y la térmica y solo la caja térmica de WiSARD de la persona (verde) y las
+              demás cajas térmicas de WiSARD del fotograma (gris). Se responde con una tecla: 1 se ve en la RGB, 2 no se
+              ve en la RGB, 3 no es persona (x borra la respuesta); tras responder pasa a la siguiente sin responder.
+              No se dibujan cajas, no hay precarga y no lee el archivo del primer anotador. Guarda en
+              data/<anotaciones_segundo_simple>.
   --persona N abre en la persona N (desde 1); si no, en la primera sin terminar.
 
 Uso:
@@ -32,6 +38,7 @@ Uso:
     .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --muestra
     .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --ajuste
     .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --segundo
+    .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --segundo-simple
 
 Ventana: arriba, la RGB alineada y la térmica lado a lado, ampliadas alrededor de la persona y con la misma vista (el
 cursor se repite en las dos). La vista se centra en la persona; cerca del borde del fotograma se corre lo justo para
@@ -406,6 +413,10 @@ class Anotador:
         if len(self.ajenas):  # se escriben tal como se leyeron, en el orden de la lista de personas
             df = pd.concat([self.ajenas, df], ignore_index=True)
             df = df.iloc[np.argsort(self.todas.index.get_indexer(df.id), kind="stable")]
+        self.escribir(df)
+
+    def escribir(self, df):
+        """Escritura atómica; si el archivo está abierto en otro programa, avisa y se reintenta en el próximo cambio."""
         tmp = self.salida.with_name(self.salida.name + ".tmp")
         self.salida.parent.mkdir(parents=True, exist_ok=True)
         df.to_csv(tmp, index=False, encoding="utf-8")
@@ -492,12 +503,18 @@ class Anotador:
         self.mensaje = f"{texto}: {'si' if self.r[marca] else 'no'}"
 
     # ------------------------------------------------------------------ navegación
+    def terminada_en(self, j):
+        return terminada(self.anot[self.ids[j]])
+
+    def n_terminadas(self):
+        return sum(self.terminada_en(j) for j in range(len(self.ids)))
+
     def siguiente_sin_terminar(self, desde=None):
         desde = self.i if desde is None else desde
         n = len(self.ids)
         for k in range(1, n + 1):
             j = (desde + k) % n
-            if not terminada(self.anot[self.ids[j]]):
+            if not self.terminada_en(j):
                 return j
         return None
 
@@ -515,7 +532,7 @@ class Anotador:
         self.mensaje = ""
         self.abrir()
 
-    def abrir(self):
+    def cargar_imagenes(self):
         p = self.p
         if self._pos_cargada != p.posicion:
             rgb = cv2.imread(str(self.alineados / p.imagen_rgb), cv2.IMREAD_COLOR)
@@ -525,6 +542,9 @@ class Anotador:
             self.img = {"rgb": rgb, "ter": cv2.cvtColor(ter, cv2.COLOR_GRAY2BGR)}
             self._pos_cargada = p.posicion
             self.preparar_imagenes()
+
+    def abrir(self):
+        self.cargar_imagenes()
         self.vista = self.vista_inicial()
         self.herramienta = "completa" if self.r["completa"] is None else "visible"
         self.t0 = time.monotonic()
@@ -607,12 +627,42 @@ class Anotador:
         u1, v1 = self.a_panel(caja[2], caja[3])
         cv2.rectangle(img, (int(round(u0)), int(round(v0))), (int(round(u1)) - 1, int(round(v1)) - 1), color, grosor)
 
-    def panel(self, lado):
+    def fondo_panel(self, lado):
+        """La imagen de `lado` en la vista actual, sin nada dibujado."""
         x0, y0, z = self.origen()
         M = np.float64([[z, 0, z * (0.5 - x0) - 0.5], [0, z, z * (0.5 - y0) - 0.5]])
-        img = cv2.warpAffine(self.mostrar[lado], M, (self.pw, self.ph),
-                             flags=cv2.INTER_NEAREST if self.pixeles else cv2.INTER_CUBIC,
-                             borderMode=cv2.BORDER_CONSTANT, borderValue=BORDE_IMAGEN)
+        return cv2.warpAffine(self.mostrar[lado], M, (self.pw, self.ph),
+                              flags=cv2.INTER_NEAREST if self.pixeles else cv2.INTER_CUBIC,
+                              borderMode=cv2.BORDER_CONSTANT, borderValue=BORDE_IMAGEN)
+
+    def senalar(self, img):
+        """Triángulos en los bordes que señalan el centro de la persona a anotar."""
+        p = self.p
+        uc, vc = self.a_panel((p.ter_x0 + p.ter_x1) / 2, (p.ter_y0 + p.ter_y1) / 2)
+        t = 9
+        if 0 <= uc < self.pw:
+            for y, s in ((0, 1), (self.ph - 1, -1)):
+                cv2.fillPoly(img, [np.int32([[uc - t, y], [uc + t, y], [uc, y + s * 1.6 * t]])], MARCA, cv2.LINE_AA)
+        if 0 <= vc < self.ph:
+            for x, s in ((0, 1), (self.pw - 1, -1)):
+                cv2.fillPoly(img, [np.int32([[x, vc - t], [x, vc + t], [x + s * 1.6 * t, vc]])], MARCA, cv2.LINE_AA)
+
+    def dibujar_cursor(self, img, color):
+        """Cursor repetido en los dos paneles."""
+        if self.raton_pos is not None and self.panel_en(*self.raton_pos) is not None:
+            lado_r = self.panel_en(*self.raton_pos)
+            x, y = self.desde_panel(self.raton_pos[0] - self.x_panel[lado_r], self.raton_pos[1])
+            u, v = (int(round(c - 0.5)) for c in self.a_panel(x, y))
+            cv2.line(img, (u, 0), (u, self.ph - 1), color, 1)
+            cv2.line(img, (0, v), (self.pw - 1, v), color, 1)
+
+    def rotular(self, img, rotulo, color=BLANCO):
+        (w, h), _ = cv2.getTextSize(rotulo, FUENTE, 0.6, 1)
+        cv2.rectangle(img, (0, 0), (w + 16, h + 12), (0, 0, 0), -1)
+        cv2.putText(img, rotulo, (8, h + 5), FUENTE, 0.6, color, 1, cv2.LINE_AA)
+
+    def panel(self, lado):
+        img = self.fondo_panel(lado)
         r, p = self.r, self.p
         a = self.arrastre
         movida = None  # completa de este panel mientras se arrastra para moverla
@@ -632,34 +682,16 @@ class Anotador:
                 if otra != propia:  # dónde está la completa en la otra imagen
                     self.rect(img, otra, COMPLETA_OTRA, 1)
                 self.rect(img, movida or propia, COMPLETA, 2)
-        # triángulos en los bordes que señalan el centro de la persona a anotar
-        uc, vc = self.a_panel((p.ter_x0 + p.ter_x1) / 2, (p.ter_y0 + p.ter_y1) / 2)
-        t = 9
-        if 0 <= uc < self.pw:
-            for y, s in ((0, 1), (self.ph - 1, -1)):
-                cv2.fillPoly(img, [np.int32([[uc - t, y], [uc + t, y], [uc, y + s * 1.6 * t]])], MARCA, cv2.LINE_AA)
-        if 0 <= vc < self.ph:
-            for x, s in ((0, 1), (self.pw - 1, -1)):
-                cv2.fillPoly(img, [np.int32([[x, vc - t], [x, vc + t], [x + s * 1.6 * t, vc]])], MARCA, cv2.LINE_AA)
+        self.senalar(img)
         # caja en curso de dibujo
         if a is not None and self.destino_de_arrastre(a) != "mover":
             destino = self.destino_de_arrastre(a)
             if destino == "completa" or destino == lado:
                 self.rect(img, self.caja_de_arrastre(a), COMPLETA if destino == "completa" else VISIBLE, 1)
-        # cursor repetido en los dos paneles
-        if self.raton_pos is not None and self.panel_en(*self.raton_pos) is not None:
-            lado_r = self.panel_en(*self.raton_pos)
-            x, y = self.desde_panel(self.raton_pos[0] - self.x_panel[lado_r], self.raton_pos[1])
-            u, v = (int(round(c - 0.5)) for c in self.a_panel(x, y))
-            color = VISIBLE if self.herramienta == "visible" else COMPLETA
-            cv2.line(img, (u, 0), (u, self.ph - 1), color, 1)
-            cv2.line(img, (0, v), (self.pw - 1, v), color, 1)
+        self.dibujar_cursor(img, VISIBLE if self.herramienta == "visible" else COMPLETA)
         estado = {"caja": "caja", "no_visible": "NO VISIBLE", "pendiente": "visible pendiente"}[r[lado]["estado"]]
-        rotulo = f"{'RGB alineada' if lado == 'rgb' else 'termica'} - {estado}"
-        (w, h), _ = cv2.getTextSize(rotulo, FUENTE, 0.6, 1)
-        cv2.rectangle(img, (0, 0), (w + 16, h + 12), (0, 0, 0), -1)
-        cv2.putText(img, rotulo, (8, h + 5), FUENTE, 0.6, AVISO if r[lado]["estado"] == "no_visible" else BLANCO, 1,
-                    cv2.LINE_AA)
+        self.rotular(img, f"{'RGB alineada' if lado == 'rgb' else 'termica'} - {estado}",
+                     AVISO if r[lado]["estado"] == "no_visible" else BLANCO)
         return img
 
     def vista_general(self, lado):
@@ -675,13 +707,18 @@ class Anotador:
     def texto(self, img, linea, x, y, color=GRIS, escala=0.5):
         cv2.putText(img, linea, (x, y), FUENTE, escala, color, 1, cv2.LINE_AA)
 
-    def dibujar(self):
+    def lienzo(self):
+        """Los dos paneles ampliados y, debajo, las imágenes completas."""
         L = np.full((self.alto, self.ancho, 3), FONDO, np.uint8)
         for lado, xp in self.x_panel.items():
             L[:self.ph, xp:xp + self.pw] = self.panel(lado)
             k = 0 if lado == "rgb" else 1
             L[self.y_general:self.y_general + self.gh, k * (self.gw + self.sep):k * (self.gw + self.sep) + self.gw] = \
                 self.vista_general(lado)
+        return L
+
+    def dibujar(self):
+        L = self.lienzo()
         p, r = self.p, self.r
         x = 2 * (self.gw + self.sep) + self.sep
         y = self.y_general + 16
@@ -884,23 +921,224 @@ class Anotador:
                 break
         self.salir_de_persona()
         cv2.destroyAllWindows()
-        n = sum(terminada(self.anot[i]) for i in self.ids)
-        print(f"{n} de {len(self.ids)} personas terminadas; guardado en {self.salida}")
+        print(f"{self.n_terminadas()} de {len(self.ids)} personas terminadas; guardado en {self.salida}")
 
 
-def crear_anotador(cfg, rutas, segundo, salida=None, area=None, inicio=None, muestra=False, ajuste=False):
+# ---------------------------------------------------------------------------------------------------- modo simple
+RESPUESTAS = {"1": "se_ve_rgb", "2": "no_se_ve_rgb", "3": "no_es_persona"}  # tecla -> respuesta guardada
+TEXTO_RESPUESTA = {"se_ve_rgb": "SE VE EN LA RGB", "no_se_ve_rgb": "NO SE VE EN LA RGB", "no_es_persona": "NO ES PERSONA"}
+COLUMNAS_SIMPLE = ["id", "vuelo", "posicion", "indice_caja", "anotador", "respuesta", "tiempo_s", "guardado"]
+CAJA_WISARD = (0, 255, 0)
+COLUMNAS_WISARD = (["id", "vuelo", "posicion", "indice_caja", "cajas_en_fotograma", "imagen_rgb", "imagen_termica"]
+                   + [f"ter_{c}" for c in CAJA])
+
+
+class AnotadorSimple(Anotador):
+    """Segundo anotador, modo simple (decidido el 2026-11-01). Por cada persona de la muestra se ven la RGB alineada y
+    la térmica con la caja térmica de WiSARD de la persona (verde; en la RGB, donde la pone la semejanza) y las demás
+    cajas térmicas de WiSARD del fotograma (gris). Se responde con una tecla: 1 se ve en la RGB, 2 no se ve en la RGB,
+    3 no es persona. No se dibujan cajas, no hay precarga (de la lista de personas solo se usan las columnas de WiSARD
+    de la térmica y las imágenes) y no se lee el archivo del primer anotador."""
+
+    def __init__(self, o, personas, ids, alineados, salida, tam_ter, area=None, inicio=None):
+        self.o, self.modo, self.salida = o, "segundo_simple", Path(salida)
+        self.primero, self.muestra, self.nombre_lista = False, False, None
+        self.alineados = Path(alineados)
+        self.tw, self.th = tam_ter
+        self.todas = personas[COLUMNAS_WISARD].set_index("id", drop=False)
+        self.ids = list(ids)
+        self.area = area
+        self.disponer(area)
+        self.resp = {i: {"respuesta": None, "tiempo_s": 0.0, "guardado": ""} for i in self.ids}
+        self.cargar()
+        self.mensaje, self.aviso_guardado = "", ""
+        self.arrastre, self.raton_pos = None, None
+        self.realce, self.pixeles, self.ver_cajas = False, False, True
+        self._pos_cargada = None
+        if inicio is not None:
+            if not 1 <= inicio <= len(self.ids):
+                raise SystemExit(f"--persona debe estar entre 1 y {len(self.ids)}")
+            self.i = inicio - 1
+        else:
+            sin = self.siguiente_sin_terminar(desde=-1)
+            self.i = 0 if sin is None else sin
+        self.abrir()
+
+    # ------------------------------------------------------------------ datos
+    def cargar(self):
+        if not self.salida.exists():
+            return
+        df = pd.read_csv(self.salida, dtype={"id": str})
+        faltan = [c for c in COLUMNAS_SIMPLE if c not in df.columns]
+        if faltan:
+            raise SystemExit(f"{self.salida}: faltan las columnas {faltan}")
+        ajenas = sorted(set(df.id) - set(self.ids))
+        if ajenas:
+            raise SystemExit(f"{self.salida}: {len(ajenas)} personas que no son de la muestra ({ajenas[:3]}...)")
+        if len(df) and set(df.anotador) != {self.modo}:
+            raise SystemExit(f"{self.salida}: anotaciones de {sorted(set(df.anotador))}, se esperaba {self.modo}")
+        malas = sorted(set(df.respuesta) - set(RESPUESTAS.values()))
+        if malas:
+            raise SystemExit(f"{self.salida}: respuestas desconocidas {malas}")
+        for f in df.itertuples():
+            self.resp[f.id] = {"respuesta": f.respuesta, "tiempo_s": float(f.tiempo_s),
+                               "guardado": "" if pd.isna(f.guardado) else str(f.guardado)}
+        print(f"Retomando {self.salida}: {len(df)} de {len(self.ids)} personas respondidas")
+
+    def guardar(self):
+        ahora = time.monotonic()
+        self.resp[self.id]["tiempo_s"] += ahora - self.t0
+        self.t0 = ahora
+        filas = []
+        for i in self.ids:
+            r = self.resp[i]
+            if r["respuesta"] is not None:
+                p = self.todas.loc[i]
+                filas.append({"id": i, "vuelo": p.vuelo, "posicion": int(p.posicion), "indice_caja": int(p.indice_caja),
+                              "anotador": self.modo, "respuesta": r["respuesta"], "tiempo_s": round(r["tiempo_s"], 1),
+                              "guardado": r["guardado"]})
+        self.escribir(pd.DataFrame(filas, columns=COLUMNAS_SIMPLE))
+
+    def responder(self, respuesta):
+        r = self.resp[self.id]
+        r["respuesta"], r["guardado"] = respuesta, datetime.now().isoformat(timespec="seconds")
+        self.guardar()
+        texto = f"persona {self.i + 1}: {TEXTO_RESPUESTA[respuesta].lower()}"
+        j = self.siguiente_sin_terminar()
+        if j is None:  # todas respondidas: se queda en esta persona
+            self.mensaje = texto + " | todas las personas estan respondidas (q para salir)"
+            return
+        self.ir_a(j)
+        self.mensaje = texto
+
+    def borrar(self):
+        r = self.resp[self.id]
+        if r["respuesta"] is None:
+            self.mensaje = "esta persona no tiene respuesta"
+            return
+        r["respuesta"], r["guardado"] = None, ""
+        self.guardar()
+        self.mensaje = "respuesta borrada"
+
+    def terminada_en(self, j):
+        return self.resp[self.ids[j]]["respuesta"] is not None
+
+    def salir_de_persona(self):
+        if self.resp[self.id]["respuesta"] is not None:
+            self.guardar()
+
+    def abrir(self):
+        self.cargar_imagenes()
+        self.vista = self.vista_inicial()
+        self.t0 = time.monotonic()
+
+    # ------------------------------------------------------------------ dibujo
+    def panel(self, lado):
+        img = self.fondo_panel(lado)
+        p = self.p
+        if self.ver_cajas:
+            for q in self.todas[self.todas.posicion == p.posicion].itertuples():
+                if q.id != p.id:
+                    self.rect(img, [q.ter_x0, q.ter_y0, q.ter_x1, q.ter_y1], OTRAS, 1)
+            self.rect(img, [p.ter_x0, p.ter_y0, p.ter_x1, p.ter_y1], CAJA_WISARD, 1)
+        self.senalar(img)
+        self.dibujar_cursor(img, GRIS)
+        self.rotular(img, "RGB alineada" if lado == "rgb" else "termica")
+        return img
+
+    def dibujar(self):
+        L = self.lienzo()
+        p = self.p
+        x = 2 * (self.gw + self.sep) + self.sep
+        y = self.y_general + 16
+        self.texto(L, f"SEGUNDO ANOTADOR (modo simple) | persona {self.i + 1} de {len(self.ids)} | respondidas "
+                      f"{self.n_terminadas()} de {len(self.ids)} | fotograma {p.posicion}, caja {p.indice_caja + 1} de "
+                      f"{p.cajas_en_fotograma}", x, y, BLANCO, 0.55)
+        self.texto(L, "Se ve esta persona en la RGB? Verde: su caja termica de WiSARD (en la RGB, donde la pone la "
+                      "alineacion: puede correrse unos px).", x, y + 22)
+        self.texto(L, "Gris: otras personas de WiSARD en el fotograma. Los triangulos amarillos senalan a la persona.",
+                   x, y + 44)
+        r = self.resp[self.id]["respuesta"]
+        self.texto(L, "respuesta: " + (TEXTO_RESPUESTA[r] if r else "SIN RESPONDER"), x, y + 76, BIEN if r else MARCA,
+                   0.65)
+        if self.aviso_guardado or self.mensaje:
+            self.texto(L, self.aviso_guardado or self.mensaje, x, y + 104, AVISO if self.aviso_guardado else MARCA)
+        yb = self.y_barra + 17
+        self.texto(L, "1: SE VE en la RGB | 2: NO SE VE en la RGB | 3: NO ES PERSONA (en la caja termica no hay una "
+                      "persona) | x: borrar la respuesta", 8, yb, BLANCO, 0.5)
+        self.texto(L, "n / b: siguiente / anterior | espacio: siguiente sin responder | rueda o + / -: zoom | flechas: "
+                      "mover la vista | 0: vista inicial", 8, yb + 23)
+        self.texto(L, "e: contraste | i: pixeles | h: ocultar las cajas | q: salir (se guarda despues de cada respuesta)",
+                   8, yb + 46)
+        return L
+
+    # ------------------------------------------------------------------ eventos
+    def raton(self, evento, u, v, flags, _=None):
+        if evento == cv2.EVENT_MOUSEWHEEL:  # como en la herramienta: (u, v) en coordenadas de pantalla
+            if self.raton_pos is not None:
+                self.zoom(self.o["zoom_paso"] if flags > 0 else 1 / self.o["zoom_paso"], self.raton_pos)
+            return
+        self.raton_pos = (u, v)  # sin arrastres: no se dibujan cajas
+
+    def tecla(self, k):
+        """Devuelve False para salir."""
+        if k in FLECHAS:
+            self.mover(*FLECHAS[k])
+            return True
+        c = chr(k) if 0 <= k < 256 else ""
+        if c in RESPUESTAS:
+            self.responder(RESPUESTAS[c])
+        elif c == "x":
+            self.borrar()
+        elif c == "n":
+            self.ir_a(self.i + 1)
+        elif c == "b":
+            self.ir_a(self.i - 1)
+        elif c == " ":
+            j = self.siguiente_sin_terminar()
+            if j is None:
+                self.mensaje = "todas las personas estan respondidas"
+            else:
+                self.ir_a(j)
+        elif c in ("+", "="):
+            self.zoom(self.o["zoom_paso"], self.raton_pos)
+        elif c == "-":
+            self.zoom(1 / self.o["zoom_paso"], self.raton_pos)
+        elif c == "0":
+            self.vista = self.vista_inicial()
+        elif c == "e":
+            self.realce = not self.realce
+            self.preparar_imagenes()
+        elif c == "i":
+            self.pixeles = not self.pixeles
+        elif c == "h":
+            self.ver_cajas = not self.ver_cajas
+        elif c == "q":
+            return False
+        return True
+
+
+def crear_anotador(cfg, rutas, segundo, salida=None, area=None, inicio=None, muestra=False, ajuste=False,
+                   simple=False):
     """Anotador del primer o del segundo anotador. `salida` permite escribir en otro archivo (para pruebas). Con
     `muestra`, el primer anotador (con precarga) anota solo las personas de la muestra; con `ajuste`, solo las de la
-    lista de ajuste de la visible RGB, en su orden."""
+    lista de ajuste de la visible RGB, en su orden. Con `simple`, el segundo anotador en modo simple (una tecla por
+    persona de la muestra; no lee el archivo del primer anotador)."""
     if segundo and (muestra or ajuste):
         raise SystemExit("--muestra y --ajuste son para el primer anotador")
     if muestra and ajuste:
         raise SystemExit("--muestra y --ajuste no van juntos")
+    if simple and (segundo or muestra or ajuste):
+        raise SystemExit("--segundo-simple va solo")
     o, data = cfg["oclusion"], rutas["data"]
     ruta_personas = data / o["personas"]
     if not ruta_personas.exists():
         raise SystemExit(f"No existe {ruta_personas}: corre antes con --preparar")
     personas = pd.read_csv(ruta_personas, dtype={"id": str})
+    if simple:
+        ids = pd.read_csv(data / o["muestra_segundo"], dtype={"id": str}).sort_values("orden").id
+        return AnotadorSimple(o, personas, ids, data / cfg["datasets"]["alineados"],
+                              salida or data / o["anotaciones_segundo_simple"], tuple(cfg["tam_termica"]), area, inicio)
     if segundo or muestra:
         ids = pd.read_csv(data / o["muestra_segundo"], dtype={"id": str}).id
     if ajuste:
@@ -929,6 +1167,9 @@ def main():
     ap.add_argument("--muestra", action="store_true", help="primer anotador, solo las personas de la muestra")
     ap.add_argument("--ajuste", action="store_true", help="primer anotador, solo la lista de ajuste de la visible RGB")
     ap.add_argument("--segundo", action="store_true", help="modo del segundo anotador")
+    ap.add_argument("--segundo-simple", action="store_true",
+                    help="segundo anotador, modo simple: una tecla por persona (se ve / no se ve en la RGB / no es "
+                         "persona)")
     ap.add_argument("--persona", type=int, help="abre en la persona N (desde 1)")
     args = ap.parse_args()
     cfg = leer_yaml(args.config)
@@ -939,7 +1180,7 @@ def main():
     from marcar_puntos import preparar_pantalla
     area = preparar_pantalla()  # antes de crear cualquier ventana
     crear_anotador(cfg, rutas, args.segundo, area=area, inicio=args.persona, muestra=args.muestra,
-                   ajuste=args.ajuste).ejecutar()
+                   ajuste=args.ajuste, simple=args.segundo_simple).ejecutar()
 
 
 if __name__ == "__main__":
