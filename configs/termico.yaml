@@ -1,0 +1,9 @@
+# Dataset de Ultralytics del modelo 'termico'. Generado por scripts/fase3_particion.py con configs/fase3.yaml: no editar a mano.
+# Imágenes: data/alineados/termica (enlaces duros). Etiquetas: las térmicas sin cajas repetidas.
+path: C:/Users/User/Desktop/sar-fusion-wisard/sar-fusion-wisard/data/datasets/termico
+train: images/train
+val: images/val
+test: images/test
+channels: 3
+names:
+  0: persona

@@ -1,0 +1,19 @@
+modelo,division,channels,imagenes,con_etiqueta,sin_archivo_etiqueta,fondo,corruptas,instancias,avisos,tipo,imagen,forma_tensor,dif_max_con_png,canales_iguales
+fusion,train,4.0,3247.0,3247.0,0.0,186.0,0.0,9340,0.0,division,,,,
+fusion,val,4.0,442.0,442.0,0.0,137.0,0.0,500,0.0,division,,,,
+fusion,test,4.0,928.0,928.0,0.0,149.0,0.0,1501,0.0,division,,,,
+rgb,train,3.0,3247.0,3247.0,0.0,186.0,0.0,9340,0.0,division,,,,
+rgb,val,3.0,442.0,442.0,0.0,137.0,0.0,500,0.0,division,,,,
+rgb,test,3.0,928.0,928.0,0.0,149.0,0.0,1501,0.0,division,,,,
+termico,train,3.0,3247.0,3247.0,0.0,186.0,0.0,9340,0.0,division,,,,
+termico,val,3.0,442.0,442.0,0.0,137.0,0.0,500,0.0,division,,,,
+termico,test,3.0,928.0,928.0,0.0,149.0,0.0,1501,0.0,division,,,,
+fusion,,,,,,,,4,,muestra,210924_FHL_Enterprise_0405_0489,"(4, 640, 640)",0.0,False
+fusion,,,,,,,,1,,muestra,210924_FHL_Enterprise_0405_0605,"(4, 640, 640)",0.0,False
+fusion,,,,,,,,1,,muestra,210924_FHL_Enterprise_0405_0802,"(4, 640, 640)",0.0,False
+rgb,,,,,,,,4,,muestra,210924_FHL_Enterprise_0405_0489,"(3, 640, 640)",0.0,False
+rgb,,,,,,,,1,,muestra,210924_FHL_Enterprise_0405_0605,"(3, 640, 640)",0.0,False
+rgb,,,,,,,,1,,muestra,210924_FHL_Enterprise_0405_0802,"(3, 640, 640)",0.0,False
+termico,,,,,,,,4,,muestra,210924_FHL_Enterprise_0405_0489,"(3, 640, 640)",0.0,True
+termico,,,,,,,,1,,muestra,210924_FHL_Enterprise_0405_0605,"(3, 640, 640)",0.0,True
+termico,,,,,,,,1,,muestra,210924_FHL_Enterprise_0405_0802,"(3, 640, 640)",0.0,True
