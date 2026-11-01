@@ -180,6 +180,11 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
       - La 46 y la 38 pasan a "no es persona".
     - Luego el primer anotador ajusta la visible RGB de las 29 con visible (herramienta `--ajuste`), porque las
       visibles se salían de la completa y daban λ = 0.
+    - Hecho: ajustó 23 y dejó 6 como estaban. Las 29 se ven enteras (λ RGB de 0 a 0.047).
+    - Estado de las 75: 7 "no es persona" y 68 comparables. Baja 29, moderada 0 y severa 39 (la RGB "no visible").
+      Detalle en `reports/fase3.md`.
+    - Pendiente antes del kappa: si 63 y 64 son una o dos personas, y qué hacer con 21, 22 y 58 (no visibles en las
+      dos imágenes).
   - **Pendiente de decidir:** el papel del segundo anotador con este plan.
 - **Niveles** según λ en la imagen RGB: baja (0 a 35 %), moderada (35 a 70 %), severa (más de 70 %).
 - **Configuración base:** 100 épocas, imagen de 640, lote 16 (bajar si no entra en 8 GB; el mismo para los tres),

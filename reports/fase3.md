@@ -318,3 +318,32 @@ con realce de contraste, sin cajas.
   igual.
 - **Prueba de la herramienta:** 59 comprobaciones. Las 4 nuevas son de `--ajuste`: el orden de la lista, las demás
   filas apartadas, la barra espaciadora con todas terminadas y que al guardar se conservan todas las filas.
+
+### Estado de la muestra tras el ajuste (antes del kappa)
+
+**Ajuste de la visible RGB** (1 de noviembre de 2026, herramienta `--ajuste`):
+
+- El primer anotador revisó las 29 personas de la lista: ajustó 23 y dejó 6 como estaban.
+- Las visibles quedaron más ajustadas. La parte fuera de la completa bajó de una mediana del 40 % (máximo 74 %) a una
+  del 23 % (máximo 38 %).
+- Las 29 siguen saliéndose más del 10 % de la completa. Aun así, todas cubren la completa entera o casi: λ RGB = 0 en
+  24 y de 0.007 a 0.047 en las otras 5. Son personas que se ven enteras en la RGB.
+
+**Estado de las 75:**
+
+| | Personas |
+|---|---:|
+| No es persona (30, 33, 36, 37, 38, 41 y 46) | 7 |
+| Fuera de cuadro | 0 |
+| **Comparables** | **68** |
+| Baja (RGB visible, λ RGB de 0 a 0.047) | 29 |
+| Moderada | 0 |
+| Severa (RGB "no visible", λ RGB = 1) | 39 |
+
+- **λ RGB manual:** queda prácticamente en 0 o 1. No hay ninguna persona en nivel moderado.
+- **Visibles térmicas:** las 65 son las cajas de WiSARD y se salen más del 10 % de la completa térmica. Eso no afecta
+  el nivel, que se calcula con la RGB.
+- **Pendiente antes del kappa:**
+  - Si 63 y 64 son una o dos personas.
+  - Qué hacer con 21, 22 y 58 (fotogramas 258, 321 y 588). Tienen la RGB y la térmica "no visible" y una mancha
+    tenue en la térmica. No hubo confusión de `t` y `r`.
