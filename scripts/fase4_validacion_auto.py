@@ -23,6 +23,12 @@ Partes (por omisión, las tres), con salidas en reports/<validacion_auto.carpeta
                  desde el fotograma anterior dentro de cada cámara (RGB con RGB, térmica con térmica) y su diferencia
                  (salto): un desfase solo en p da un salto en p y el contrario en p + 1. Imagen de inspección como las
                  de la revisión de desfases de la fase 2, con `detalle` entero. Agrega una fila a la bitácora.
+  entre_anotadores  concordancia entre el primer anotador y el segundo (modo simple, data/<oclusion.
+                 anotaciones_segundo_simple>) sobre las dos clases: se ve en la RGB (baja) o no (severa). Las "no es
+                 persona" de cualquiera de los dos (y las "fuera de cuadro" del primero) van aparte. Kappa de Cohen con
+                 IC 95 %, matriz de confusión, tabla completa con las "no es persona", desacuerdos con sus imágenes (en
+                 <entre_anotadores.carpeta>/, también las "no es persona" de uno solo) y respuestas del segundo más
+                 rápidas que `tiempo_rapido_s`. Agrega una fila a la bitácora.
 
 No modifica data/ ni el dataset original (lo lee para la medida del fondo, como en la fase 2).
 
@@ -44,7 +50,7 @@ import yaml
 from comun import RAIZ, agregar_a_bitacora, leer_rutas, leer_yaml
 from oclusion_auto import NIVELES, _ascii, hashlib_md5, nivel, revisar
 
-PARTES = ["comparar", "no_es_persona", "fondo"]
+PARTES = ["comparar", "no_es_persona", "fondo", "entre_anotadores"]
 
 
 def leer_muestra(cfg, rutas):
@@ -60,9 +66,9 @@ def leer_muestra(cfg, rutas):
     return man
 
 
-def matriz(x, col_manual, col_auto, niveles):
+def matriz(x, col_manual, col_auto, niveles, nombres=("manual", "automatico")):
     m = pd.crosstab(pd.Categorical(x[col_manual], niveles), pd.Categorical(x[col_auto], niveles), dropna=False)
-    m.index.name, m.columns.name = "manual", "automatico"
+    m.index.name, m.columns.name = nombres
     return m
 
 
@@ -309,6 +315,91 @@ def fondo(cfg, rutas, carpeta):
     return t
 
 
+# ---------------------------------------------------------------------------------------------------- entre anotadores
+def entre_anotadores(cfg, rutas, carpeta):
+    o, va = cfg["oclusion"], cfg["validacion_auto"]
+    ea = va["entre_anotadores"]
+    baja, severa = va["niveles"]
+    texto = {baja: "se ve", severa: "no se ve", "no_es_persona": "no es persona", "fuera_de_cuadro": "fuera de cuadro"}
+    man = leer_muestra(cfg, rutas)
+    ruta2 = rutas["data"] / o["anotaciones_segundo_simple"]
+    seg = pd.read_csv(ruta2, dtype={"id": str}).set_index("id")
+    faltan = [i for i in man.index if i not in seg.index]
+    if faltan:
+        raise SystemExit(f"Faltan {len(faltan)} de {len(man)} personas en {ruta2} (la primera: {faltan[0]})")
+    x = man[["n_muestra", "posicion", "indice_caja", "rgb_estado", "no_es_persona", "fuera_de_cuadro"]].join(
+        seg[["respuesta", "tiempo_s"]].rename(columns={"respuesta": "respuesta_segundo",
+                                                       "tiempo_s": "tiempo_segundo_s"}))
+    x["primero"] = np.select([x.no_es_persona, x.fuera_de_cuadro, x.rgb_estado == "no_visible", x.rgb_estado == "caja"],
+                             ["no_es_persona", "fuera_de_cuadro", severa, baja], "sin_resolver")
+    x["segundo"] = x.respuesta_segundo.map({"se_ve_rgb": baja, "no_se_ve_rgb": severa, "no_es_persona": "no_es_persona"})
+    if (x.primero == "sin_resolver").any() or x.segundo.isna().any():
+        raise SystemExit("Hay respuestas sin resolver o desconocidas")
+    x["aparte"] = x.primero.isin(["no_es_persona", "fuera_de_cuadro"]) | (x.segundo == "no_es_persona")
+    x["desacuerdo"] = x.primero != x.segundo
+    comp = x[~x.aparte]
+    m = matriz(comp, "primero", "segundo", [baja, severa], ("primero", "segundo"))
+    k = kappa(m)
+    todas = [baja, severa, "no_es_persona", "fuera_de_cuadro"]
+    completa = matriz(x, "primero", "segundo", todas, ("primero", "segundo"))
+    completa = completa.loc[completa.sum(axis=1) > 0, completa.sum(axis=0) > 0]
+    des = comp[comp.desacuerdo]
+    uno_solo = x[x.aparte & x.desacuerdo]  # "no es persona" para uno solo de los dos
+    rapidas = x[x.tiempo_segundo_s < ea["tiempo_rapido_s"]]
+    res = pd.DataFrame([{"comparacion": "primero contra segundo", "comparables": len(comp), "kappa": k[0],
+                         "ic95_bajo": k[1], "ic95_alto": k[2], "acuerdo": (~comp.desacuerdo).mean(),
+                         "desacuerdos": len(des)}])
+    # Informativo: cada anotador contra el nivel automático, en las mismas personas comparables.
+    auto = pd.read_csv(rutas["data"] / cfg["oclusion_auto"]["salida"], dtype={"id": str}).set_index("id")
+    comp = comp.assign(automatico=np.where(auto.loc[comp.index, "sin_caja_rgb_cerca"].astype(bool), severa, baja))
+    matrices_auto = {}
+    for quien in ("primero", "segundo"):
+        mq = matrices_auto[quien] = matriz(comp, quien, "automatico", [baja, severa], (quien, "automatico"))
+        kq = kappa(mq)
+        res.loc[len(res)] = {"comparacion": f"{quien} contra automático (informativo)", "comparables": len(comp),
+                             "kappa": kq[0], "ic95_bajo": kq[1], "ic95_alto": kq[2],
+                             "acuerdo": (comp[quien] == comp.automatico).mean(),
+                             "desacuerdos": int((comp[quien] != comp.automatico).sum())}
+    res = res.round(4)
+
+    sub = carpeta / ea["carpeta"]
+    sub.mkdir(parents=True, exist_ok=True)
+    cols = ["n_muestra", "posicion", "indice_caja", "primero", "segundo", "aparte", "desacuerdo", "tiempo_segundo_s"]
+    x = x.join(comp[["automatico"]])
+    x[cols + ["automatico"]].to_csv(sub / "respuestas.csv", encoding="utf-8")
+    res.to_csv(sub / "kappa.csv", index=False, encoding="utf-8")
+    m.to_csv(sub / "matriz.csv", encoding="utf-8")
+    completa.to_csv(sub / "tabla_completa.csv", encoding="utf-8")
+    pd.concat([des, uno_solo])[cols].to_csv(sub / "desacuerdos.csv", encoding="utf-8")
+    personas = [int(n) for n in pd.concat([des, uno_solo]).sort_values("n_muestra").n_muestra]
+    if personas:
+        crit = {int(f.n_muestra): f"primero: {texto[f.primero]} / segundo: {texto[f.segundo]}"
+                for f in pd.concat([des, uno_solo]).itertuples()}
+        revisar(cfg, rutas, personas=personas, nombre="imagenes", base=sub, criterio=crit)
+
+    pd.set_option("display.width", 220)
+    print(f"{len(x)} personas; aparte {int(x.aparte.sum())} ('no es persona' de alguno o 'fuera de cuadro'); "
+          f"comparables {len(comp)}")
+    print(res.to_string(index=False))
+    print(f"\nDos clases (filas: primero; columnas: segundo)\n{m}\n\nTabla completa\n{completa}")
+    for quien, mq in matrices_auto.items():
+        print(f"\n{quien} contra automático (informativo)\n{mq}")
+    print(f"\n'No es persona' de alguno: {int(x.aparte.sum())}; de uno solo: {len(uno_solo)}; respuestas del segundo en "
+          f"menos de {ea['tiempo_rapido_s']} s: {len(rapidas)}")
+    print(f"\nDesacuerdos en las dos clases:\n{des[cols].to_string()}")
+    print(f"\n'No es persona' de uno solo:\n{uno_solo[cols].to_string()}")
+    print(f"\nTiempo del segundo por persona (s): mediana {x.tiempo_segundo_s.median():.1f}, "
+          f"menos de {ea['tiempo_rapido_s']} s: {len(rapidas)} ({', '.join(map(str, rapidas.n_muestra))})")
+    agregar_a_bitacora(
+        rutas["bitacora"], "4", "concordancia entre anotadores (muestra, dos clases)",
+        f"primero (visible RGB) contra segundo (modo simple); {len(x)} personas, aparte {int(x.aparte.sum())} "
+        f"('no es persona' de alguno)",
+        f"kappa {k[0]:.3f} (IC {k[1]:.3f}-{k[2]:.3f}), acuerdo {(~comp.desacuerdo).mean():.1%}, {len(des)} "
+        f"desacuerdos en {len(comp)}; 'no es persona' de uno solo: {len(uno_solo)}; informativo, contra el automático: "
+        f"primero {res.kappa.iloc[1]:.3f}, segundo {res.kappa.iloc[2]:.3f}")
+    return x, res, m
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--config", required=True)
@@ -323,7 +414,8 @@ def main():
     for parte in PARTES:
         if parte in args.partes:
             print(f"\n===== {parte}")
-            {"comparar": comparar, "no_es_persona": no_es_persona, "fondo": fondo}[parte](cfg, rutas, carpeta)
+            {"comparar": comparar, "no_es_persona": no_es_persona, "fondo": fondo,
+             "entre_anotadores": entre_anotadores}[parte](cfg, rutas, carpeta)
 
 
 if __name__ == "__main__":

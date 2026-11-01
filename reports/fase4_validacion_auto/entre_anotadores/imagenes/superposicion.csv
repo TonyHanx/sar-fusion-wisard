@@ -1,0 +1,3 @@
+posicion,persona_a,persona_b,iou_wisard,inter_sobre_menor_wisard,iou_completas,inter_sobre_menor_completas,completa_48_sobre_wisard_48,completa_48_sobre_wisard_49,completa_49_sobre_wisard_49,completa_49_sobre_wisard_48,completa_72_sobre_wisard_72,completa_72_sobre_wisard_73,completa_73_sobre_wisard_73,completa_73_sobre_wisard_72
+513,48,49,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,,,,
+894,72,73,0.0,0.0,0.0,0.0,,,,,1.0,0.0,1.0,0.0

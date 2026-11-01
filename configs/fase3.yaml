@@ -98,6 +98,11 @@ validacion_auto:
   no_es_persona:
     alto_panel_px: 300
     percentiles_estirado: [1, 99]
+  # Concordancia entre el primer anotador y el segundo (modo simple) sobre las dos clases, pedida el 2026-11-01. Las "no
+  # es persona" de cualquiera de los dos van aparte.
+  entre_anotadores:
+    carpeta: entre_anotadores             # dentro de <carpeta>: tablas y, en imagenes/, los desacuerdos
+    tiempo_rapido_s: 0.5                  # respuestas del segundo más rápidas que esto se señalan (posible doble tecla)
   # Revisión con la medida del fondo de la fase 2 (correlación de fase de los gradientes, fiable si la respuesta es de
   # `revision_desfases.fondo_respuesta_min` o más; la extensión por el fondo usaba > `extension_fondo_min_px`).
   revision_fondo:
