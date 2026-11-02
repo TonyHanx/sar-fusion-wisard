@@ -1,0 +1,108 @@
+posicion,indice_caja,dudosa,en_conflicto,empate,distancia_mas_cercana,enlaces_dudosas,enlaces_con_nivel
+103,1,True,False,False,1,210924_FHL_Enterprise_0405_0102_1 (+1),
+104,1,True,False,False,2,210924_FHL_Enterprise_0405_0102_1 (+2),
+142,1,True,True,False,1,210924_FHL_Enterprise_0405_0141_1 (+1),210924_FHL_Enterprise_0405_0144_1 (-2)
+143,1,False,True,False,1,210924_FHL_Enterprise_0405_0141_1 (+2),210924_FHL_Enterprise_0405_0144_1 (-1)
+145,1,False,True,False,1,210924_FHL_Enterprise_0405_0147_1 (-2),210924_FHL_Enterprise_0405_0144_1 (+1)
+146,1,True,True,False,1,210924_FHL_Enterprise_0405_0147_1 (-1),210924_FHL_Enterprise_0405_0144_1 (+2)
+148,1,True,False,False,1,210924_FHL_Enterprise_0405_0147_1 (+1);210924_FHL_Enterprise_0405_0150_1 (-2),
+149,1,True,False,False,1,210924_FHL_Enterprise_0405_0147_1 (+2);210924_FHL_Enterprise_0405_0150_1 (-1),
+151,1,True,False,False,1,210924_FHL_Enterprise_0405_0150_1 (+1);210924_FHL_Enterprise_0405_0153_1 (-2),
+152,1,True,False,False,1,210924_FHL_Enterprise_0405_0150_1 (+2);210924_FHL_Enterprise_0405_0153_1 (-1),
+154,1,True,True,False,1,210924_FHL_Enterprise_0405_0153_1 (+1),210924_FHL_Enterprise_0405_0156_1 (-2)
+155,1,False,True,False,1,210924_FHL_Enterprise_0405_0153_1 (+2),210924_FHL_Enterprise_0405_0156_1 (-1)
+157,2,True,True,False,1,210924_FHL_Enterprise_0405_0156_2 (+1),210924_FHL_Enterprise_0405_0159_1 (-2)
+158,1,False,True,False,1,210924_FHL_Enterprise_0405_0156_2 (+2),210924_FHL_Enterprise_0405_0159_1 (-1)
+166,2,True,True,False,1,210924_FHL_Enterprise_0405_0165_2 (+1),210924_FHL_Enterprise_0405_0168_1 (-2)
+167,1,False,True,False,1,210924_FHL_Enterprise_0405_0165_2 (+2),210924_FHL_Enterprise_0405_0168_1 (-1)
+184,2,True,False,False,2,210924_FHL_Enterprise_0405_0186_2 (-2),
+185,2,True,False,False,1,210924_FHL_Enterprise_0405_0186_2 (-1),
+187,3,True,False,False,1,210924_FHL_Enterprise_0405_0186_2 (+1),
+188,1,True,False,False,2,210924_FHL_Enterprise_0405_0186_2 (+2),
+191,0,True,False,False,1,210924_FHL_Enterprise_0405_0192_0 (-1),
+193,0,True,False,False,1,210924_FHL_Enterprise_0405_0192_0 (+1),
+194,0,True,False,False,1,210924_FHL_Enterprise_0405_0195_0 (-1),
+196,0,True,False,False,1,210924_FHL_Enterprise_0405_0195_0 (+1),
+197,0,True,False,False,2,210924_FHL_Enterprise_0405_0195_0 (+2),
+205,0,True,False,False,2,210924_FHL_Enterprise_0405_0207_0 (-2),
+206,0,True,False,False,1,210924_FHL_Enterprise_0405_0207_0 (-1),
+208,1,True,False,False,1,210924_FHL_Enterprise_0405_0207_0 (+1),
+232,0,False,True,False,1,210924_FHL_Enterprise_0405_0234_0 (-2),210924_FHL_Enterprise_0405_0231_0 (+1)
+233,0,True,True,False,1,210924_FHL_Enterprise_0405_0234_0 (-1),210924_FHL_Enterprise_0405_0231_0 (+2)
+235,0,True,True,False,1,210924_FHL_Enterprise_0405_0234_0 (+1),210924_FHL_Enterprise_0405_0237_0 (-2)
+236,1,False,True,False,1,210924_FHL_Enterprise_0405_0234_0 (+2),210924_FHL_Enterprise_0405_0237_0 (-1)
+241,2,True,False,False,2,210924_FHL_Enterprise_0405_0243_2 (-2),
+242,2,True,False,False,1,210924_FHL_Enterprise_0405_0243_2 (-1),
+244,2,True,False,False,1,210924_FHL_Enterprise_0405_0243_2 (+1),
+292,0,True,True,False,1,210924_FHL_Enterprise_0405_0291_0 (+1),210924_FHL_Enterprise_0405_0294_0 (-2)
+293,0,False,True,False,1,210924_FHL_Enterprise_0405_0291_0 (+2),210924_FHL_Enterprise_0405_0294_0 (-1)
+314,0,True,False,False,1,210924_FHL_Enterprise_0405_0315_0 (-1),
+316,0,True,False,False,1,210924_FHL_Enterprise_0405_0315_0 (+1);210924_FHL_Enterprise_0405_0318_0 (-2),
+317,0,True,False,False,1,210924_FHL_Enterprise_0405_0315_0 (+2);210924_FHL_Enterprise_0405_0318_0 (-1),
+319,0,True,False,False,1,210924_FHL_Enterprise_0405_0318_0 (+1),
+320,0,True,False,False,2,210924_FHL_Enterprise_0405_0318_0 (+2),
+322,0,True,False,False,1,210924_FHL_Enterprise_0405_0321_0 (+1),
+323,0,True,False,False,2,210924_FHL_Enterprise_0405_0321_0 (+2),
+337,1,False,True,False,1,210924_FHL_Enterprise_0405_0339_1 (-2),210924_FHL_Enterprise_0405_0336_1 (+1)
+338,1,True,True,False,1,210924_FHL_Enterprise_0405_0339_1 (-1),210924_FHL_Enterprise_0405_0336_1 (+2)
+340,0,True,False,False,1,210924_FHL_Enterprise_0405_0339_1 (+1),
+341,0,True,False,False,2,210924_FHL_Enterprise_0405_0339_1 (+2),
+343,1,True,True,False,1,210924_FHL_Enterprise_0405_0342_1 (+1),210924_FHL_Enterprise_0405_0345_1 (-2)
+344,1,False,True,False,1,210924_FHL_Enterprise_0405_0342_1 (+2),210924_FHL_Enterprise_0405_0345_1 (-1)
+379,0,True,False,False,1,210924_FHL_Enterprise_0405_0378_0 (+1),
+422,3,True,False,False,1,210924_FHL_Enterprise_0405_0423_3 (-1),
+425,2,True,False,False,1,210924_FHL_Enterprise_0405_0426_2 (-1),
+427,1,False,True,False,1,210924_FHL_Enterprise_0405_0429_1 (-2),210924_FHL_Enterprise_0405_0426_1 (+1)
+427,2,True,True,False,1,210924_FHL_Enterprise_0405_0426_2 (+1),210924_FHL_Enterprise_0405_0429_2 (-2)
+428,1,True,True,False,1,210924_FHL_Enterprise_0405_0429_1 (-1),210924_FHL_Enterprise_0405_0426_1 (+2)
+428,2,False,True,False,1,210924_FHL_Enterprise_0405_0426_2 (+2),210924_FHL_Enterprise_0405_0429_2 (-1)
+430,1,True,False,False,1,210924_FHL_Enterprise_0405_0429_1 (+1);210924_FHL_Enterprise_0405_0432_1 (-2),
+430,2,False,True,False,1,210924_FHL_Enterprise_0405_0432_2 (-2),210924_FHL_Enterprise_0405_0429_2 (+1)
+431,1,True,False,False,1,210924_FHL_Enterprise_0405_0429_1 (+2);210924_FHL_Enterprise_0405_0432_1 (-1),
+431,2,True,True,False,1,210924_FHL_Enterprise_0405_0432_2 (-1),210924_FHL_Enterprise_0405_0429_2 (+2)
+433,1,True,True,False,1,210924_FHL_Enterprise_0405_0432_1 (+1),210924_FHL_Enterprise_0405_0435_1 (-2)
+433,2,True,True,False,1,210924_FHL_Enterprise_0405_0432_2 (+1),210924_FHL_Enterprise_0405_0435_2 (-2)
+434,1,False,True,False,1,210924_FHL_Enterprise_0405_0432_1 (+2),210924_FHL_Enterprise_0405_0435_1 (-1)
+434,2,False,True,False,1,210924_FHL_Enterprise_0405_0432_2 (+2),210924_FHL_Enterprise_0405_0435_2 (-1)
+437,1,True,False,False,1,210924_FHL_Enterprise_0405_0438_1 (-1),
+439,1,True,False,False,1,210924_FHL_Enterprise_0405_0438_1 (+1),
+442,1,True,False,False,2,210924_FHL_Enterprise_0405_0444_0 (-2),
+443,0,True,False,False,1,210924_FHL_Enterprise_0405_0444_0 (-1),
+445,0,True,False,False,1,210924_FHL_Enterprise_0405_0444_0 (+1);210924_FHL_Enterprise_0405_0447_0 (-2),
+445,3,False,True,False,1,210924_FHL_Enterprise_0405_0447_3 (-2),210924_FHL_Enterprise_0405_0444_3 (+1)
+446,0,True,False,False,1,210924_FHL_Enterprise_0405_0444_0 (+2);210924_FHL_Enterprise_0405_0447_0 (-1),
+446,3,True,True,False,1,210924_FHL_Enterprise_0405_0447_3 (-1),210924_FHL_Enterprise_0405_0444_3 (+2)
+448,0,True,False,False,1,210924_FHL_Enterprise_0405_0447_0 (+1);210924_FHL_Enterprise_0405_0450_0 (-2),
+448,3,True,True,False,1,210924_FHL_Enterprise_0405_0447_3 (+1),210924_FHL_Enterprise_0405_0450_3 (-2)
+449,0,True,False,False,1,210924_FHL_Enterprise_0405_0447_0 (+2);210924_FHL_Enterprise_0405_0450_0 (-1),
+449,3,False,True,False,1,210924_FHL_Enterprise_0405_0447_3 (+2),210924_FHL_Enterprise_0405_0450_3 (-1)
+451,0,True,False,False,1,210924_FHL_Enterprise_0405_0450_0 (+1);210924_FHL_Enterprise_0405_0453_0 (-2),
+452,0,True,False,False,1,210924_FHL_Enterprise_0405_0450_0 (+2);210924_FHL_Enterprise_0405_0453_0 (-1),
+454,0,True,False,False,1,210924_FHL_Enterprise_0405_0453_0 (+1);210924_FHL_Enterprise_0405_0456_0 (-2),
+455,0,True,False,False,1,210924_FHL_Enterprise_0405_0453_0 (+2);210924_FHL_Enterprise_0405_0456_0 (-1),
+457,0,True,False,False,1,210924_FHL_Enterprise_0405_0456_0 (+1);210924_FHL_Enterprise_0405_0459_0 (-2),
+458,0,True,False,False,1,210924_FHL_Enterprise_0405_0456_0 (+2);210924_FHL_Enterprise_0405_0459_0 (-1),
+460,3,True,False,False,1,210924_FHL_Enterprise_0405_0459_0 (+1),
+463,3,True,True,False,1,210924_FHL_Enterprise_0405_0462_3 (+1),210924_FHL_Enterprise_0405_0465_3 (-2)
+464,3,False,True,False,1,210924_FHL_Enterprise_0405_0462_3 (+2),210924_FHL_Enterprise_0405_0465_3 (-1)
+466,3,False,True,False,1,210924_FHL_Enterprise_0405_0468_3 (-2),210924_FHL_Enterprise_0405_0465_3 (+1)
+467,3,True,True,False,1,210924_FHL_Enterprise_0405_0468_3 (-1),210924_FHL_Enterprise_0405_0465_3 (+2)
+469,3,True,False,False,1,210924_FHL_Enterprise_0405_0468_3 (+1),
+470,3,True,False,False,2,210924_FHL_Enterprise_0405_0468_3 (+2),
+472,3,True,False,False,2,210924_FHL_Enterprise_0405_0474_3 (-2),
+473,3,True,False,False,1,210924_FHL_Enterprise_0405_0474_3 (-1),
+475,3,True,False,False,1,210924_FHL_Enterprise_0405_0474_3 (+1);210924_FHL_Enterprise_0405_0477_3 (-2),
+476,3,True,False,False,1,210924_FHL_Enterprise_0405_0474_3 (+2);210924_FHL_Enterprise_0405_0477_3 (-1),
+478,3,True,False,False,1,210924_FHL_Enterprise_0405_0477_3 (+1);210924_FHL_Enterprise_0405_0480_3 (-2),
+479,3,True,False,False,1,210924_FHL_Enterprise_0405_0477_3 (+2);210924_FHL_Enterprise_0405_0480_3 (-1),
+481,3,True,False,False,1,210924_FHL_Enterprise_0405_0480_3 (+1);210924_FHL_Enterprise_0405_0483_3 (-2),
+482,3,True,False,False,1,210924_FHL_Enterprise_0405_0480_3 (+2);210924_FHL_Enterprise_0405_0483_3 (-1),
+484,3,True,True,False,1,210924_FHL_Enterprise_0405_0483_3 (+1),210924_FHL_Enterprise_0405_0486_3 (-2)
+485,3,False,True,False,1,210924_FHL_Enterprise_0405_0483_3 (+2),210924_FHL_Enterprise_0405_0486_3 (-1)
+610,0,False,True,False,1,210924_FHL_Enterprise_0405_0612_0 (-2),210924_FHL_Enterprise_0405_0609_0 (+1)
+611,0,True,True,False,1,210924_FHL_Enterprise_0405_0612_0 (-1),210924_FHL_Enterprise_0405_0609_0 (+2)
+613,0,True,False,False,1,210924_FHL_Enterprise_0405_0612_1 (+1),
+712,0,False,True,False,1,210924_FHL_Enterprise_0405_0714_0 (-2),210924_FHL_Enterprise_0405_0711_0 (+1)
+713,0,True,True,False,1,210924_FHL_Enterprise_0405_0714_0 (-1),210924_FHL_Enterprise_0405_0711_0 (+2)
+715,0,True,True,False,1,210924_FHL_Enterprise_0405_0714_0 (+1),210924_FHL_Enterprise_0405_0717_0 (-2)
+716,0,False,True,False,1,210924_FHL_Enterprise_0405_0714_0 (+2),210924_FHL_Enterprise_0405_0717_0 (-1)

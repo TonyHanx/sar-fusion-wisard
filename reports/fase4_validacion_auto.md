@@ -5,10 +5,55 @@ sección `validacion_auto`) y, el nivel final, con `scripts/fase4_nivel.py` (sec
 en `reports/fase4_validacion_auto/`. La validación no tocó `data/`. El nivel final solo escribe
 `data/oclusion_nivel.csv`. No se tocó el dataset original. Cada cálculo agrega una fila a la bitácora.
 
-## Cierre de la fase 4: nivel final
+## Nivel final (con la escena en sombra reanotada)
 
-**Fase 4 cerrada el 1 de noviembre de 2026.** El nivel que usa la fase 6 es el del primer anotador en modo simple, con la
-regla aclarada, para las 498 personas de los 310 fotogramas anotados de FHL 0405 (1 de cada 3):
+**Fase 4 cerrada el 1 de noviembre de 2026**, con la escena en sombra reanotada.
+- Es el nivel que usa la fase 6: `data/oclusion_nivel.csv`, generado con `scripts/fase4_nivel.py`.
+- Antes de reescribirlo, el script guardó el anterior en `data/respaldos/oclusion_nivel_20261101-202246.csv`.
+- Tablas en `reports/fase4_validacion_auto/nivel_final/`, y una fila nueva en la bitácora.
+
+```
+.venv\Scripts\python.exe scripts\fase4_nivel.py --config configs\fase3.yaml --rutas configs\rutas.yaml
+.venv\Scripts\python.exe scripts\fase4_cajas_dudosas.py --config configs\fase3.yaml --rutas configs\rutas.yaml
+```
+
+| Nivel | Muestra | Resto | Total | % | Fotogramas con alguna |
+|---|---:|---:|---:|---:|---:|
+| **Baja** (se ve en la RGB) | 32 | 152 | **184** | 36.9 % | 134 |
+| **Severa** (no se ve en la RGB) | 33 | 234 | **267** | 53.6 % | 155 |
+| **Sin nivel, dudosas** ("no es persona") | 10 | 37 | **47** | 9.4 % | 43 |
+| Total | 75 | 423 | 498 | 100 % | 259 |
+
+- **De dónde salen las respuestas:**
+  - las 75 de la muestra, de la ronda 2;
+  - las 423 restantes, de `--primero-simple-resto`;
+  - las 94 de los fotogramas 468 a 588, de la reanotación, que reemplaza a las anteriores.
+- **Las 47 sin nivel son cajas dudosas:**
+  - las 10 de los dos anotadores. La 41 está en la escena y siguió como "no es persona";
+  - 37 marcadas solo por el primero.
+  - Las 6 "no es persona" solo del primero en la muestra (48, 51, 52, 54, 55 y 58) estaban en la escena, y ahora son
+    "no se ve".
+- **Cajas dudosas para la fase 6:** 47 anotadas + 84 seguidas por los fotogramas no anotados = **131** de las 1 501
+  cajas térmicas del vuelo (ver "Cajas dudosas y su seguimiento").
+- **Columnas nuevas de `data/oclusion_nivel.csv`:** `los_dos_no_es_persona`, `reanotacion` y `respuesta_anterior`.
+  `caja_dudosa` quiere decir sin nivel.
+- **Tiempo por persona:**
+  - mediana de 0.9 s en las 498;
+  - **0.65 s en la reanotación de la escena** (P25 a P75: 0.5 a 0.98 s; 21 de 94 en menos de 0.5 s). Ver
+    "Limitaciones".
+  - El máximo, 4 018 s, es la primera persona de la escena. La herramienta quedó abierta en ella desde que la abrí,
+    así que no es tiempo de anotación.
+- **Contra el automático** (solo informativo; no cambia la decisión): kappa 0.750 (IC 0.688 a 0.812), acuerdo 88.0 %,
+  54 desacuerdos en 451. En la muestra da 0.661 (65 personas) y en el resto 0.765 (386).
+- **Escena en sombra:** ahora "se ven" 2 de 19 en la muestra y 1 de 69 en el resto. Antes eran 8 de 13 y 1 de 56.
+
+La sección siguiente, "Cierre de la fase 4: primera versión", queda como registro de antes de la reanotación.
+
+## Cierre de la fase 4: primera versión (antes de la reanotación)
+
+Primera versión del nivel final, antes de reanotar la escena en sombra. Se conserva como registro: el nivel que vale es
+el de "Nivel final". Es el nivel del primer anotador en modo simple, con la regla aclarada, para las 498 personas de los
+310 fotogramas anotados de FHL 0405 (1 de cada 3):
 - las 75 de la muestra salen de su ronda 2 (`data/oclusion_primero_simple_ronda2.csv`);
 - las 423 restantes salen de `--primero-simple-resto` (`data/oclusion_primero_simple_resto.csv`).
 
@@ -90,13 +135,13 @@ solaparse y que las 10 cajas dudosas son "no es persona".
     sombra".
   - El resto se anotó después de conocer los resultados de la ronda 2 (ver "Limitaciones").
 
-**Las cifras de esta sección son las de antes de la reanotación de la escena en sombra.** Se actualizan cuando esté
-hecha.
+**Las cifras de esta sección son las de antes de la reanotación de la escena en sombra.** Las finales están en "Nivel
+final".
 
 ## Reanotación de la escena en sombra (después del cierre)
 
 Decidida el 1 de noviembre de 2026, al ver la diferencia entre la muestra y el resto en esa escena (ver "Cierre de la
-fase 4"). **Pendiente: la está anotando el primer anotador.**
+fase 4"). **Hecha el 1 de noviembre de 2026.**
 
 - **Qué se reanota:** todas las personas de los fotogramas 468 a 588, de la muestra y del resto juntas (94: 20 y 74), en
   orden de fotograma y de una vez. Se usan la misma pantalla y la misma regla de la ronda 2, sin realce.
@@ -118,26 +163,37 @@ fase 4"). **Pendiente: la está anotando el primer anotador.**
   - los cambios quedan en `nivel_final/reanotacion_escena_sombra.csv` y en `reanotacion_escena_sombra_tabla.csv`.
 - **Las 10 "no es persona" de los dos** quedan sin nivel aunque la reanotación las cambie, porque así se decidió. El
   script lo avisa. En la escena está la 41 (fotograma 474).
-- **Al terminar:**
-  1. correr `scripts/fase4_nivel.py`;
-  2. correr `scripts/fase4_cajas_dudosas.py`, porque las "no es persona" de la escena pueden cambiar;
-  3. actualizar las cifras del cierre.
+- **Después de la reanotación** se corrieron `scripts/fase4_nivel.py` y `scripts/fase4_cajas_dudosas.py`. Las cifras
+  están en "Nivel final".
 - Lo probé con una reanotación simulada sobre una copia de los datos. Reemplaza las 94, guarda la copia del nivel
   anterior y avisa si cambia una de las 10.
 
-## Cajas dudosas: las 66 y su seguimiento
+**Resultado:** cambian 29 de las 94 respuestas (`nivel_final/reanotacion_escena_sombra.csv` y
+`reanotacion_escena_sombra_tabla.csv`).
+
+| Personas | Anterior \ nueva | Se ve | No se ve | No es persona |
+|---|---|---:|---:|---:|
+| Muestra (20) | se ve | 2 | 6 | 0 |
+| | no se ve | 0 | 5 | 0 |
+| | no es persona | 0 | 6 | 1 |
+| Resto (74) | se ve | 0 | 1 | 0 |
+| | no se ve | 1 | 53 | 1 |
+| | no es persona | 0 | 14 | 4 |
+
+- **En total:** 3 "se ve", 85 "no se ve" y 6 "no es persona". Antes eran 9, 60 y 25.
+- **Muestra y resto quedan con el mismo criterio:** "se ven" 2 de 19 comparables en la muestra y 1 de 69 en el resto.
+- **La 41** (fotograma 474, "no es persona" de los dos) siguió como "no es persona". No hubo aviso.
+- **Tiempo:** mediana de 0.65 s por persona (ver "Limitaciones").
+
+## Cajas dudosas y su seguimiento
 
 Decidido el 1 de noviembre de 2026:
-- las 66 personas sin nivel ("no es persona") van todas a `configs/cajas_dudosas.yaml`;
+- todas las personas sin nivel ("no es persona") van a `configs/cajas_dudosas.yaml`;
 - las etiquetas de prueba no se tocan;
 - para el cálculo "sin ellas" de la fase 6, cada caja se sigue también por los fotogramas no anotados.
 
 El yaml lo genera `scripts/fase4_cajas_dudosas.py` (sección `cajas_dudosas` de `configs/fase3.yaml`) a partir de
 `data/oclusion_nivel.csv`, así que no se edita a mano. Tablas e imagen en `reports/fase4_validacion_auto/cajas_dudosas/`.
-
-```
-.venv\Scripts\python.exe scripts\fase4_cajas_dudosas.py --config configs\fase3.yaml --rutas configs\rutas.yaml
-```
 
 **Seguimiento:**
 - Empieza en cada caja anotada (dudosa o con nivel) y va hacia adelante y hacia atrás, fotograma a fotograma, hasta el
@@ -147,40 +203,48 @@ El yaml lo genera `scripts/fase4_cajas_dudosas.py` (sección `cajas_dudosas` de 
 - Entre fotogramas seguidos, las cajas se mueven una mediana de 0.24 alturas, y el 75 % hasta 0.69.
 - Si falta un fotograma (par excluido), se corta.
 
-Cada caja de un fotograma no anotado queda en uno de tres grupos:
-- **seguida:** solo se enlaza con cajas dudosas, así que es dudosa;
-- **en conflicto:** se enlaza con una caja dudosa y, del otro lado, con una persona con nivel. Es decir, el mismo
-  objeto se respondió "no es persona" en un fotograma anotado y "se ve" o "no se ve" en el vecino;
-- **no dudosa:** solo se enlaza con personas con nivel, o con nada.
+**Regla para las cajas seguidas** (fijada el 1 de noviembre de 2026, antes de ver las cifras nuevas):
+- Cada caja seguida toma la respuesta del fotograma anotado más cercano del mismo objeto, contado en fotogramas por la
+  cadena. Es dudosa si esa caja anotada es dudosa, y no lo es si tiene nivel.
+- Si hay empate de distancia, va como dudosa.
+- **En conflicto** quiere decir que la caja se enlaza a la vez con una caja dudosa y, del otro lado, con una persona con
+  nivel. La regla las resuelve: la que está a 1 fotograma de la caja dudosa queda dudosa, y la que está a 1 de la
+  persona queda como persona.
 
-| Umbral | Anotadas | Seguidas | En conflicto | Total sin conflicto | Total con conflicto |
-|---|---:|---:|---:|---:|---:|
-| 0.5 alturas | 66 | 60 | 64 | 126 | 190 |
-| **1 altura (el que se usa)** | 66 | **78** | **78** | **144** | **222** |
-| 1.5 alturas | 66 | 80 | 84 | 146 | 230 |
+**Resultado final**, con la escena reanotada:
 
-- **Total: 144 cajas dudosas sin contar los conflictos,** de las 1 501 cajas térmicas del vuelo de prueba.
-  - Son 66 anotadas y 78 seguidas.
-  - Con las 78 en conflicto serían 222.
-- **Los 78 conflictos son 39 pares** de caja dudosa y persona con nivel, 3 fotogramas aparte, unidos por 2 cajas cada
-  uno.
+| Umbral | Anotadas | Seguidas dudosas | Total dudosas | En conflicto | Conflicto → dudosa | Conflicto → persona | Empates |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| 0.5 alturas | 47 | 59 | 106 | 34 | 17 | 17 | 0 |
+| **1 altura (el que se usa)** | 47 | **84** | **131** | 46 | 23 | 23 | 0 |
+| 1.5 alturas | 47 | 88 | 135 | 52 | 26 | 26 | 0 |
+
+- **131 cajas dudosas** de las 1 501 cajas térmicas del vuelo de prueba: 47 anotadas y 84 seguidas.
+- Las 84 seguidas son:
+  - 61 que solo se enlazan con cajas dudosas;
+  - 23 en conflicto que quedan dudosas por estar más cerca de la caja dudosa.
+- **Los conflictos bajan de 39 pares a 23** con la reanotación. Cada par tiene 2 cajas en medio: 1 queda dudosa y 1
+  como persona.
   - Lista en `cajas_dudosas/conflictos.csv`.
-  - El mosaico `cajas_dudosas/conflictos.jpg` muestra, por par, la térmica y la RGB alineada de los 4 fotogramas.
-- **Lo que se ve en el mosaico:** el seguimiento va sobre el mismo objeto, y lo que cambia es la respuesta.
-  - **165 ↔ 168:** una persona de ropa azul en el borde del fotograma. En 165 se respondió "no es persona" y en 168
-    "se ve".
-  - **462 a 480:** el mismo objeto pasa de "no es persona" a "severa" y vuelve.
-  - 18 de los 39 pares tienen alguna de sus dos personas anotadas en la escena en sombra (fotogramas 468 a 588), y la
-    reanotación puede cambiarlos.
-- **Falta decidir qué se hace con las cajas en conflicto** (ver "Pendiente de decidir").
-- Los conteos se recalculan después de la reanotación.
+  - Todas las cajas enlazadas con alguna dudosa, con sus enlaces y la decisión, en `cajas_dudosas/seguimiento.csv`.
+  - El mosaico `cajas_dudosas/conflictos.jpg` muestra, por par, los 4 fotogramas: rojo = dudosa, verde = persona.
+- Con esta separación no hubo empates.
+- Persiste el caso **165 ↔ 168**, que no está en la escena: una persona de ropa azul en el borde del fotograma,
+  respondida "no es persona" en 165 y "se ve" en 168.
+
+**Antes de la reanotación y de la regla** (registro): 66 anotadas + 78 seguidas = 144, y otras 78 cajas en conflicto en
+39 pares (222 si se contaban). El mosaico de entonces mostraba que el seguimiento iba sobre el mismo objeto y que lo que
+cambiaba era la respuesta.
 
 ## Limitaciones
 
 Las declara el reporte, decididas el 1 de noviembre de 2026:
-- **Tiempo por persona:** la mediana fue de 0.9 s en las 423 del resto (1.4 s en la muestra y 1.0 s en las 498).
+- **Tiempo por persona:** la mediana fue de 0.9 s en las 423 del resto, tal como se anotaron (1.4 s en la muestra).
   - Una respuesta tan rápida deja poco tiempo para mirar.
   - 51 respuestas del resto tardaron menos de 0.5 s.
+- **Tiempo en la reanotación de la escena en sombra:** la mediana fue de 0.65 s por persona (P25 a P75: 0.5 a
+  0.98 s), y 21 de las 94 respuestas tardaron menos de 0.5 s.
+  - En esa escena la RGB es casi negra dentro de las cajas.
 - **El resto se anotó después de conocer los resultados de la ronda 2.** El primer anotador ya sabía:
   - los desacuerdos de la escena en sombra;
   - que el automático no pasó.
@@ -784,8 +848,8 @@ En `entre_anotadores/rondas.csv`.
   `oclusion.modo_simple.reanotaciones`.
 - `scripts/fase4_nivel.py` (nuevo): el nivel final, con las reanotaciones y una copia del anterior en `data/respaldos/`.
 - `scripts/fase4_cajas_dudosas.py` (nuevo): genera `configs/cajas_dudosas.yaml` con el seguimiento por los fotogramas
-  no anotados.
-- `configs/cajas_dudosas.yaml` (nuevo): las 10 cajas dudosas.
+  no anotados y la regla del fotograma anotado más cercano.
+- `configs/cajas_dudosas.yaml` (nuevo, generado): las cajas dudosas, anotadas y seguidas.
 - `configs/fase3.yaml`:
   - Sección `validacion_auto` (niveles, kappa mínimo, mosaico, revisión del fondo y `entre_anotadores`).
   - `oclusion.modo_simple`: `ronda_actual` y, por ronda, la regla y el archivo de cada anotador que la responde en
@@ -795,28 +859,19 @@ En `entre_anotadores/rondas.csv`.
 
 ## Pendiente de decidir
 
-Ya decidido el 1 de noviembre de 2026 (ver "Decisiones tras la ronda 2", "Cierre de la fase 4" y las secciones que
-siguen):
+Ya decidido el 1 de noviembre de 2026 (ver "Decisiones tras la ronda 2", "Nivel final" y las secciones que siguen):
 - en la ronda 2, la escena en sombra no se revisó;
 - las 423 que faltan las anotó el primero con `--primero-simple-resto`;
 - se acepta la concordancia de 0.623, con el IC como limitación;
-- el nivel final está en `data/oclusion_nivel.csv`;
-- las 66 "no es persona" van todas a `configs/cajas_dudosas.yaml`, y se siguen por los fotogramas no anotados;
-- la escena en sombra se reanota entera para el nivel final;
+- la escena en sombra se reanotó entera, y esas respuestas reemplazan el nivel final de la escena;
+- el nivel final está en `data/oclusion_nivel.csv`: baja 184, severa 267 y 47 sin nivel (dudosas);
+- todas las "no es persona" van a `configs/cajas_dudosas.yaml`, y se siguen por los fotogramas no anotados. Cada caja
+  seguida toma la respuesta del fotograma anotado más cercano, y los empates van como dudosas. Total: 131 cajas;
 - **fotograma 60: no se excluye**, por desfase residual bajo los límites de la regla (tampoco 71–72);
 - las limitaciones de "Limitaciones".
 
-Pendiente:
-1. **La reanotación de la escena en sombra** (fotogramas 468 a 588). Después hay que correr `fase4_nivel.py` y
-   `fase4_cajas_dudosas.py` y actualizar las cifras.
-2. **Las 78 cajas en conflicto** (39 pares; ver "Cajas dudosas: las 66 y su seguimiento"). Son cajas de fotogramas no
-   anotados que siguen a una caja dudosa y, del otro lado, a una persona con nivel. ¿Cómo se tratan en el cálculo "sin
-   ellas"?
-   - como dudosas (222 en total);
-   - como personas (144);
-   - o según el fotograma anotado más cercano.
-   - Conviene decidirlo después de la reanotación, que puede cambiar varios.
-3. **FASES.md:** el mensaje de la fase 4 sigue hablando de λ y de tres niveles. Lo hecho está en este reporte.
+Pendiente: nada de la fase 4. Solo una nota:
+- **FASES.md:** el mensaje de la fase 4 sigue hablando de λ y de tres niveles. Lo hecho está en este reporte.
 
 Cerrados:
 - La 73 queda con la respuesta del primero ("no se ve", severa).

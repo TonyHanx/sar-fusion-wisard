@@ -1,5 +1,5 @@
 nivel,muestra,resto,total,porcentaje,fotogramas_con_alguna,cajas_dudosas
-baja,38,152,190,38.2,141,0
-severa,21,221,242,48.6,151,0
-no_es_persona,16,50,66,13.3,60,10
-total,75,423,498,100.0,259,10
+baja,32,152,184,36.9,134,0
+severa,33,234,267,53.6,155,0
+sin_nivel,10,37,47,9.4,43,47
+total,75,423,498,100.0,259,47
