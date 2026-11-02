@@ -1,4 +1,4 @@
 personas,n,mediana_s,p25_s,p75_s,p90_s,maximo_s,id_maximo,menos_de_0.5_s,rapidas_se_ve,rapidas_no_se_ve
-muestra,75,1.4,0.7,2.25,3.16,152.9,210924_FHL_Enterprise_0405_0000_1,9,9,0
-resto,423,0.9,0.6,1.4,2.9,3068.4,210924_FHL_Enterprise_0405_0000_0,51,31,20
-total,498,1.0,0.6,1.6,3.1,3068.4,210924_FHL_Enterprise_0405_0000_0,60,40,20
+muestra,75,1.0,0.5,2.15,3.06,4017.9,210924_FHL_Enterprise_0405_0468_0,15,9,6
+resto,423,0.9,0.6,1.4,3.06,3068.4,210924_FHL_Enterprise_0405_0000_0,60,31,29
+total,498,0.9,0.6,1.5,3.1,4017.9,210924_FHL_Enterprise_0405_0468_0,75,40,35

@@ -7,20 +7,28 @@ Seguimiento por los fotogramas no anotados del vuelo de prueba (`oclusion.vuelo`
 `oclusion.paso`): desde cada caja anotada (dudosa o con nivel), hacia adelante y hacia atrás, fotograma a fotograma,
 hasta el fotograma anotado siguiente, sin incluirlo. En cada paso, la caja térmica de WiSARD (data/etiquetas/termica/)
 más cercana por el centro, mutua y a `cajas_dudosas.max_dist_alturas` alturas o menos (la mayor de las dos alturas). Se
-corta si falta un fotograma (par excluido). Cada caja de un fotograma no anotado queda:
-  seguida       enlazada solo con cajas dudosas: es dudosa;
-  en conflicto  enlazada con una caja dudosa y con una persona con nivel (el mismo objeto se respondió distinto en dos
-                fotogramas anotados): va aparte, sin decidir;
-  (si solo se enlaza con personas con nivel, o con nada, no es dudosa).
+corta si falta un fotograma (par excluido).
 
-Escribe `oclusion.cajas_dudosas` (yaml generado: no editar a mano) con las tres listas; por caja, su archivo de
-etiquetas (dentro de data/etiquetas/), la línea (`indice_caja`, desde 0), el texto exacto de la línea (comprobado
-igual en las etiquetas de prueba de los tres datasets) y la caja en px. Y en reports/<cajas_dudosas.carpeta>/:
-  cajas.csv        las cajas dudosas (anotadas, seguidas y en conflicto);
+Regla (fijada el 2026-11-01 antes de ver las cifras): cada caja de un fotograma no anotado a la que llega alguna cadena
+toma la respuesta del fotograma anotado más cercano del mismo objeto (menos fotogramas de distancia por la cadena): es
+dudosa si esa caja anotada es dudosa y no lo es si tiene nivel. Si hay empate de distancia entre una caja dudosa y una
+con nivel, va como dudosa. Las que no alcanza ninguna cadena no son dudosas. Una caja "en conflicto" es una enlazada a
+la vez con una caja dudosa y con una persona con nivel (el mismo objeto se respondió distinto en dos fotogramas
+anotados); la regla las resuelve y se reportan aparte.
+
+Escribe `oclusion.cajas_dudosas` (yaml generado: no editar a mano) con las anotadas y las seguidas dudosas; por caja,
+su archivo de etiquetas (dentro de data/etiquetas/), la línea (`indice_caja`, desde 0), el texto exacto de la línea
+(comprobado igual en las etiquetas de prueba de los tres datasets) y la caja en px; las seguidas, además, la caja
+anotada más cercana que siguen, a cuántos fotogramas, y si estaban en conflicto o en empate. Y en
+reports/<cajas_dudosas.carpeta>/:
+  cajas.csv        las cajas dudosas (anotadas y seguidas);
+  seguimiento.csv  todas las cajas de fotogramas no anotados enlazadas con alguna caja dudosa, con sus enlaces y la
+                   decisión de la regla;
   resumen.csv      cuántas hay de cada tipo, con el umbral y con los de `sensibilidad_alturas`;
-  conflictos.csv   los pares (caja dudosa, persona con nivel) unidos por cajas en conflicto;
+  conflictos.csv   los pares (caja dudosa, persona con nivel) unidos por cajas en conflicto, y cómo quedó cada una;
   conflictos.jpg   por par, los fotogramas de uno al otro: térmica y RGB alineada alrededor de la caja (rojo: la caja
-                   dudosa anotada; verde: la persona con nivel; amarillo: las cajas seguidas en medio).
+                   dudosa anotada y las seguidas que quedan dudosas; verde: la persona con nivel y las seguidas que
+                   quedan como persona).
 No modifica data/ ni el dataset original.
 
 Uso:
@@ -36,7 +44,7 @@ import pandas as pd
 from comun import RAIZ, leer_cajas_yolo, leer_rutas, leer_yaml
 from fase4_validacion_auto import respuestas_simple
 
-ROJO, VERDE, AMARILLO = (40, 40, 230), (60, 200, 60), (0, 220, 255)
+ROJO, VERDE = (40, 40, 230), (60, 200, 60)
 
 
 def cargar_cajas(carpeta, vuelo, tam):
@@ -81,10 +89,24 @@ def seguir(cajas, anotadas, paso, umbral):
     return llega
 
 
+def decidir(v):
+    """Regla del fotograma anotado más cercano: (dudosa, empate, enlaces más cercanos). Empate entre una caja dudosa y
+    una con nivel a la misma distancia: dudosa."""
+    d = min(abs(x[2]) for x in v)
+    cerca = [x for x in v if abs(x[2]) == d]
+    dudosa = any(x[1] for x in cerca)
+    empate = dudosa and any(not x[1] for x in cerca)
+    return dudosa, empate, cerca
+
+
 def clasificar(llega):
-    seguidas = {qj: v for qj, v in llega.items() if all(x[1] for x in v)}
-    conflicto = {qj: v for qj, v in llega.items() if any(x[1] for x in v) and not all(x[1] for x in v)}
-    return seguidas, conflicto
+    """Cajas de fotogramas no anotados enlazadas con alguna dudosa: {(q, j): (enlaces, dudosa, empate, conflicto)}."""
+    out = {}
+    for qj, v in llega.items():
+        if any(x[1] for x in v):
+            dudosa, empate, _ = decidir(v)
+            out[qj] = (v, dudosa, empate, not all(x[1] for x in v))
+    return out
 
 
 def caja_px(c):
@@ -136,8 +158,8 @@ def mosaico(pares, cajas, alineados, vuelo, cfg_m, ruta):
     ancho = max(f.shape[1] for f in filas)
     filas = [np.hstack([f, np.full((f.shape[0], ancho - f.shape[1], 3), 255, np.uint8)]) for f in filas]
     cab = np.full((26, ancho, 3), 255, np.uint8)
-    cv2.putText(cab, "termica (izq.) y RGB alineada (der.); rojo: caja dudosa anotada; verde: persona con nivel; "
-                     "amarillo: seguidas", (4, 18), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 0, 0), 1, cv2.LINE_AA)
+    cv2.putText(cab, "termica (izq.) y RGB alineada (der.); rojo: dudosa (anotada o seguida); verde: persona con nivel "
+                     "(anotada o seguida)", (4, 18), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 0, 0), 1, cv2.LINE_AA)
     cv2.imwrite(str(ruta), np.vstack([cab] + filas), [cv2.IMWRITE_JPEG_QUALITY, 90])
 
 
@@ -209,38 +231,50 @@ def main():
     resumen = []
     n_no_anot = sum(len(c[0]) for p, c in cajas.items() if p % paso)
     for u in sorted({cd["max_dist_alturas"], *cd["sensibilidad_alturas"]}):
-        s, c = clasificar(seguir(cajas, anotadas, paso, u))
+        cl = clasificar(seguir(cajas, anotadas, paso, u)).values()
+        n_seg = sum(1 for x in cl if x[1])
         resumen.append({"max_dist_alturas": u, "usado": u == cd["max_dist_alturas"],
-                        "anotadas": int(niv.dudosa.sum()), "seguidas": len(s), "en_conflicto": len(c),
-                        "total_sin_conflicto": int(niv.dudosa.sum()) + len(s),
-                        "total_con_conflicto": int(niv.dudosa.sum()) + len(s) + len(c),
+                        "anotadas": int(niv.dudosa.sum()), "seguidas_dudosas": n_seg,
+                        "total_dudosas": int(niv.dudosa.sum()) + n_seg,
+                        "solo_enlazadas_con_dudosas": sum(1 for x in cl if not x[3]),
+                        "en_conflicto": sum(1 for x in cl if x[3]),
+                        "conflicto_a_dudosa": sum(1 for x in cl if x[3] and x[1]),
+                        "conflicto_a_persona": sum(1 for x in cl if x[3] and not x[1]),
+                        "empates": sum(1 for x in cl if x[2]),
                         "cajas_en_fotogramas_no_anotados": n_no_anot,
                         "cajas_del_vuelo": n_no_anot + n_anot})
     resumen = pd.DataFrame(resumen)
     resumen.to_csv(carpeta / "resumen.csv", index=False, encoding="utf-8")
     print(resumen.to_string(index=False))
-    seguidas, conflicto = clasificar(seguir(cajas, anotadas, paso, cd["max_dist_alturas"]))
+    clas = clasificar(seguir(cajas, anotadas, paso, cd["max_dist_alturas"]))
 
     # ---- listas
-    filas, yaml_anot, yaml_seg, yaml_conf = [], [], [], []
+    filas, yaml_anot, yaml_seg, seg_filas = [], [], [], []
     for f in niv[niv.dudosa].itertuples():
         p, k = int(f.posicion), int(f.indice_caja)
         linea = comprobar_linea(p, k)
         d = {"id": f.id, "posicion": p, "indice_caja": k, "etiqueta": f"{rel}/{vuelo}_{p:04d}.txt", "linea": linea,
              "caja_px": caja_px(cajas[p][0][k]), "en_muestra": bool(f.en_muestra), "los_dos": f.id in los_dos}
         yaml_anot.append(d)
-        filas.append({"tipo": "anotada", **d, "sigue_a": "", "con_nivel": ""})
-    for tipo, grupo, lista in (("seguida", seguidas, yaml_seg), ("en_conflicto", conflicto, yaml_conf)):
-        for (q, j), v in sorted(grupo.items()):
-            linea = comprobar_linea(q, j)
-            d = {"posicion": q, "indice_caja": j, "etiqueta": f"{rel}/{vuelo}_{q:04d}.txt", "linea": linea,
-                 "caja_px": caja_px(cajas[q][0][j]), "sigue_a": sorted({x[0] for x in v if x[1]})}
-            if tipo == "en_conflicto":
-                d["con_nivel"] = sorted({x[0] for x in v if not x[1]})
-            lista.append(d)
-            filas.append({"tipo": tipo, "id": "", **{k: (";".join(x) if isinstance(x, list) and k in
-                                                             ("sigue_a", "con_nivel") else x) for k, x in d.items()}})
+        filas.append({"tipo": "anotada", **d})
+    for (q, j), (v, dudosa, empate, conflicto) in sorted(clas.items()):
+        _, _, cerca = decidir(v)
+        seg_filas.append({"posicion": q, "indice_caja": j, "dudosa": dudosa, "en_conflicto": conflicto,
+                          "empate": empate, "distancia_mas_cercana": abs(cerca[0][2]),
+                          "enlaces_dudosas": ";".join(f"{x[0]} ({x[2]:+d})" for x in v if x[1]),
+                          "enlaces_con_nivel": ";".join(f"{x[0]} ({x[2]:+d})" for x in v if not x[1])})
+        if not dudosa:
+            continue
+        linea = comprobar_linea(q, j)
+        cerc = sorted({x[0] for x in cerca if x[1]})
+        d = {"posicion": q, "indice_caja": j, "etiqueta": f"{rel}/{vuelo}_{q:04d}.txt", "linea": linea,
+             "caja_px": caja_px(cajas[q][0][j]), "sigue_a": cerc, "a_fotogramas": abs(cerca[0][2]),
+             "en_conflicto": conflicto, "empate": empate}
+        yaml_seg.append(d)
+        filas.append({"tipo": "seguida", "id": "", **{k: (";".join(x) if isinstance(x, list) and k == "sigue_a" else x)
+                                                      for k, x in d.items()}})
     pd.DataFrame(filas).to_csv(carpeta / "cajas.csv", index=False, encoding="utf-8")
+    pd.DataFrame(seg_filas).to_csv(carpeta / "seguimiento.csv", index=False, encoding="utf-8")
 
     r0 = resumen[resumen.usado].iloc[0]
     cab = f"""# Cajas térmicas de WiSARD dudosas de la prueba ({vuelo}). GENERADO por scripts/fase4_cajas_dudosas.py a partir
@@ -249,45 +283,51 @@ def main():
 #   data/datasets/<modelo>/labels/test/ (enlaces duros), como las dejó WiSARD (sin cajas repetidas).
 # - `cajas`: las personas sin nivel de los fotogramas anotados ("no es persona" del primer anotador; `los_dos` = también
 #   del segundo en la ronda {ronda}). No entran en ningún nivel.
-# - `seguidas`: cajas de los fotogramas no anotados enlazadas solo con cajas dudosas (seguimiento fotograma a
-#   fotograma, caja más cercana, mutua y a {cd['max_dist_alturas']} alturas o menos; ver configs/fase3.yaml, cajas_dudosas).
-# - `en_conflicto`: cajas de fotogramas no anotados enlazadas con una caja dudosa (`sigue_a`) y con una persona con
-#   nivel (`con_nivel`): el mismo objeto se respondió distinto en dos fotogramas anotados. Falta decidir qué se hace.
+# - `seguidas`: cajas de los fotogramas no anotados que siguen a una caja dudosa (seguimiento fotograma a fotograma,
+#   caja más cercana, mutua y a {cd['max_dist_alturas']} alturas o menos; ver configs/fase3.yaml, cajas_dudosas). Regla
+#   (fijada el 2026-11-01): cada caja seguida toma la respuesta del fotograma anotado más cercano del mismo objeto
+#   (`sigue_a`, a `a_fotogramas`); si hay empate de distancia, va como dudosa (`empate`). `en_conflicto`: también se
+#   enlaza con una persona con nivel, más lejos (las que quedan como persona no están aquí; ver el reporte).
 # - Fase 6: las métricas se calculan con y sin las cajas dudosas ("sin ellas" = esas cajas se marcan como ignoradas).
 # Por caja: `etiqueta` (dentro de data/etiquetas/), `indice_caja` (línea, desde 0, sin contar líneas vacías), `linea`
 # (texto exacto: clase cx cy w h, YOLO normalizado) y `caja_px` (x0, y0, x1, y1 en px de la térmica, 640 x 512).
 fuente: data/{cfg['nivel_final']['salida']}
 max_dist_alturas: {cd['max_dist_alturas']}
-resumen: {{anotadas: {int(r0.anotadas)}, de_los_dos: {len(los_dos)}, seguidas: {int(r0.seguidas)}, en_conflicto: \
-{int(r0.en_conflicto)}, total_sin_conflicto: {int(r0.total_sin_conflicto)}, total_con_conflicto: \
-{int(r0.total_con_conflicto)}, cajas_del_vuelo: {int(r0.cajas_del_vuelo)}}}
+resumen: {{anotadas: {int(r0.anotadas)}, de_los_dos: {len(los_dos)}, seguidas: {int(r0.seguidas_dudosas)}, total: \
+{int(r0.total_dudosas)}, conflictos_a_dudosa: {int(r0.conflicto_a_dudosa)}, conflictos_a_persona: \
+{int(r0.conflicto_a_persona)}, empates: {int(r0.empates)}, cajas_del_vuelo: {int(r0.cajas_del_vuelo)}}}
 """
     texto = cab
-    for nombre, lista in (("cajas", yaml_anot), ("seguidas", yaml_seg), ("en_conflicto", yaml_conf)):
+    for nombre, lista in (("cajas", yaml_anot), ("seguidas", yaml_seg)):
         texto += f"{nombre}:" + (" []\n" if not lista else "\n" + "".join(f"  - {linea_yaml(d)}\n" for d in lista))
     ruta_yaml = RAIZ / o["cajas_dudosas"]
     ruta_yaml.write_text(texto, encoding="utf-8")
     leido = leer_yaml(ruta_yaml)
-    assert len(leido["cajas"]) == len(yaml_anot) and len(leido["en_conflicto"] or []) == len(yaml_conf)
-    print(f"{ruta_yaml}: {len(yaml_anot)} anotadas, {len(yaml_seg)} seguidas, {len(yaml_conf)} en conflicto")
+    assert len(leido["cajas"]) == len(yaml_anot) and len(leido["seguidas"] or []) == len(yaml_seg)
+    print(f"{ruta_yaml}: {len(yaml_anot)} anotadas y {len(yaml_seg)} seguidas = {len(yaml_anot) + len(yaml_seg)}")
 
     # ---- pares en conflicto y mosaico
     pares = {}
-    for (q, j), v in conflicto.items():
+    for (q, j), (v, dudosa, empate, conflicto) in clas.items():
+        if not conflicto:
+            continue
         for a in (x for x in v if x[1]):
             for b in (x for x in v if not x[1]):
-                pares.setdefault((a[0], b[0]), []).append((q, j))
+                pares.setdefault((a[0], b[0]), []).append((q, j, dudosa))
     por_id = niv.set_index("id")
     filas_p, mos = [], []
     for (a, b), medio in sorted(pares.items(), key=lambda kv: int(por_id.posicion[kv[0][0]])):
         pa, pb = int(por_id.posicion[a]), int(por_id.posicion[b])
         ka, kb = int(por_id.indice_caja[a]), int(por_id.indice_caja[b])
-        cadena = sorted([(pa, ka, ROJO), (pb, kb, VERDE)] + [(q, j, AMARILLO) for q, j in sorted(set(medio))])
+        medio = sorted(set(medio))
+        cadena = sorted([(pa, ka, ROJO), (pb, kb, VERDE)] + [(q, j, ROJO if d else VERDE) for q, j, d in medio])
         filas_p.append({"dudosa": a, "posicion_dudosa": pa, "respuesta_dudosa": por_id.respuesta[a],
                         "con_nivel": b, "posicion_con_nivel": pb, "nivel": por_id.nivel[b],
-                        "cajas_en_medio": len(set(medio))})
+                        "cajas_en_medio": len(medio), "quedan_dudosas": sum(1 for x in medio if x[2]),
+                        "quedan_persona": sum(1 for x in medio if not x[2])})
         mos.append({"cadena": cadena, "texto": f"{pa} (no es persona, caja {ka + 1})  <->  {pb} ({por_id.nivel[b]}, "
-                                               f"caja {kb + 1})"})
+                                               f"caja {kb + 1})  | en medio: "
+                                               + ", ".join(f"{q} {'dudosa' if d else 'persona'}" for q, _, d in medio)})
     conf = pd.DataFrame(filas_p)
     conf.to_csv(carpeta / "conflictos.csv", index=False, encoding="utf-8")
     mosaico(mos, cajas, data / cfg["datasets"]["alineados"], vuelo, cd["mosaico"], carpeta / "conflictos.jpg")

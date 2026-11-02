@@ -1,0 +1,7 @@
+personas,anterior,se_ve_rgb,no_se_ve_rgb,no_es_persona
+muestra,se_ve_rgb,2,6,0
+muestra,no_se_ve_rgb,0,5,0
+muestra,no_es_persona,0,6,1
+resto,se_ve_rgb,0,1,0
+resto,no_se_ve_rgb,1,53,1
+resto,no_es_persona,0,14,4

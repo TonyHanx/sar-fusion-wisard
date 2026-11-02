@@ -1,4 +1,4 @@
-max_dist_alturas,usado,anotadas,seguidas,en_conflicto,total_sin_conflicto,total_con_conflicto,cajas_en_fotogramas_no_anotados,cajas_del_vuelo
-0.5,False,66,60,64,126,190,1003,1501
-1.0,True,66,78,78,144,222,1003,1501
-1.5,False,66,80,84,146,230,1003,1501
+max_dist_alturas,usado,anotadas,seguidas_dudosas,total_dudosas,solo_enlazadas_con_dudosas,en_conflicto,conflicto_a_dudosa,conflicto_a_persona,empates,cajas_en_fotogramas_no_anotados,cajas_del_vuelo
+0.5,False,47,59,106,42,34,17,17,0,1003,1501
+1.0,True,47,84,131,61,46,23,23,0,1003,1501
+1.5,False,47,88,135,62,52,26,26,0,1003,1501

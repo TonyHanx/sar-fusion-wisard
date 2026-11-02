@@ -160,8 +160,9 @@ nivel_final:
 # los fotogramas no anotados: desde cada caja anotada, hacia adelante y hacia atrás, fotograma a fotograma, hasta el
 # fotograma anotado siguiente (sin incluirlo: tiene su propia respuesta). En cada paso se toma la caja de WiSARD más
 # cercana (por el centro), que tiene que ser mutua y estar a `max_dist_alturas` alturas o menos (la mayor de las dos
-# alturas). Si falta un fotograma (par excluido), se corta. Una caja seguida que también se enlaza con una persona con
-# nivel va aparte, "en conflicto".
+# alturas). Si falta un fotograma (par excluido), se corta. Regla (fijada el 2026-11-01 antes de ver las cifras nuevas):
+# cada caja seguida toma la respuesta del fotograma anotado más cercano del mismo objeto; si hay empate de distancia,
+# va como dudosa. "En conflicto" = enlazada a la vez con una caja dudosa y con una persona con nivel (se reporta).
 cajas_dudosas:
   max_dist_alturas: 1.0                  # entre fotogramas seguidos: mediana 0.24 alturas, 75 % hasta 0.69
   sensibilidad_alturas: [0.5, 1.5]       # solo se reportan

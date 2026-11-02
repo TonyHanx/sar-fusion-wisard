@@ -263,25 +263,31 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
       - 63 y 64 son dos personas; la completa de la 63 se centró en su propia caja.
       - 21, 22 y 58: la visible térmica es la caja de WiSARD, y siguen en severa.
       - Los niveles no cambian.
-  - **Pendiente de decidir** (ver `reports/fase4_validacion_auto.md`):
-    - cómo se tratan en el "sin ellas" las 78 cajas en conflicto (39 pares): cajas de fotogramas no anotados que
-      siguen a una caja dudosa y, del otro lado, a una persona con nivel. Conviene decidirlo después de la
-      reanotación de la escena en sombra.
+  - **Pendiente de decidir:** nada de la fase 4 (ver `reports/fase4_validacion_auto.md`).
   - **Decidido el 1 de noviembre de 2026, tras el cierre:**
     - **Fotograma 60: no se excluye** (tampoco 71–72): el desfase residual está bajo los límites de la regla.
-    - **Cajas dudosas:** las 66 "no es persona" van todas a `configs/cajas_dudosas.yaml`, y las etiquetas de prueba
-      no se tocan.
+    - **Cajas dudosas:** todas las "no es persona" van a `configs/cajas_dudosas.yaml` (66 antes de la reanotación y
+      47 después), y las etiquetas de prueba no se tocan.
       - Para el "sin ellas", cada caja se sigue por los fotogramas no anotados. Se toma la caja de WiSARD más
         cercana, mutua y a 1 altura o menos, fotograma a fotograma, hasta el fotograma anotado siguiente.
-      - Resultado antes de la reanotación: 66 anotadas + 78 seguidas = **144**, más 78 en conflicto (222 con ellas),
-        de 1 501 cajas.
+      - **Regla de las cajas seguidas** (fijada antes de ver las cifras nuevas): cada caja seguida toma la respuesta
+        del fotograma anotado más cercano del mismo objeto; si hay empate de distancia, va como dudosa. Lo aplica
+        `scripts/fase4_cajas_dudosas.py`.
+      - **Resultado final**, con la escena reanotada: 47 anotadas + 84 seguidas = **131 cajas dudosas** de 1 501.
+        - Hubo 46 cajas en conflicto (23 pares): 23 quedaron dudosas y 23 como persona.
+        - No hubo empates.
+        - Antes de la reanotación y de la regla eran 66 + 78 = 144, más 78 en conflicto.
     - **Escena en sombra:** se reanotan de una vez todas sus personas (94: 20 de la muestra y 74 del resto), en
       orden de fotograma, con la misma regla.
       - Herramienta: `anotar_oclusion.py --primero-simple-reanotar escena_sombra`.
       - Esas respuestas reemplazan el nivel final de la escena, y los kappas de la ronda 2 no cambian.
-      - Las anteriores quedan en sus archivos y en `respuesta_anterior`. Pendiente de anotar.
+      - Las anteriores quedan en sus archivos y en `respuesta_anterior`.
+      - Hecha el 1 de noviembre de 2026: cambian 29 de 94. Quedan 3 "se ve", 85 "no se ve" y 6 "no es persona"
+        (antes 9, 60 y 25). La 41 siguió como "no es persona".
+      - El nivel anterior quedó en `data\respaldos\oclusion_nivel_20261101-202246.csv`.
     - **Limitaciones del reporte:**
       - la mediana de 0.9 s por persona en el resto;
+      - la mediana de 0.65 s por persona en la reanotación de la escena en sombra;
       - que el resto se anotó después de conocer los resultados de la ronda 2;
       - el IC de la concordancia, ya declarado antes.
     - Las métricas por nivel van sobre los 310 fotogramas anotados: con el nivel a mano, el nivel solo existe ahí.
@@ -292,17 +298,19 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
   - **Baja:** se ve en la RGB.
   - **Desde la ronda 2 se usa el manual en modo simple** de las 498 personas de los 310 fotogramas anotados.
     - Son las 75 de la muestra del primero en la ronda 2 más las 423 de `--primero-simple-resto`.
-    - Las 10 cajas dudosas quedan sin nivel.
-  - **Nivel final (fase 4 cerrada el 1 de noviembre de 2026; la escena en sombra se está reanotando):**
+    - Las "no es persona" quedan sin nivel (cajas dudosas); las 10 de los dos, siempre.
+  - **Nivel final (fase 4 cerrada el 1 de noviembre de 2026, con la escena en sombra reanotada):**
     `data/oclusion_nivel.csv`.
-    - Antes de la reanotación: **baja 190, severa 242 y sin nivel ("no es persona") 66** de 498. Las 66 incluyen las
-      10 de los dos.
+    - **Baja 184, severa 267 y sin nivel (dudosas, "no es persona") 47** de 498. Las 47 incluyen las 10 de los dos.
+    - Con las seguidas por los fotogramas no anotados, **131 cajas dudosas** de 1 501 (`configs/cajas_dudosas.yaml`).
     - 259 de los 310 fotogramas tienen alguna persona.
-    - Mediana de 1.0 s por persona: 1.4 s en la muestra y 0.9 s en el resto.
-    - Informativo, contra el automático: kappa 0.716 (IC 0.649 a 0.782) en 432 comparables. No reabre la decisión,
+    - Mediana de 0.9 s por persona; 0.65 s en la reanotación de la escena.
+    - Informativo, contra el automático: kappa 0.750 (IC 0.688 a 0.812) en 451 comparables. No reabre la decisión,
       que se tomó con la muestra (0.427).
-    - En la escena en sombra (468 a 588), la muestra tiene 8 "se ve" de 13 y el resto 1 de 56. Detalle en
-      `reports/fase4_validacion_auto.md`, "Cierre de la fase 4".
+    - En la escena en sombra, ahora "se ven" 2 de 19 en la muestra y 1 de 69 en el resto (antes, 8 de 13 y 1 de
+      56).
+    - Antes de la reanotación eran baja 190, severa 242 y sin nivel 66. Detalle en
+      `reports/fase4_validacion_auto.md`, "Nivel final".
   - Automático, solo como referencia: en FHL 0405, severa 976 y baja 525 de 1 501. En los 310 anotados, severa 323 y
     baja 175 de 498.
   - Antes eran tres niveles según λ RGB: baja (0 a 35 %), moderada (35 a 70 %) y severa (más de 70 %). Solo se usan
@@ -320,8 +328,8 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
   - **Por nivel de oclusión** sobre los **310 anotados**, los únicos con nivel. Al evaluar un nivel, las personas de los
     otros niveles se marcan como ignoradas.
   - **Con y sin las cajas dudosas** (`configs/cajas_dudosas.yaml`), decidido el 1 de noviembre de 2026. "Sin ellas" =
-    esas cajas se marcan como ignoradas. Son las anotadas y las seguidas por los fotogramas no anotados; las "en
-    conflicto" están pendientes. Las etiquetas de prueba no se tocan.
+    esas cajas se marcan como ignoradas. Son las anotadas y las seguidas por los fotogramas no anotados, con la
+    regla del fotograma anotado más cercano: 131 de 1 501. Las etiquetas de prueba no se tocan.
 - **Prueba estadística:** McNemar (statsmodels) entre modelos dentro de cada nivel, corrección de Bonferroni, α = 0.05.
 - **Bootstrap por episodio (fase 6):** los intervalos de confianza se calculan remuestreando episodios completos, no
   fotogramas, porque los fotogramas seguidos de un episodio no son independientes. Usa seed=0.
