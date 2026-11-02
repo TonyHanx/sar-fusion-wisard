@@ -223,7 +223,20 @@ Resultados:
 .venv\Scripts\python.exe scripts\entrenar.py --config configs\fase5.yaml --rutas configs\rutas.yaml --corrida fusion_lote16_2ep
 ```
 
-Las corridas están en `configs/fase5.yaml` (`corridas`), y el resultado en `reports/fase5a.md`.
+**Mensaje 5a, segunda parte (usado, 1 de noviembre de 2026),** tras ver que la potencia baja a unos 70 W al
+entrenar:
+
+> Potencia: sigue en modo Rendimiento. Ajusta la regla de CLAUDE.md: la comprobación previa debe dar 90 W o más, y el
+> límite real durante el entrenamiento se registra en cada corrida. Los tres modelos deben entrenar en las mismas
+> condiciones. Usa 4 procesos de lectura en todas las corridas y anótalo en CLAUDE.md y en configs/fase5.yaml. Antes
+> de cada corrida, avísame para cerrar Roblox, ChatGPT y Chrome. Como la variación entre corridas (0.014) es del orden
+> del umbral, cambio la regla del cuarto canal antes de correr la comparación: se elige (a) solo si su mAP@0.5 en la
+> época 10 supera al de (b) por 0.02 o más; si no, se elige (b). Anota en CLAUDE.md que se cambió y por qué, con la
+> fecha, antes de entrenar. Corre la comparación de 10 épocas (a) contra (b) y la medición de tiempo de los modelos RGB
+> y térmico. Completa reports/fase5a.md, haz commit y push, y detente.
+
+Las corridas están en `configs/fase5.yaml` (`corridas`), y el resultado en `reports/fase5a.md`: lote 16, AdamW con
+0.002, cuarto canal en promedio y unos 70 a 74 min por modelo.
 
 **Mensaje 5b (entrenamientos completos):**
 

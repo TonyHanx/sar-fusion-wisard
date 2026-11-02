@@ -9,6 +9,7 @@ base:
   datos: configs/fusion.yaml
   carpeta: fase5                     # dentro de runs/
   inicio_cuarto_canal: azar          # azar (lo que hace Ultralytics) o promedio (de los 3 de color, en la primera capa)
+                                     # elegido en la fase 5a para la fusión: promedio (CLAUDE.md); se pone en cada corrida
   ultralytics:
     seed: 0
     deterministic: true
