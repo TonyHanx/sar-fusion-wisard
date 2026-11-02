@@ -29,6 +29,11 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
   carga de la CPU. Los 55 W anotados antes eran una lectura en modo de bajo consumo.
 - Todos los entrenamientos que se reporten corren en esta misma laptop.
 - Controlador NVIDIA 617.42 (CUDA 13.4), actualizado el 30 de octubre de 2026 (antes 555.97).
+- **Bajo la carga real del entrenamiento** (fase 5a, 1 de noviembre de 2026), el límite aplicado baja a unos **70 W**.
+  - Pasa aunque la comprobación previa, con solo la GPU cargada, dé de 95 a 99 W.
+  - Baja en los primeros segundos, cuando arrancan los procesos de lectura de Ultralytics, que ocupan la CPU.
+  - Con 4 procesos en vez de 8 pasa igual.
+  - **Pendiente de decidir** (ver `reports/fase5a.md`).
 
 ## Rutas
 
@@ -70,6 +75,9 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
 - Validación del nivel automático (`scripts/fase4_validacion_auto.py`): `reports\fase4_validacion_auto.md`, con tablas
   e imágenes en `reports\fase4_validacion_auto\`. Las dos rondas entre anotadores están en `entre_anotadores\ronda1\`
   y `entre_anotadores\ronda2\`.
+- Fase 5 (`scripts/entrenar.py`, corridas en `configs/fase5.yaml`):
+  - salidas en `runs\fase5\<corrida>\`, con `resumen.json`, `epocas.csv` y `monitor.csv`;
+  - reporte en `reports\fase5a.md`.
 - Proyecto anterior, solo como consulta: `C:\Users\User\sar-fusion\reports\` (scripts `emparejamiento.py` y
   `analisis_pares.py`, y `resumen_wisard.md`). Se puede reutilizar código de ahí, pero los resultados se regeneran aquí.
 
@@ -133,6 +141,14 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
 - **Fusión temprana:** imagen TIFF de 4 canales, `channels: 4` en el yaml del dataset.
   Verificado: con 4 canales, la primera capa recibe los pesos preentrenados en los 3 canales de color y el cuarto
   queda al azar. Se probará también inicializar el cuarto canal con el promedio de los pesos de color.
+  - **Regla para elegir el inicio del cuarto canal** (fijada el 1 de noviembre de 2026, antes de entrenar):
+    - Se entrena la fusión 10 épocas de dos formas, con todo lo demás igual:
+      - (a) cuarto canal al azar, como hace Ultralytics;
+      - (b) cuarto canal con el promedio de los pesos de color de la primera capa.
+    - Se elige la que tenga mayor mAP@0.5 en validación.
+    - Si la diferencia es menor que 0.01, se elige (b), porque así la térmica también arranca con pesos preentrenados.
+    - Decide el mAP@0.5 de validación de la **última época** (la 10, `metrics/mAP50(B)` en `results.csv`). Se precisó
+      antes de entrenar. Los de la mejor época y de `best.pt` (que Ultralytics elige por mAP@0.5:0.95) solo se reportan.
 - **Modelo solo térmica:** la térmica entra con **3 canales (el gris repetido)**, para aprovechar los pesos
   preentrenados de la primera capa. Decidido el 1 de noviembre de 2026.
 - **Etiquetas de referencia:** las de la imagen térmica, sin cajas repetidas, para los tres modelos.
@@ -317,6 +333,12 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
     para reportar la comparación.
 - **Configuración base:** 100 épocas, imagen de 640, lote 16 (bajar si no entra en 8 GB; el mismo para los tres),
   optimizador y tasa de aprendizaje por defecto de Ultralytics para YOLO26 (registrar cuáles fueron).
+  - **Lote 16:** entra (fase 5a: pico de 5 331 de 8 188 MiB con la fusión), así que es el de los tres.
+  - **Optimizador que elige Ultralytics** (`optimizer=auto`): **AdamW con lr0 = 0.002**, betas 0.9 y 0.999,
+    weight_decay 0.0005.
+    - Lo elige porque 51 × 100 = 5 100 iteraciones no pasan de 10 000.
+    - `args.yaml` guarda lo pedido (`auto` y 0.01); la elección está en `train_args` de `last.pt` y en
+      `resumen.json`.
 - **Aumento de color (fase 5):** **`hsv_h=0`, `hsv_s=0`, `hsv_v=0` en los tres modelos**, para que entrenen igual.
   - Ultralytics no aplica el aumento HSV a imágenes de 4 canales (`RandomHSV` sale si la imagen no tiene 3), así que
     la fusión no lo recibiría.
