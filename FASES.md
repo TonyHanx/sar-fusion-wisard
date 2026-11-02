@@ -171,19 +171,32 @@ El primer comando es para ti; el segundo, para el segundo anotador.
 
 ## Fase 4. Niveles de oclusión (paso 4 del flujo)
 
-**Mensaje:**
+**Lo que se hizo (cerrada el 1 de noviembre de 2026).** El nivel es de **dos clases**, sin λ:
+- **Severa:** la persona no se ve en la RGB.
+- **Baja:** se ve en la RGB.
+- Se dejó de usar λ y los tres niveles porque en la muestra no hubo ninguna moderada (0 de 68).
 
-> Fase 4.
->
-> 1. Calcula λ en RGB y en térmica para cada persona anotada (`data/oclusion.csv`; una caja completa compartida y una
->    visible por imagen) y asigna el nivel con λ RGB (baja, moderada o severa). Marca también oclusión blanda (visible
->    en al menos una imagen) o dura (tapada en ambas). Cuenta aparte las "fuera de cuadro" y las "no es persona".
-> 2. Calcula el kappa de Cohen entre los dos anotadores sobre el nivel asignado, con las 75 personas de la muestra
->    (`data/oclusion_segundo.csv`).
-> 3. Genera `reports/tabla_niveles.csv` con personas por nivel y `reports/fase4.md` con el resumen y el kappa.
+Cómo se obtuvo:
+- **A mano:** el primer anotador lo anota en modo simple, con la regla aclarada, para las 498 personas de los 310
+  fotogramas anotados.
+- **El automático no se usa:** su kappa contra el primero en la ronda 2 fue 0.427, menor que 0.61.
+- **Concordancia entre anotadores** (ronda 2, 75 personas): kappa 0.623 (IC 95 % 0.400 a 0.846). Se acepta, y el IC va
+  como limitación.
+- **Escena en sombra:** los fotogramas 468 a 588 se reanotaron enteros.
+
+Resultados:
+- **Nivel final** (`data/oclusion_nivel.csv`): baja 184, severa 267 y 47 sin nivel ("no es persona", cajas dudosas).
+- **Cajas dudosas** para la fase 6 (`configs/cajas_dudosas.yaml`): 47 anotadas + 84 seguidas por los fotogramas no
+  anotados = 131 de 1 501.
+- Detalle en `reports/fase4_validacion_auto.md`.
+
+```
+.venv\Scripts\python.exe scripts\fase4_nivel.py --config configs\fase3.yaml --rutas configs\rutas.yaml
+.venv\Scripts\python.exe scripts\fase4_cajas_dudosas.py --config configs\fase3.yaml --rutas configs\rutas.yaml
+```
 
 **Revisa:**
-- Cuántas personas quedaron en el nivel severo. Si son muy pocas, avísame antes de entrenar.
+- Cuántas personas quedaron en el nivel severo: 267 de las 451 con nivel.
 
 ---
 
