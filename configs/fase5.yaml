@@ -71,3 +71,15 @@ corridas:
   termico_tiempo_3ep:
     datos: configs/termico.yaml
     ultralytics: {epochs: 3, close_mosaic: 1}
+
+  # Fase 5b: los tres modelos, 100 épocas (base: lote 16, 4 procesos de lectura, seed=0, hsv=0, close_mosaic=10 por
+  # omisión). Se corren uno tras otro, en este orden. Solo entrenamiento y validación: la prueba (FHL 0405) es la fase 6.
+  fusion_100ep:
+    fase: 5b
+    inicio_cuarto_canal: promedio      # elegido en la fase 5a
+  rgb_100ep:
+    fase: 5b
+    datos: configs/rgb.yaml
+  termico_100ep:
+    fase: 5b
+    datos: configs/termico.yaml
