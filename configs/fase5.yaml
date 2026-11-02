@@ -1,0 +1,66 @@
+# Fase 5: entrenamiento de YOLO26s con scripts/entrenar.py.
+# Uso: .venv\Scripts\python.exe scripts\entrenar.py --config configs\fase5.yaml --rutas configs\rutas.yaml --corrida NOMBRE
+# Cada corrida toma `base` y cambia solo lo que dice. Las claves de `ultralytics` van tal cual a model.train(); lo que no
+# está aquí queda con el valor por omisión de Ultralytics 8.4.194 (optimizer=auto, close_mosaic=10, mosaic=1.0, etc.).
+
+base:
+  fase: 5a
+  pesos: yolo26s.pt                  # relativo a la raíz del repositorio
+  datos: configs/fusion.yaml
+  carpeta: fase5                     # dentro de runs/
+  inicio_cuarto_canal: azar          # azar (lo que hace Ultralytics) o promedio (de los 3 de color, en la primera capa)
+  ultralytics:
+    seed: 0
+    deterministic: true
+    imgsz: 640
+    epochs: 100
+    batch: 16                        # el mismo para los tres modelos (fase 5a)
+    hsv_h: 0.0
+    hsv_s: 0.0
+    hsv_v: 0.0
+    device: 0
+    workers: 8
+    cache: false                     # las imágenes se leen del disco por lotes, nunca todas en memoria
+
+potencia:                            # comprobación antes de cada corrida (CLAUDE.md)
+  minimo_w: 90                       # mediana del límite aplicado bajo carga (enforced.power.limit)
+  segundos_carga: 30
+  plan: Performance                  # plan de energía de Windows
+  armoury_crate: Rendimiento         # no se puede leer desde Python; se declara
+
+monitor:
+  intervalo_s: 1                     # lecturas de nvidia-smi y de la RAM durante el entrenamiento
+
+memoria:
+  # "Entra" si Ultralytics no bajó el lote por falta de memoria y el pico de memoria dedicada de la GPU (nvidia-smi) no
+  # pasa de esta fracción del total. Así se descarta que Windows haya usado memoria compartida del sistema.
+  fraccion_maxima: 0.95
+
+corridas:
+  # Lote: 2 épocas con mosaico (close_mosaic=0), como las 90 primeras de un entrenamiento de 100 épocas. Con
+  # close_mosaic=10, Ultralytics quitaría el mosaico desde la primera época de una corrida de 10 épocas o menos.
+  fusion_lote16_2ep:
+    ultralytics: {epochs: 2, batch: 16, close_mosaic: 0}
+  fusion_lote8_2ep:                  # no se corre si el lote 16 entra
+    ultralytics: {epochs: 2, batch: 8, close_mosaic: 0}
+  # Diagnóstico: con workers=8 (Ultralytics abre 8 procesos de lectura para entrenar y 16 para validar) la RAM llegó al
+  # 99.9 % y el límite aplicado de la GPU bajó a 70 W. Se prueba con menos procesos.
+  fusion_lote16_2ep_w4:
+    ultralytics: {epochs: 2, batch: 16, close_mosaic: 0, workers: 4}
+
+  # Inicio del cuarto canal: 10 épocas, todo lo demás igual (regla en CLAUDE.md). Con close_mosaic=10 por omisión, las
+  # dos entrenan sin mosaico las 10 épocas.
+  fusion_azar_10ep:
+    inicio_cuarto_canal: azar
+    ultralytics: {epochs: 10}
+  fusion_promedio_10ep:
+    inicio_cuarto_canal: promedio
+    ultralytics: {epochs: 10}
+
+  # Tiempo por época de los otros dos modelos: 2 épocas con mosaico y la última sin él (close_mosaic=1).
+  rgb_tiempo_3ep:
+    datos: configs/rgb.yaml
+    ultralytics: {epochs: 3, close_mosaic: 1}
+  termico_tiempo_3ep:
+    datos: configs/termico.yaml
+    ultralytics: {epochs: 3, close_mosaic: 1}

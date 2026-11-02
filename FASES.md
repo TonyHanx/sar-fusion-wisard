@@ -202,19 +202,28 @@ Resultados:
 
 ## Fase 5. Entrenamiento (pasos 5 y 6 del flujo)
 
-**Mensaje 5a (prueba corta):**
+**Mensaje 5a (usado, 1 de noviembre de 2026):**
 
-> Fase 5a.
+> Fase 5a. Antes de entrenar, verifica con nvidia-smi que el límite bajo carga sea de al menos 90 W.
 >
-> 1. Escribe `scripts/entrenar.py`, que lea un yaml de `configs/`, entrene YOLO26s desde `yolo26s.pt` y registre la
->    corrida en la bitácora. Usa `hsv_h=0`, `hsv_s=0` y `hsv_v=0` en los tres modelos: Ultralytics no aplica el aumento
->    HSV a 4 canales, y así los tres entrenan igual (decidido el 1 de noviembre de 2026).
-> 2. Con el modelo de fusión, entrena 2 épocas con lote 16 y mide la memoria de la GPU y el tiempo por época.
->    Si no entra, prueba lote 8.
-> 3. Compara dos formas de iniciar el cuarto canal: al azar (lo que hace Ultralytics) y con el promedio de los pesos
->    de color. Explícame la diferencia.
-> 4. Dime qué optimizador y tasa de aprendizaje eligió Ultralytics (están en `args.yaml`) y cuánto tardaría un
+> 1. Escribe `scripts/entrenar.py`: lee un yaml de `configs/`, entrena YOLO26s desde `yolo26s.pt` con seed=0, imagen
+>    de 640, `hsv_h=hsv_s=hsv_v=0`, y registra cada corrida en la bitácora.
+> 2. Con el modelo de fusión, entrena 2 épocas con lote 16 y mide la memoria máxima de la GPU y el tiempo por época.
+>    Si no entra, prueba lote 8. El lote que entre se usa para los tres modelos.
+> 3. Dime qué optimizador y tasa de aprendizaje eligió Ultralytics (están en `args.yaml`) y cuánto tardaría cada
 >    entrenamiento de 100 épocas.
+> 4. Inicio del cuarto canal. Entrena la fusión 10 épocas de dos formas, con todo lo demás igual: (a) cuarto canal al
+>    azar, como hace Ultralytics; (b) cuarto canal con el promedio de los pesos de color de la primera capa. Regla,
+>    fijada antes de ver el resultado: se elige la que tenga mayor mAP@0.5 en validación; si la diferencia es menor que
+>    0.01, se elige (b), porque así la térmica también arranca con pesos preentrenados. Anota la regla en CLAUDE.md
+>    antes de entrenar.
+> 5. Escribe `reports/fase5a.md` con todo, haz commit y push, y detente. No entrenes las 100 épocas todavía.
+
+```
+.venv\Scripts\python.exe scripts\entrenar.py --config configs\fase5.yaml --rutas configs\rutas.yaml --corrida fusion_lote16_2ep
+```
+
+Las corridas están en `configs/fase5.yaml` (`corridas`), y el resultado en `reports/fase5a.md`.
 
 **Mensaje 5b (entrenamientos completos):**
 
