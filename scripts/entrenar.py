@@ -204,6 +204,17 @@ def comprobar_potencia(cfg):
     return r, problemas
 
 
+def procesos_abiertos(nombres):
+    """Los de `nombres` (sin .exe, sin distinguir mayúsculas) que están corriendo."""
+    buscados = {n.lower() for n in nombres}
+    abiertos = set()
+    for p in psutil.process_iter(["name"]):
+        n = (p.info["name"] or "").lower().removesuffix(".exe")
+        if n in buscados:
+            abiertos.add(n)
+    return sorted(abiertos)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", required=True)
@@ -221,10 +232,15 @@ def main():
     if c["inicio_cuarto_canal"] == "promedio" and canales != 4:
         raise SystemExit("inicio_cuarto_canal: promedio solo tiene sentido con 4 canales")
 
+    abiertos = procesos_abiertos(cfg.get("cerrar_antes", []))
+    if abiertos:
+        raise SystemExit(f"No se entrena: cierra antes {', '.join(abiertos)} (cerrar_antes en {args.config}).")
     potencia, problemas = comprobar_potencia(cfg["potencia"])
     print(f"Potencia: {potencia}")
     if problemas:
         raise SystemExit("No se entrena: " + "; ".join(problemas) + ". Revisa la laptop y vuelve a correr.")
+    potencia["ram_antes_mib"] = round(psutil.virtual_memory().used / 2 ** 20)
+    potencia["cerradas"] = cfg.get("cerrar_antes", [])
 
     modelo = YOLO(str(RAIZ / c["pesos"]))
     pre = modelo.model.state_dict()[PRIMERA_CAPA].detach().float().cpu().clone()
