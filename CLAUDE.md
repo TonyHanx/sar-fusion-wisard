@@ -17,8 +17,16 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
 - Ejecuta Python con el entorno virtual del proyecto (`.venv`).
 - La memoria es limitada (16 GB de RAM y 8 GB en la GPU): procesa las imágenes por partes, nunca todas en memoria.
 - Todos los entrenamientos se hacen con la laptop **enchufada**, en modo **Rendimiento** de Armoury Crate y con el
-  plan de energía **Performance** de Windows. Antes de entrenar, verifica con `nvidia-smi` que el límite aplicado
-  bajo carga (`enforced.power.limit`) sea de al menos 90 W; si no, detente y avísame.
+  plan de energía **Performance** de Windows. Los tres modelos entrenan en las mismas condiciones.
+  - **Potencia** (regla ajustada el 1 de noviembre de 2026, fase 5a):
+    - Antes de entrenar, la **comprobación previa** (30 s con solo la GPU cargada) tiene que dar un límite aplicado
+      (`enforced.power.limit`, mediana) de al menos 90 W. Si no, detente y avísame. `scripts/entrenar.py` la hace solo.
+    - El **límite real durante el entrenamiento** se registra en cada corrida (`resumen.json` y bitácora). No tiene
+      mínimo: con la CPU ocupada en leer las imágenes baja a unos 70 W (ver "Equipo").
+  - **4 procesos de lectura** (`workers: 4`) en todas las corridas, decidido el 1 de noviembre de 2026. Con 8, la RAM
+    llegaba al 99.9 %, y con 4 la época no fue más lenta.
+  - **Antes de cada corrida, avísame para cerrar Roblox, ChatGPT y Chrome.** `scripts/entrenar.py` no entrena si
+    alguno está abierto (`cerrar_antes` en `configs/fase5.yaml`).
 
 ## Equipo
 
@@ -33,7 +41,8 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
   - Pasa aunque la comprobación previa, con solo la GPU cargada, dé de 95 a 99 W.
   - Baja en los primeros segundos, cuando arrancan los procesos de lectura de Ultralytics, que ocupan la CPU.
   - Con 4 procesos en vez de 8 pasa igual.
-  - **Pendiente de decidir** (ver `reports/fase5a.md`).
+  - Decidido: se sigue en modo Rendimiento, y el límite real se registra en cada corrida (ver "Reglas de trabajo" y
+    `reports/fase5a.md`).
 
 ## Rutas
 
@@ -141,14 +150,19 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
 - **Fusión temprana:** imagen TIFF de 4 canales, `channels: 4` en el yaml del dataset.
   Verificado: con 4 canales, la primera capa recibe los pesos preentrenados en los 3 canales de color y el cuarto
   queda al azar. Se probará también inicializar el cuarto canal con el promedio de los pesos de color.
-  - **Regla para elegir el inicio del cuarto canal** (fijada el 1 de noviembre de 2026, antes de entrenar):
-    - Se entrena la fusión 10 épocas de dos formas, con todo lo demás igual:
+  - **Regla para elegir el inicio del cuarto canal** (cambiada el 1 de noviembre de 2026, antes de correr la
+    comparación):
+    - Se entrena la fusión 10 épocas de dos formas, con todo lo demás igual (4 procesos de lectura):
       - (a) cuarto canal al azar, como hace Ultralytics;
       - (b) cuarto canal con el promedio de los pesos de color de la primera capa.
-    - Se elige la que tenga mayor mAP@0.5 en validación.
-    - Si la diferencia es menor que 0.01, se elige (b), porque así la térmica también arranca con pesos preentrenados.
-    - Decide el mAP@0.5 de validación de la **última época** (la 10, `metrics/mAP50(B)` en `results.csv`). Se precisó
-      antes de entrenar. Los de la mejor época y de `best.pt` (que Ultralytics elige por mAP@0.5:0.95) solo se reportan.
+    - **Se elige (a) solo si su mAP@0.5 de validación en la época 10 supera al de (b) por 0.02 o más. Si no, se elige
+      (b)**, que además hace que la térmica también arranque con pesos preentrenados.
+    - Decide el mAP@0.5 de validación de la **época 10**, la última (`metrics/mAP50(B)` en `results.csv`). Los de la
+      mejor época y de `best.pt` (que Ultralytics elige por mAP@0.5:0.95) solo se reportan.
+    - **Por qué se cambió:** la regla anterior se fijó antes de entrenar, el 1 de noviembre de 2026. Decía "mayor
+      mAP@0.5; si la diferencia es menor que 0.01, (b)". En las pruebas de 2 épocas, cambiar solo el número de procesos
+      de lectura movió el mAP@0.5 de 0.307 a 0.293, una diferencia de 0.014. Eso es del orden del umbral de 0.01, así que
+      se subió a 0.02 a favor de (b). Se cambió antes de correr la comparación de 10 épocas.
 - **Modelo solo térmica:** la térmica entra con **3 canales (el gris repetido)**, para aprovechar los pesos
   preentrenados de la primera capa. Decidido el 1 de noviembre de 2026.
 - **Etiquetas de referencia:** las de la imagen térmica, sin cajas repetidas, para los tres modelos.
@@ -334,6 +348,7 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
 - **Configuración base:** 100 épocas, imagen de 640, lote 16 (bajar si no entra en 8 GB; el mismo para los tres),
   optimizador y tasa de aprendizaje por defecto de Ultralytics para YOLO26 (registrar cuáles fueron).
   - **Lote 16:** entra (fase 5a: pico de 5 331 de 8 188 MiB con la fusión), así que es el de los tres.
+  - **4 procesos de lectura** (`workers: 4`) en los tres (ver "Reglas de trabajo").
   - **Optimizador que elige Ultralytics** (`optimizer=auto`): **AdamW con lr0 = 0.002**, betas 0.9 y 0.999,
     weight_decay 0.0005.
     - Lo elige porque 51 × 100 = 5 100 iteraciones no pasan de 10 000.

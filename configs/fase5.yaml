@@ -19,14 +19,20 @@ base:
     hsv_s: 0.0
     hsv_v: 0.0
     device: 0
-    workers: 8
+    workers: 4                       # en todas las corridas (CLAUDE.md, 1 de noviembre de 2026): con 8 la RAM llegaba al 99.9 %
     cache: false                     # las imágenes se leen del disco por lotes, nunca todas en memoria
 
-potencia:                            # comprobación antes de cada corrida (CLAUDE.md)
-  minimo_w: 90                       # mediana del límite aplicado bajo carga (enforced.power.limit)
+potencia:                            # comprobación previa, antes de cada corrida (CLAUDE.md)
+  minimo_w: 90                       # mediana del límite aplicado (enforced.power.limit) con solo la GPU cargada
+                                     # el límite real durante el entrenamiento se registra, sin mínimo
   segundos_carga: 30
   plan: Performance                  # plan de energía de Windows
   armoury_crate: Rendimiento         # no se puede leer desde Python; se declara
+
+cerrar_antes:                        # no se entrena si alguno está abierto (CLAUDE.md); nombres de proceso sin .exe
+  - RobloxPlayerBeta
+  - ChatGPT
+  - chrome
 
 monitor:
   intervalo_s: 1                     # lecturas de nvidia-smi y de la RAM durante el entrenamiento
@@ -39,8 +45,8 @@ memoria:
 corridas:
   # Lote: 2 épocas con mosaico (close_mosaic=0), como las 90 primeras de un entrenamiento de 100 épocas. Con
   # close_mosaic=10, Ultralytics quitaría el mosaico desde la primera época de una corrida de 10 épocas o menos.
-  fusion_lote16_2ep:
-    ultralytics: {epochs: 2, batch: 16, close_mosaic: 0}
+  fusion_lote16_2ep:                 # se corrió con 8 procesos de lectura, el valor de entonces
+    ultralytics: {epochs: 2, batch: 16, close_mosaic: 0, workers: 8}
   fusion_lote8_2ep:                  # no se corre si el lote 16 entra
     ultralytics: {epochs: 2, batch: 8, close_mosaic: 0}
   # Diagnóstico: con workers=8 (Ultralytics abre 8 procesos de lectura para entrenar y 16 para validar) la RAM llegó al
