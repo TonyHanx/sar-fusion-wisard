@@ -181,7 +181,8 @@ fase 4"). **Hecha el 1 de noviembre de 2026.**
 | | no es persona | 0 | 14 | 4 |
 
 - **En total:** 3 "se ve", 85 "no se ve" y 6 "no es persona". Antes eran 9, 60 y 25.
-- **Muestra y resto quedan con el mismo criterio:** "se ven" 2 de 19 comparables en la muestra y 1 de 69 en el resto.
+- **La diferencia entre muestra y resto se reduce:** "se ven" 2 de 19 en la muestra (antes 8 de 13) y 1 de 69 en el
+  resto (antes 1 de 56).
 - **La 41** (fotograma 474, "no es persona" de los dos) siguió como "no es persona". No hubo aviso.
 - **Tiempo:** mediana de 0.65 s por persona (ver "Limitaciones").
 
@@ -870,8 +871,7 @@ Ya decidido el 1 de noviembre de 2026 (ver "Decisiones tras la ronda 2", "Nivel 
 - **fotograma 60: no se excluye**, por desfase residual bajo los límites de la regla (tampoco 71–72);
 - las limitaciones de "Limitaciones".
 
-Pendiente: nada de la fase 4. Solo una nota:
-- **FASES.md:** el mensaje de la fase 4 sigue hablando de λ y de tres niveles. Lo hecho está en este reporte.
+Pendiente: nada de la fase 4. La sección de la fase 4 en `FASES.md` ya describe lo hecho (dos niveles, sin λ).
 
 Cerrados:
 - La 73 queda con la respuesta del primero ("no se ve", severa).
