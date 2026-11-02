@@ -41,8 +41,13 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
   - Pasa aunque la comprobación previa, con solo la GPU cargada, dé de 95 a 99 W.
   - Baja en los primeros segundos, cuando arrancan los procesos de lectura de Ultralytics, que ocupan la CPU.
   - Con 4 procesos en vez de 8 pasa igual.
+  - Con 4 procesos y Roblox, ChatGPT y Chrome cerrados, quedó entre 82 y 85 W de mediana (4 corridas). La GPU llegó
+    a 84–87 °C.
   - Decidido: se sigue en modo Rendimiento, y el límite real se registra en cada corrida (ver "Reglas de trabajo" y
     `reports/fase5a.md`).
+- **RAM al entrenar:** aun con 4 procesos de lectura y esas aplicaciones cerradas, el pico llega al 98.7–99.9 %.
+  Ultralytics abre 4 procesos para entrenar y 8 para validar. No hubo errores, y el uso de la GPU se mantuvo por
+  encima del 88 %.
 
 ## Rutas
 
@@ -163,6 +168,10 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
       mAP@0.5; si la diferencia es menor que 0.01, (b)". En las pruebas de 2 épocas, cambiar solo el número de procesos
       de lectura movió el mAP@0.5 de 0.307 a 0.293, una diferencia de 0.014. Eso es del orden del umbral de 0.01, así que
       se subió a 0.02 a favor de (b). Se cambió antes de correr la comparación de 10 épocas.
+    - **Resultado (1 de noviembre de 2026): se elige (b), el promedio de los pesos de color.**
+      - mAP@0.5 de validación en la época 10: (a) 0.260 y (b) 0.306, así que (a) − (b) = −0.047.
+      - (b) quedó por encima en las 10 épocas, pero las curvas son ruidosas (hasta 0.11 entre épocas seguidas).
+      - Es una sola semilla. Detalle en `reports/fase5a.md`.
 - **Modelo solo térmica:** la térmica entra con **3 canales (el gris repetido)**, para aprovechar los pesos
   preentrenados de la primera capa. Decidido el 1 de noviembre de 2026.
 - **Etiquetas de referencia:** las de la imagen térmica, sin cajas repetidas, para los tres modelos.
@@ -349,6 +358,8 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
   optimizador y tasa de aprendizaje por defecto de Ultralytics para YOLO26 (registrar cuáles fueron).
   - **Lote 16:** entra (fase 5a: pico de 5 331 de 8 188 MiB con la fusión), así que es el de los tres.
   - **4 procesos de lectura** (`workers: 4`) en los tres (ver "Reglas de trabajo").
+  - **Tiempo estimado de 100 épocas** (fase 5a): fusión ≈ 74 min, solo RGB ≈ 71 min y solo térmica ≈ 70 min. Los tres
+    seguidos, ≈ 3.6 h. Una época dura unos 42–44 s, con el límite de 82–85 W.
   - **Optimizador que elige Ultralytics** (`optimizer=auto`): **AdamW con lr0 = 0.002**, betas 0.9 y 0.999,
     weight_decay 0.0005.
     - Lo elige porque 51 × 100 = 5 100 iteraciones no pasan de 10 000.
