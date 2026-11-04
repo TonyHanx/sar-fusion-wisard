@@ -383,8 +383,22 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
     la fusión no lo recibiría.
   - Al modelo solo térmica solo le cambiaría el brillo.
   - Decidido el 1 de noviembre de 2026.
-- **Métricas:** recall, precisión (umbral de confianza 0.5), F2 y mAP@0.5, con script propio sobre pycocotools.
-  Decidido el 1 de noviembre de 2026.
+- **Métricas:** recall, precisión, F2 y mAP@0.5, con script propio sobre pycocotools. Decidido el 1 de noviembre de
+  2026.
+  - **Umbral de confianza** para recall, precisión, F2 y McNemar. Cambiado el 3 de noviembre de 2026, antes de evaluar
+    la prueba; antes era 0.5 para los tres modelos:
+    - Se fija **por modelo**: es el que maximiza el **F2 en validación**, en la rejilla de 0.05 a 0.95 con paso 0.05.
+      Si hay empate, se toma el umbral más alto.
+    - Se aplica **sin cambios a la prueba**.
+    - Las métricas con 0.5 se reportan **solo como descripción, sin McNemar**.
+    - El **mAP@0.5 no cambia**, porque no usa umbral.
+    - Bonferroni sigue con 3 comparaciones por nivel.
+    - **Por qué:** en validación, con 0.5, la fusión (`best.pt`) tiene recall 0.172. En FHL 0134 detecta 3 de 211
+      personas.
+  - **Noche del 3 al 4 de noviembre:** solo se guardan las predicciones crudas (confianza ≥ 0.001) de validación y de
+    prueba de los tres modelos (`evaluar.py --solo-predecir`), sin calcular ninguna métrica.
+    - Al día siguiente se calculan los umbrales en validación y luego se aplican a la prueba.
+    - Mientras tanto, `evaluar.py` no evalúa la prueba.
   - **Globales** sobre los **928 fotogramas** de prueba, y también sobre los **310 anotados**.
   - **Por nivel de oclusión** sobre los **310 anotados**, los únicos con nivel. Al evaluar un nivel, las personas de los
     otros niveles se marcan como ignoradas.
@@ -395,8 +409,9 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
   - **Fijado el 3 de noviembre de 2026, antes de evaluar la prueba:**
     - Bonferroni con **3 comparaciones dentro de cada nivel** (fusión–RGB, fusión–térmica y RGB–térmica): cada p se
       multiplica por 3.
-    - Una persona está **detectada** si una predicción con confianza ≥ 0.5 la empareja a IoU ≥ 0.5, con el mismo
-      emparejamiento de pycocotools que da el recall de ese nivel.
+    - Una persona está **detectada** si una predicción del modelo con confianza ≥ **su umbral** (el de F2 en
+      validación; ver "Métricas", cambiado el 3 de noviembre de 2026) la empareja a IoU ≥ 0.5. Se usa el mismo
+      emparejamiento de pycocotools que da el recall de ese nivel. Con 0.5 no hay McNemar.
     - McNemar exacta (binomial, la de statsmodels por omisión).
 - **Bootstrap por episodio (fase 6):** los intervalos de confianza se calculan remuestreando episodios completos, no
   fotogramas, porque los fotogramas seguidos de un episodio no son independientes. Usa seed=0.

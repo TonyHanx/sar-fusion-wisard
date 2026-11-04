@@ -2,9 +2,10 @@
 # Uso:
 #   powershell -NoProfile -ExecutionPolicy Bypass -File scripts\noche.ps1 -Config configs\noche.yaml -Python .venv\Scripts\python.exe
 #   (agrega -Seco para la prueba en seco: rutas, git, datos de la prueba, aplicaciones, potencia y energía; no entrena)
-# Pasos: 1) entrenar rgb_100ep, commit y push; 2) entrenar termico_100ep, commit y push; 3) evaluar la prueba (fase 6)
-# con los tres modelos, una sola vez y solo si los tres terminaron; commit y push. Si un paso falla, se anota, se hace
-# commit y push de lo que haya y se sigue con lo que no depende de él.
+# Pasos: 1) entrenar rgb_100ep, commit y push; 2) entrenar termico_100ep, commit y push; 3) si los tres terminaron,
+# guardar las predicciones crudas de validación y prueba de los tres, sin métricas (cambiado el 3 de noviembre de 2026:
+# los umbrales se fijan después en validación); commit y push. Si un paso falla, se anota, se hace commit y push de lo
+# que haya y se sigue con lo que no depende de él.
 rutas: configs/rutas.yaml
 log: reports/noche_log.txt              # todo lo que pasa, con hora (va a git)
 log_seco: runs/noche/seco_log.txt       # la prueba en seco (fuera de git)
@@ -24,7 +25,8 @@ entrenar:
 evaluar:
   script: scripts/evaluar.py
   config: configs/fase6.yaml            # salidas en particiones.prueba.salidas; predicciones en runs/<carpeta>/prueba
-  particion: prueba                     # una sola vez; solo si los tres modelos terminaron
+  particion: prueba                     # la prueba en seco verifica sus datos y que no existan sus predicciones
+  predecir: [validacion, prueba]        # solo predicciones crudas (evaluar.py --solo-predecir); ninguna métrica
 
 git:
   remoto: origin

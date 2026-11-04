@@ -3,8 +3,9 @@ Noche del 3 al 4 de noviembre de 2026 (configs/noche.yaml).
 
 1) Entrena rgb_100ep y hace commit y push de reports/fase5b/rgb_100ep/, la bitácora y el log.
 2) Entrena termico_100ep y hace commit y push. Si los tres modelos terminaron, también las curvas de los tres.
-3) Evalúa la prueba (FHL 0405, fase 6) con los tres modelos, una sola vez y solo si los tres terminaron. Luego commit
-   y push de resultados.csv, mcnemar.csv, el gráfico, la bitácora y el log.
+3) Si los tres terminaron, guarda las predicciones crudas (confianza >= 0.001) de validación y de prueba de los tres
+   modelos (evaluar.py --solo-predecir), sin calcular ninguna métrica: los umbrales por modelo se fijan después en
+   validación (CLAUDE.md, 3 de noviembre de 2026). Luego commit y push de la bitácora y el log.
 
 - Si falla la comprobación de potencia, espera y reintenta (configs/noche.yaml).
 - Si un paso falla, lo anota, hace commit y push de lo que haya y sigue con lo que no depende de él.
@@ -302,7 +303,7 @@ if ($Seco) {
 }
 
 # ------------------------------------------------------------------------------------------------------------ noche
-Anotar "=== Noche: empieza. Corridas $(@($cfg.entrenar.corridas) -join ', '); luego la evaluación de la $($cfg.evaluar.particion)."
+Anotar "=== Noche: empieza. Corridas $(@($cfg.entrenar.corridas) -join ', '); luego las predicciones crudas de $(@($cfg.evaluar.predecir) -join ' y ') (sin métricas)."
 $ok = @{}
 foreach ($c in $cfg.entrenar.corridas) {
     try { $ok[$c] = [bool](Entrenar $c) } catch { Anotar "Error inesperado entrenando ${c}: $_"; $ok[$c] = $false }
@@ -330,20 +331,19 @@ if ($faltan.Count -eq 0) {
         else { Anotar "No se pudieron hacer las curvas de los tres (código $k): $(Motivo 'resumen_5b')" }
         Guardar 'Fase 5b: curvas y tabla de los tres modelos (noche)' @($cfg.entrenar.carpeta_reports, $cfg.log)
 
-        Anotar "Evaluando la $($cfg.evaluar.particion) con los tres modelos (una sola vez). Salida completa en $($cfg.pasos)/evaluar_$($cfg.evaluar.particion).log."
-        $k = Correr "evaluar_$($cfg.evaluar.particion)" "$python $($cfg.evaluar.script) --config $($cfg.evaluar.config) --rutas $($cfg.rutas) --particion $($cfg.evaluar.particion)"
-        if ($k -eq 0) {
-            Anotar "Evaluación terminada: $($salidasEval -join ', ')."
-            try { Resumir-Evaluacion } catch { Anotar "No se pudo resumir la evaluación en el log: $_" }
-        } else {
-            Anotar "FALLO en la evaluación (código $k): $(Motivo "evaluar_$($cfg.evaluar.particion)")"
+        # 3. solo predicciones crudas (sin métricas): los umbrales se fijan mañana en validación (CLAUDE.md)
+        foreach ($pp in $cfg.evaluar.predecir) {
+            Anotar "Guardando las predicciones crudas de $pp con los tres modelos (sin métricas). Salida completa en $($cfg.pasos)/predecir_$pp.log."
+            $k = Correr "predecir_$pp" "$python $($cfg.evaluar.script) --config $($cfg.evaluar.config) --rutas $($cfg.rutas) --particion $pp --solo-predecir"
+            if ($k -eq 0) { Anotar "Predicciones de $pp guardadas en $($rutasCfg.runs)/$($cfg6.carpeta)/$pp/<modelo>/predictions.json." }
+            else { Anotar "FALLO al predecir $pp (código $k): $(Motivo "predecir_$pp")" }
         }
-        Guardar "Fase 6: evaluación de la prueba (FHL 0405) con los tres modelos (noche)" ($salidasEval + @($bitacora, $cfg.log))
-    } catch { Anotar "Error inesperado en la evaluación: $_" }
+        Guardar 'Fase 6: predicciones crudas de validación y prueba, tres modelos, sin métricas (noche)' @($bitacora, $cfg.log)
+    } catch { Anotar "Error inesperado al predecir: $_" }
 } else {
-    Anotar "No se evalúa la $($cfg.evaluar.particion): no terminaron $($faltan -join ', ')."
+    Anotar "No se guardan las predicciones: no terminaron $($faltan -join ', ')."
 }
 
 $estado = ($cfg.entrenar.corridas | ForEach-Object { "$_ $(if ($ok[$_]) { 'bien' } else { 'falló' })" }) -join ', '
-Anotar "=== Noche: termina. $estado. Evaluación: $(if ($faltan.Count -eq 0) { 'intentada (ver arriba)' } else { 'no se corrió' })."
+Anotar "=== Noche: termina. $estado. Predicciones: $(if ($faltan.Count -eq 0) { 'intentadas (ver arriba)' } else { 'no se hicieron' })."
 Guardar 'Noche: registro final' @($cfg.log)
