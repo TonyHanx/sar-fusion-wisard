@@ -83,3 +83,17 @@ corridas:
   termico_100ep:
     fase: 5b
     datos: configs/termico.yaml
+
+# Resumen de la fase 5b (scripts/fase5b_resumen.py). Solo lee las corridas: no evalúa nada en la prueba.
+resumen_5b:
+  carpeta: fase5b                    # dentro de reports/
+  corridas:                          # en este orden; color = slots 1 a 3 de la paleta de referencia (modo claro)
+    fusion_100ep: {nombre: Fusión temprana, color: "#2a78d6"}
+    rgb_100ep: {nombre: Solo RGB, color: "#eb6834"}
+    termico_100ep: {nombre: Solo térmica, color: "#1baf7a"}
+  figura:
+    dpi: 150
+    fondo: "#fcfcfb"
+    texto: "#0b0b0b"
+    texto_secundario: "#52514e"
+    rejilla: "#e4e3df"
