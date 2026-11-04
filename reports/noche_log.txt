@@ -1,0 +1,4 @@
+[2026-11-03 23:26:38] === Noche: empieza. Corridas rgb_100ep, termico_100ep; luego las predicciones crudas de validacion y prueba (sin métricas).
+[2026-11-03 23:26:38] Entrenando rgb_100ep (intento 1). Salida completa en runs/noche/entrenar_rgb_100ep.log.
+[2026-11-04 05:55:00] (anotado a mano al revisar) A las 00:15:37 la laptop perdió la corriente y Windows la suspendió a las 00:15:40; se reanudó a las 05:50. rgb_100ep quedó en la época 67 de 100, sin resumen.json; noche.ps1 tampoco siguió. termico_100ep no empezó y no se guardaron predicciones.
+[2026-11-04 05:57:53] (anotado a mano) rgb_100ep cortada se descarta y se mueve a runs/fase5/rgb_100ep_cortada2; solo RGB se entrena desde cero al relanzar noche.ps1.
