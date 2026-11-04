@@ -202,14 +202,22 @@ def verificar(datos, nombre_part):
 
 # ------------------------------------------------------------------------------------------------------- predicción
 
-def predecir(clave, info, cfg, rutas, nombre_part, part):
-    """predictions.json del validador de Ultralytics (se reutiliza si ya existe)."""
+def predecir(clave, info, cfg, rutas, nombre_part, part, sin_metricas=False):
+    """predictions.json del validador de Ultralytics (se reutiliza si ya existe). Con `sin_metricas`, el validador
+    solo guarda las predicciones: no calcula ni imprime ninguna métrica (tampoco su P y R con umbral)."""
     from ultralytics import YOLO
     from ultralytics.models.yolo.detect import DetectionValidator
 
     class Validador(DetectionValidator):
         def eval_json(self, stats):  # sin faster-coco-eval: la evaluación se hace aquí con pycocotools
             return stats
+
+        def get_stats(self):
+            return {} if sin_metricas else super().get_stats()
+
+        def print_results(self):
+            if not sin_metricas:
+                super().print_results()
 
     carpeta = rutas["runs"] / cfg["carpeta"] / nombre_part / clave
     pj = carpeta / "predictions.json"
@@ -224,9 +232,10 @@ def predecir(clave, info, cfg, rutas, nombre_part, part):
         t = time.time()
         met = modelo.val(validator=Validador, data=str(ruta(info["datos"])), split=part["split"], save_json=True,
                          project=str(carpeta.parent), name=clave, exist_ok=True, **cfg["prediccion"])
-        ultra = {"pesos": rel(pesos), "segundos": round(time.time() - t, 1),
-                 "map50": float(met.box.map50), "map50_95": float(met.box.map), "precision": float(met.box.mp),
-                 "recall": float(met.box.mr)}
+        ultra = {"pesos": rel(pesos), "segundos": round(time.time() - t, 1), "sin_metricas": sin_metricas}
+        if not sin_metricas:
+            ultra.update({"map50": float(met.box.map50), "map50_95": float(met.box.map),
+                          "precision": float(met.box.mp), "recall": float(met.box.mr)})
         carpeta.mkdir(parents=True, exist_ok=True)
         if not pj.exists():  # sin ninguna predicción, Ultralytics no escribe el archivo
             pj.write_text("[]", encoding="utf-8")
@@ -423,6 +432,8 @@ def main():
     ap.add_argument("--particion", required=True)
     ap.add_argument("--modelos", nargs="+", help="por omisión, los de `modelos`")
     ap.add_argument("--solo-verificar", action="store_true", help="etiquetas, niveles, dudosas y bloques; sin predecir")
+    ap.add_argument("--solo-predecir", action="store_true",
+                    help="solo guarda las predicciones crudas (conf de `prediccion`); no calcula ninguna métrica")
     args = ap.parse_args()
     cfg = leer_yaml(args.config)
     rutas = leer_rutas(args.rutas)
@@ -439,6 +450,20 @@ def main():
     verificar(datos, args.particion)
     if args.solo_verificar:
         return
+    if args.solo_predecir:
+        for k, info in modelos.items():
+            p, u = predecir(k, info, cfg, rutas, args.particion, part, sin_metricas=True)
+            destino = rutas["runs"] / cfg["carpeta"] / args.particion / k / "predictions.json"
+            print(f"{k}: {len(p)} predicciones (confianza >= {cfg['prediccion']['conf']}) en {rel(destino)}")
+            agregar_a_bitacora(rutas["bitacora"], part["fase_bitacora"], f"YOLO26s {k}",
+                               f"partición {args.particion} (split {part['split']}); pesos {u['pesos']}; solo "
+                               f"predicciones crudas (confianza >= {cfg['prediccion']['conf']}, validador de "
+                               f"Ultralytics con save_json)",
+                               f"{len(p)} predicciones en {rel(destino)}; no se calculó ninguna métrica")
+        return
+    if args.particion == "prueba":  # hasta implementar la regla del 3 de noviembre de 2026 (CLAUDE.md, "Métricas")
+        raise SystemExit("La evaluación de la prueba espera los umbrales por modelo fijados en validación (F2). "
+                         "Por ahora solo --solo-predecir o --solo-verificar.")
     if part.get("una_sola_vez") and any(p.exists() for p in salidas.values()):
         raise SystemExit("La partición ya se evaluó (existen " + ", ".join(rel(p) for p in
                                                                            salidas.values() if p.exists())
@@ -456,7 +481,7 @@ def main():
     preds, ultra = {}, {}
     for k, info in modelos.items():
         preds[k], ultra[k] = predecir(k, info, cfg, rutas, args.particion, part)
-        print(f"{k}: {len(preds[k])} predicciones; Ultralytics: mAP@0.5 {ultra[k]['map50']:.4f}")
+        print(f"{k}: {len(preds[k])} predicciones; Ultralytics: mAP@0.5 {ultra[k].get('map50', float('nan')):.4f}")
 
     per = datos["per"]
     filas, filas_mc, evals = [], [], {}
@@ -551,7 +576,7 @@ def main():
                   f"bootstrap {B} remuestreos de {nb} bloques (episodios), seed={cfg['bootstrap']['seed']}; "
                   f"salidas {', '.join(rel(p) for p in salidas.values())}")
         agregar_a_bitacora(rutas["bitacora"], part["fase_bitacora"], f"YOLO26s {k}", config,
-                           "; ".join(resumen) + f"; Ultralytics (su AP) mAP50 {ultra[k]['map50']:.4f}")
+                           "; ".join(resumen) + f"; Ultralytics (su AP) mAP50 {ultra[k].get('map50', float('nan')):.4f}")
 
 
 if __name__ == "__main__":

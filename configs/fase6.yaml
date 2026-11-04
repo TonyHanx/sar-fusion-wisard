@@ -29,7 +29,8 @@ prediccion:                          # model.val() de Ultralytics con save_json 
 
 evaluacion:
   iou: 0.5
-  conf: 0.5                          # recall, precisión, F2 y "detectada" (McNemar)
+  conf: 0.5                          # solo descriptivo desde el 3 de noviembre de 2026; el umbral de cada modelo se fija
+                                     # en validación por F2 (CLAUDE.md, "Métricas"), pendiente en evaluar.py
   beta: 2                            # F2
   max_dets: 100                      # predicciones por imagen, como COCO
   tam_imagen: [640, 512]             # ancho y alto de todas las imágenes alineadas (fase 2)
