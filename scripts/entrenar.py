@@ -1,7 +1,10 @@
 """Fase 5: entrena YOLO26s desde yolo26s.pt con una corrida de configs/fase5.yaml y la registra en la bitácora.
 
-Antes de entrenar comprueba que la laptop esté enchufada y con el plan de energía de la configuración, y que el límite
-de potencia aplicado bajo carga (enforced.power.limit) llegue al mínimo. Si no, se detiene sin entrenar.
+Antes de entrenar comprueba que la carpeta de la corrida no exista (Ultralytics la renombraría), que las aplicaciones
+de `cerrar_antes` estén cerradas, que la laptop esté enchufada y con el plan de energía de la configuración, y que el
+límite de potencia aplicado bajo carga (enforced.power.limit) llegue al mínimo. Si no, se detiene sin entrenar, con el
+código de salida de `codigos_salida` (scripts/noche.ps1 reintenta solo el de potencia). Con --solo-comprobar hace las
+comprobaciones de aplicaciones y potencia y sale, sin entrenar.
 
 Con `inicio_cuarto_canal: promedio`, el cuarto canal de la primera capa arranca con el promedio de los pesos de los 3
 canales de color. Con `azar`, queda como lo deja Ultralytics: los 3 de color con los pesos preentrenados y el cuarto al
@@ -22,6 +25,7 @@ import json
 import math
 import statistics
 import subprocess
+import sys
 import threading
 import time
 import traceback
@@ -220,25 +224,47 @@ def main():
     ap.add_argument("--config", required=True)
     ap.add_argument("--rutas", required=True)
     ap.add_argument("--corrida", required=True)
+    ap.add_argument("--solo-comprobar", action="store_true",
+                    help="solo las comprobaciones de aplicaciones y potencia; no entrena")
     args = ap.parse_args()
     cfg = leer_yaml(args.config)
     rutas = leer_rutas(args.rutas)
+    codigos = cfg["codigos_salida"]
+
+    def salir(mensaje, codigo):
+        print(mensaje, file=sys.stderr, flush=True)
+        sys.exit(codigo)
+
     if args.corrida not in cfg["corridas"]:
-        raise SystemExit(f"No existe la corrida {args.corrida}. Hay: {', '.join(cfg['corridas'])}")
+        salir(f"No existe la corrida {args.corrida}. Hay: {', '.join(cfg['corridas'])}", codigos["otro"])
     c = mezclar(cfg["base"], cfg["corridas"][args.corrida])
     ultra = c["ultralytics"]
     datos = RAIZ / c["datos"]
     canales = leer_yaml(datos).get("channels", 3)
     if c["inicio_cuarto_canal"] == "promedio" and canales != 4:
-        raise SystemExit("inicio_cuarto_canal: promedio solo tiene sentido con 4 canales")
+        salir("inicio_cuarto_canal: promedio solo tiene sentido con 4 canales", codigos["otro"])
+    carpeta_corrida = rutas["runs"] / c["carpeta"] / args.corrida
+    if carpeta_corrida.exists() and not args.solo_comprobar:
+        salir(f"No se entrena: ya existe {carpeta_corrida} (Ultralytics la renombraría). Muévela antes.",
+              codigos["carpeta_existe"])
 
     abiertos = procesos_abiertos(cfg.get("cerrar_antes", []))
-    if abiertos:
-        raise SystemExit(f"No se entrena: cierra antes {', '.join(abiertos)} (cerrar_antes en {args.config}).")
+    mensaje_apps = f"No se entrena: cierra antes {', '.join(abiertos)} (cerrar_antes en {args.config})."
+    if abiertos and not args.solo_comprobar:
+        salir(mensaje_apps, codigos["aplicaciones"])
     potencia, problemas = comprobar_potencia(cfg["potencia"])
-    print(f"Potencia: {potencia}")
+    print(f"Potencia: {potencia}", flush=True)
+    if args.solo_comprobar:  # informa de todo junto, sin entrenar
+        if problemas:
+            print("No se entrena: " + "; ".join(problemas) + ".", file=sys.stderr, flush=True)
+        if abiertos:
+            salir(mensaje_apps, codigos["aplicaciones"])
+        if problemas:
+            sys.exit(codigos["potencia"])
+        print("Comprobaciones previas: bien (aplicaciones cerradas y potencia). No se entrena (--solo-comprobar).")
+        return
     if problemas:
-        raise SystemExit("No se entrena: " + "; ".join(problemas) + ". Revisa la laptop y vuelve a correr.")
+        salir("No se entrena: " + "; ".join(problemas) + ". Revisa la laptop y vuelve a correr.", codigos["potencia"])
     potencia["ram_antes_mib"] = round(psutil.virtual_memory().used / 2 ** 20)
     potencia["cerradas"] = cfg.get("cerrar_antes", [])
 

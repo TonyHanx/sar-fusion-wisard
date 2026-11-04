@@ -95,6 +95,16 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
 - Fase 5 (`scripts/entrenar.py`, corridas en `configs/fase5.yaml`):
   - salidas en `runs\fase5\<corrida>\`, con `resumen.json`, `epocas.csv` y `monitor.csv`;
   - reporte en `reports\fase5a.md`.
+  - Fase 5b: copia de los archivos de cada corrida en `reports\fase5b\<corrida>\` (`scripts/fase5b_copiar.py`), y
+    curvas y tabla de los tres en `reports\fase5b\` (`scripts/fase5b_resumen.py`).
+  - La corrida de solo RGB cortada en la época 7 está en `runs\fase5\rgb_100ep_cortada\`. Se descartó y no se usa.
+- Fase 6 (`scripts/evaluar.py`, `configs/fase6.yaml`):
+  - predicciones en `runs\fase6\<particion>\<modelo>\predictions.json`;
+  - salidas en `reports\resultados.csv`, `reports\mcnemar.csv` y `reports\recall_por_nivel.png`.
+  - La prueba del script en validación está en `runs\fase6\validacion\`.
+- Noche del 3 al 4 de noviembre de 2026 (`scripts/noche.ps1`, `configs/noche.yaml`):
+  - registro en `reports\noche_log.txt`;
+  - salida completa de cada paso en `runs\noche\`.
 - Proyecto anterior, solo como consulta: `C:\Users\User\sar-fusion\reports\` (scripts `emparejamiento.py` y
   `analisis_pares.py`, y `resumen_wisard.md`). Se puede reutilizar código de ahí, pero los resultados se regeneran aquí.
 
@@ -382,11 +392,28 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
     esas cajas se marcan como ignoradas. Son las anotadas y las seguidas por los fotogramas no anotados, con la
     regla del fotograma anotado más cercano: 131 de 1 501. Las etiquetas de prueba no se tocan.
 - **Prueba estadística:** McNemar (statsmodels) entre modelos dentro de cada nivel, corrección de Bonferroni, α = 0.05.
+  - **Fijado el 3 de noviembre de 2026, antes de evaluar la prueba:**
+    - Bonferroni con **3 comparaciones dentro de cada nivel** (fusión–RGB, fusión–térmica y RGB–térmica): cada p se
+      multiplica por 3.
+    - Una persona está **detectada** si una predicción con confianza ≥ 0.5 la empareja a IoU ≥ 0.5, con el mismo
+      emparejamiento de pycocotools que da el recall de ese nivel.
+    - McNemar exacta (binomial, la de statsmodels por omisión).
 - **Bootstrap por episodio (fase 6):** los intervalos de confianza se calculan remuestreando episodios completos, no
   fotogramas, porque los fotogramas seguidos de un episodio no son independientes. Usa seed=0.
   - Los episodios son tramos seguidos con persona.
-  - En la fase 6 se fijan el número de remuestreos y qué episodios se usan: los 18 de FHL 0405, o los 13 que quedan
-    si los pares excluidos no cortan.
+  - **Fijado el 3 de noviembre de 2026, antes de evaluar la prueba:**
+    - **13 episodios** en FHL 0405: los pares excluidos no cortan, porque a los dos lados del hueco se ve a la misma
+      persona. Si los cortaran, serían 18.
+    - **Los 149 fotogramas sin persona también entran**, para que sus falsos positivos se remuestreen junto con su
+      escena:
+      - Cada uno de los 12 tramos sin persona queda entre dos episodios y toca a los dos.
+      - El tramo se parte a la mitad: cada fotograma va al episodio más cercano por posición en el vídeo, y el del
+        medio exacto va con el anterior.
+      - Por ejemplo, de 259–288, los fotogramas 259–273 van al episodio 2 y 274–288 al episodio 3.
+    - Cada fotograma queda en un solo bloque. Hay 13 bloques, que se remuestrean con reemplazo.
+    - **10 000 remuestreos**, con intervalo percentil del 95 %.
+    - En las métricas sobre los 310 anotados, cada bloque aporta solo sus fotogramas anotados.
+    - Las diferencias entre modelos se calculan sobre los mismos remuestreos.
 
 ## Estructura del repositorio
 
