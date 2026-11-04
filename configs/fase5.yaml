@@ -35,6 +35,12 @@ cerrar_antes:                        # no se entrena si alguno está abierto (CL
   - ChatGPT
   - chrome
 
+codigos_salida:                      # de scripts/entrenar.py cuando no entrena; scripts/noche.ps1 reintenta solo `potencia`
+  otro: 1                            # corrida inexistente, configuración, o un error al entrenar (Python sale con 1)
+  aplicaciones: 3                    # alguna de cerrar_antes está abierta
+  potencia: 4                        # sin enchufe, otro plan de energía o límite aplicado bajo el mínimo
+  carpeta_existe: 5                  # runs/<carpeta>/<corrida> ya existe
+
 monitor:
   intervalo_s: 1                     # lecturas de nvidia-smi y de la RAM durante el entrenamiento
 
@@ -91,6 +97,10 @@ resumen_5b:
     fusion_100ep: {nombre: Fusión temprana, color: "#2a78d6"}
     rgb_100ep: {nombre: Solo RGB, color: "#eb6834"}
     termico_100ep: {nombre: Solo térmica, color: "#1baf7a"}
+  # scripts/fase5b_copiar.py: archivos de cada corrida que se copian a reports/<carpeta>/<corrida>/ (más su fila de la
+  # bitácora). Ultralytics hace las curvas y las matrices con best.pt en la validación final.
+  archivos_corrida: [results.csv, results.png, BoxPR_curve.png, BoxF1_curve.png, confusion_matrix.png,
+                     confusion_matrix_normalized.png, args.yaml, resumen.json]
   figura:
     dpi: 150
     fondo: "#fcfcfb"

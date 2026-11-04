@@ -36,11 +36,15 @@ completa; solo RGB quedó en la época 7 de 100 y solo térmica no empezó. Este
 - **Suspensión:** con la laptop enchufada, el plan de energía no la suspende ni la hiberna (tiempo 0).
 - **Para retomar:** con ChatGPT, Chrome y Roblox cerrados, las corridas se lanzan una tras otra. La cadena se
   detiene si una comprobación falla.
-  - La fusión ya está; falta decidir si `rgb_100ep` se reanuda desde `last.pt` o se empieza de nuevo.
-    - `scripts/entrenar.py` todavía no reanuda: usa `exist_ok=False`, así que el comando de abajo falla mientras exista
-      la carpeta.
-    - Además, Ultralytics no guarda el estado del generador aleatorio. Una corrida reanudada no es idéntica a una
+  - La fusión ya está.
+  - **Decidido el 3 de noviembre de 2026:** la corrida cortada de solo RGB se descarta y se mueve a
+    `runs/fase5/rgb_100ep_cortada/`. Está en la bitácora.
+    - Solo RGB se entrena **desde cero**, con la misma configuración, para que los tres modelos entrenen en las mismas
+      condiciones.
+    - Ultralytics no guarda el estado del generador aleatorio, así que una corrida reanudada no sería idéntica a una
       corrida seguida.
+  - Solo RGB y solo térmica se entrenan la noche del 3 al 4 de noviembre con `scripts/noche.ps1` (`configs/noche.yaml`),
+    que después evalúa la prueba (fase 6). El registro está en `reports/noche_log.txt`.
 
   ```
   .venv\Scripts\python.exe scripts\entrenar.py --config configs\fase5.yaml --rutas configs\rutas.yaml --corrida fusion_100ep

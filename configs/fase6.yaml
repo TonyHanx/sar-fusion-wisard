@@ -1,0 +1,89 @@
+# Fase 6: evaluación por nivel de oclusión (scripts/evaluar.py). Reglas en CLAUDE.md, "Métricas", "Prueba estadística"
+# y "Bootstrap por episodio" (fijadas el 3 de noviembre de 2026, antes de evaluar la prueba).
+# Uso:
+#   .venv\Scripts\python.exe scripts\evaluar.py --config configs\fase6.yaml --rutas configs\rutas.yaml --particion prueba
+#   ... --particion prueba --solo-verificar      (etiquetas, niveles, cajas dudosas y bloques; sin predecir)
+#   ... --particion validacion --modelos fusion fusion_last      (prueba del script, sin tocar la prueba)
+
+corridas: fase5                      # dentro de runs/: corridas de entrenamiento
+pesos: weights/best.pt               # dentro de cada corrida: el best.pt de Ultralytics (mayor mAP@0.5:0.95), sin cambiar
+carpeta: fase6                       # dentro de runs/: predicciones por partición y modelo
+
+modelos:                             # en este orden; las diferencias y los pares de McNemar son a − b en este orden
+  fusion: {corrida: fusion_100ep, datos: configs/fusion.yaml, nombre: Fusión temprana, color: "#2a78d6"}
+  rgb: {corrida: rgb_100ep, datos: configs/rgb.yaml, nombre: Solo RGB, color: "#eb6834"}
+  termico: {corrida: termico_100ep, datos: configs/termico.yaml, nombre: Solo térmica, color: "#1baf7a"}
+# Solo para probar el script en validación; no se aceptan en la prueba. Es la misma corrida de fusión con last.pt,
+# para probar las diferencias y McNemar con dos modelos.
+modelos_solo_validacion:
+  fusion_last: {corrida: fusion_100ep, pesos: weights/last.pt, datos: configs/fusion.yaml, nombre: Fusión (last.pt),
+                color: "#52514e"}
+
+prediccion:                          # model.val() de Ultralytics con save_json (la misma lectura que en la validación)
+  imgsz: 640
+  batch: 16
+  conf: 0.001                        # el de la validación de Ultralytics: todas las predicciones, para el mAP
+  device: 0
+  workers: 4
+  plots: false
+
+evaluacion:
+  iou: 0.5
+  conf: 0.5                          # recall, precisión, F2 y "detectada" (McNemar)
+  beta: 2                            # F2
+  max_dets: 100                      # predicciones por imagen, como COCO
+  tam_imagen: [640, 512]             # ancho y alto de todas las imágenes alineadas (fase 2)
+  pares: pares.csv                   # dentro de data/: pares anotados, con los excluidos (para los episodios)
+
+bootstrap:
+  remuestreos: 10000
+  seed: 0
+  confianza: 0.95                    # intervalo percentil
+  excluidos_cortan: false            # false: 13 episodios en FHL 0405 (true: 18)
+  # Los tramos sin persona se parten a la mitad entre los episodios vecinos: cada fotograma va al episodio más cercano
+  # por posición, y el del medio exacto va con el anterior. Los del inicio o del final van con el único vecino.
+
+mcnemar:
+  exacta: true                       # binomial (statsmodels por omisión)
+  alfa: 0.05
+  dudosas: sin                       # en los niveles da lo mismo: las dudosas no tienen nivel
+  # Bonferroni: dentro de cada nivel, por el número de pares de modelos (3 con los tres modelos).
+
+particiones:
+  prueba:
+    split: test
+    vuelos: [210924_FHL_Enterprise_0405]
+    niveles: data/oclusion_nivel.csv
+    paso_anotados: 3                 # fotogramas anotados: posición múltiplo de 3
+    cajas_dudosas: configs/cajas_dudosas.yaml
+    subconjuntos:
+      - {nombre: todos_928, fotogramas: todos, personas: todas}
+      - {nombre: anotados_310, fotogramas: anotados, personas: todas}
+      - {nombre: baja, fotogramas: anotados, personas: baja, mcnemar: true, grafico: true,
+         rotulo: "Baja\n(se ve en la RGB)"}
+      - {nombre: severa, fotogramas: anotados, personas: severa, mcnemar: true, grafico: true,
+         rotulo: "Severa\n(no se ve en la RGB)"}
+    comprobar: {fotogramas: 928, anotados: 310, personas: 1501, baja: 184, severa: 267, sin_nivel: 47, dudosas: 131,
+                bloques: 13}
+    titulo: "Recall por nivel de oclusión (FHL 0405, 310 fotogramas anotados)"
+    salidas: {resultados: reports/resultados.csv, mcnemar: reports/mcnemar.csv, grafico: reports/recall_por_nivel.png}
+    una_sola_vez: true               # si ya existe alguna salida, no se vuelve a evaluar
+    fase_bitacora: "6"
+  validacion:
+    split: val
+    vuelos: [210924_FHL_Enterprise_0134, 210417_MtErie_Enterprise_0007]
+    subconjuntos:
+      - {nombre: todos_442, fotogramas: todos, personas: todas, mcnemar: true, grafico: true, rotulo: "Todas"}
+    comprobar: {fotogramas: 442, personas: 500, bloques: 10}
+    titulo: "Recall en validación (prueba del script)"
+    salidas: {resultados: runs/fase6/validacion/resultados.csv, mcnemar: runs/fase6/validacion/mcnemar.csv,
+              grafico: runs/fase6/validacion/recall.png}
+    una_sola_vez: false
+    fase_bitacora: "6 (prueba del script en validación)"
+
+figura:
+  dpi: 150
+  fondo: "#fcfcfb"
+  texto: "#0b0b0b"
+  texto_secundario: "#52514e"
+  rejilla: "#e4e3df"

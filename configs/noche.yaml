@@ -1,0 +1,35 @@
+# Noche del 3 al 4 de noviembre de 2026 (scripts/noche.ps1). Rutas relativas a la raíz del repositorio.
+# Uso:
+#   powershell -NoProfile -ExecutionPolicy Bypass -File scripts\noche.ps1 -Config configs\noche.yaml -Python .venv\Scripts\python.exe
+#   (agrega -Seco para la prueba en seco: rutas, git, datos de la prueba, aplicaciones, potencia y energía; no entrena)
+# Pasos: 1) entrenar rgb_100ep, commit y push; 2) entrenar termico_100ep, commit y push; 3) evaluar la prueba (fase 6)
+# con los tres modelos, una sola vez y solo si los tres terminaron; commit y push. Si un paso falla, se anota, se hace
+# commit y push de lo que haya y se sigue con lo que no depende de él.
+rutas: configs/rutas.yaml
+log: reports/noche_log.txt              # todo lo que pasa, con hora (va a git)
+log_seco: runs/noche/seco_log.txt       # la prueba en seco (fuera de git)
+pasos: runs/noche                       # salida completa de cada comando (fuera de git)
+
+entrenar:
+  script: scripts/entrenar.py
+  config: configs/fase5.yaml            # misma configuración que fusion_100ep (base de fase5.yaml)
+  corridas: [rgb_100ep, termico_100ep]  # en este orden
+  ya_entrenadas: [fusion_100ep]         # tienen que tener resumen.json para evaluar
+  reintentos_potencia: 3                # si falla la comprobación de potencia, espera y reintenta hasta 3 veces
+  espera_reintento_s: 300
+  copiar: scripts/fase5b_copiar.py      # archivos de cada corrida a reports/fase5b/<corrida>/
+  resumen: scripts/fase5b_resumen.py    # curvas y tabla de los tres (solo lee las corridas), si los tres terminaron
+  carpeta_reports: reports/fase5b
+
+evaluar:
+  script: scripts/evaluar.py
+  config: configs/fase6.yaml            # salidas en particiones.prueba.salidas; predicciones en runs/<carpeta>/prueba
+  particion: prueba                     # una sola vez; solo si los tres modelos terminaron
+
+git:
+  remoto: origin
+  rama: main
+  coautor: "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+
+seco:
+  disco_minimo_gb: 10                   # aviso si queda menos espacio libre en la unidad del proyecto
