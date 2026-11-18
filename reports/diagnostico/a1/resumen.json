@@ -1,0 +1,26 @@
+{
+  "carpetas": 80,
+  "por_modalidad": [
+    {
+      "modalidad": "IR",
+      "imagenes": 29878,
+      "con_txt": 24084,
+      "txt_con_cajas": 13798,
+      "cajas": 27544
+    },
+    {
+      "modalidad": "VIS",
+      "imagenes": 26252,
+      "con_txt": 20504,
+      "txt_con_cajas": 17386,
+      "cajas": 46660
+    }
+  ],
+  "parejas": 17,
+  "carpetas_en_parejas": 34,
+  "termicas_anotadas_total": 24084,
+  "termicas_en_los_4617": 4617,
+  "termicas_anotadas_fuera": 19467,
+  "termicas_fuera_con_cajas": 9653,
+  "cajas_termicas_fuera": 16203
+}

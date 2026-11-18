@@ -4,7 +4,7 @@
 # comparta archivos con entrenamiento ni validación (A6).
 # Uso:
 #   .venv\Scripts\python.exe scripts\diagnostico.py --config configs\diagnostico.yaml --rutas configs\rutas.yaml --parte inventario
-#   (partes: inventario, estado, tamanos, integridad, validar, hoja, b1_datos; b_evaluar y b_por_vuelo con --corrida)
+#   (partes: inventario, estado, tamanos, integridad, validar, hoja, b1_datos, copiar; b_evaluar y b_por_vuelo con --corrida)
 #   .venv\Scripts\python.exe scripts\entrenar.py --config configs\diagnostico.yaml --rutas configs\rutas.yaml --corrida b1_termico_aleatoria_30ep
 #   .venv\Scripts\python.exe scripts\diagnostico.py --config configs\diagnostico.yaml --rutas configs\rutas.yaml --parte b_evaluar --corrida b1_termico_aleatoria_30ep
 
@@ -130,3 +130,27 @@ corridas:
   b3_termico_vuelo_1280_30ep:        # solo si se confirma; el lote 16 a 1280 probablemente no entra en 8 GB
     datos: configs/termico.yaml
     ultralytics: {imgsz: 1280}
+
+# Copia para git (--parte copiar): runs/ no va a git, así que las salidas livianas de runs/<carpeta>/ se copian a
+# reports/<destino>/ con la misma estructura. No se copian los pesos ni los datasets de enlaces duros (son las
+# imágenes de data/, que no va a GitHub).
+copiar:
+  destino: diagnostico               # dentro de reports/
+  desde_runs:                        # globs dentro de runs/<carpeta>/
+    - a1/*
+    - a2/*
+    - a3/*
+    - a4/**/*
+    - a5/hoja.png                    # los 16 pares sueltos están todos en la hoja
+    - a5/hoja.csv
+    - a5/revision/*                  # mosaicos y ampliaciones de la revisión a ojo de A5
+    - a6/*
+    - "*.log"
+    - datasets/b1_termico_aleatoria/b1.yaml
+    - datasets/b1_termico_aleatoria/reparto.csv
+    - b1_termico_aleatoria_30ep/**/*
+    - b2_termico_vuelo_30ep/**/*
+  excluir: ["*.pt"]
+  extra:                             # de otras carpetas de runs/ (solo lectura): origen -> destino en reports/<destino>/
+    fase5/rgb_100ep_cortada/results.csv: a2/rgb_100ep_cortada_results.csv
+    fase5/rgb_100ep_cortada2/results.csv: a2/rgb_100ep_cortada2_results.csv

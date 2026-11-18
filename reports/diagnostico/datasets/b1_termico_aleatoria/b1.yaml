@@ -1,0 +1,1 @@
+{"path": "C:/Users/User/Desktop/sar-fusion-wisard/sar-fusion-wisard/runs/diagnostico/datasets/b1_termico_aleatoria", "train": "images/train", "val": "images/val", "test": "images/test", "channels": 3, "names": {"0": "persona"}}

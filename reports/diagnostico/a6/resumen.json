@@ -1,0 +1,122 @@
+{
+  "conteos": [
+    {
+      "dataset": "fusion",
+      "split": "train",
+      "imagenes": 3247,
+      "esperadas": 3247,
+      "cajas": 9340,
+      "cajas_esperadas": 9340,
+      "etiquetas_encontradas": 3247,
+      "sin_etiqueta": 0,
+      "etiquetas_vacias": 186,
+      "corruptas": 0,
+      "cache_vigente": true,
+      "cache_avisos": 0,
+      "cache_imagenes": 3247,
+      "cache_corruptas": 0
+    },
+    {
+      "dataset": "fusion",
+      "split": "val",
+      "imagenes": 442,
+      "esperadas": 442,
+      "cajas": 500,
+      "cajas_esperadas": 500,
+      "etiquetas_encontradas": 442,
+      "sin_etiqueta": 0,
+      "etiquetas_vacias": 137,
+      "corruptas": 0,
+      "cache_vigente": true,
+      "cache_avisos": 0,
+      "cache_imagenes": 442,
+      "cache_corruptas": 0
+    },
+    {
+      "dataset": "rgb",
+      "split": "train",
+      "imagenes": 3247,
+      "esperadas": 3247,
+      "cajas": 9340,
+      "cajas_esperadas": 9340,
+      "etiquetas_encontradas": 3247,
+      "sin_etiqueta": 0,
+      "etiquetas_vacias": 186,
+      "corruptas": 0,
+      "cache_vigente": true,
+      "cache_avisos": 0,
+      "cache_imagenes": 3247,
+      "cache_corruptas": 0
+    },
+    {
+      "dataset": "rgb",
+      "split": "val",
+      "imagenes": 442,
+      "esperadas": 442,
+      "cajas": 500,
+      "cajas_esperadas": 500,
+      "etiquetas_encontradas": 442,
+      "sin_etiqueta": 0,
+      "etiquetas_vacias": 137,
+      "corruptas": 0,
+      "cache_vigente": true,
+      "cache_avisos": 0,
+      "cache_imagenes": 442,
+      "cache_corruptas": 0
+    },
+    {
+      "dataset": "termico",
+      "split": "train",
+      "imagenes": 3247,
+      "esperadas": 3247,
+      "cajas": 9340,
+      "cajas_esperadas": 9340,
+      "etiquetas_encontradas": 3247,
+      "sin_etiqueta": 0,
+      "etiquetas_vacias": 186,
+      "corruptas": 0,
+      "cache_vigente": true,
+      "cache_avisos": 0,
+      "cache_imagenes": 3247,
+      "cache_corruptas": 0
+    },
+    {
+      "dataset": "termico",
+      "split": "val",
+      "imagenes": 442,
+      "esperadas": 442,
+      "cajas": 500,
+      "cajas_esperadas": 500,
+      "etiquetas_encontradas": 442,
+      "sin_etiqueta": 0,
+      "etiquetas_vacias": 137,
+      "corruptas": 0,
+      "cache_vigente": true,
+      "cache_avisos": 0,
+      "cache_imagenes": 442,
+      "cache_corruptas": 0
+    }
+  ],
+  "avisos": 0,
+  "avisos_distintos": {},
+  "choques": [],
+  "hashes": {
+    "termica": {
+      "archivos": 4617,
+      "contenidos_distintos": 4617,
+      "contenidos_repetidos": 0,
+      "repetidos_entre_splits": 0
+    },
+    "rgb": {
+      "archivos": 4617,
+      "contenidos_distintos": 4617,
+      "contenidos_repetidos": 0,
+      "repetidos_entre_splits": 0
+    }
+  },
+  "por_split": {
+    "train": 3247,
+    "val": 442,
+    "test": 928
+  }
+}

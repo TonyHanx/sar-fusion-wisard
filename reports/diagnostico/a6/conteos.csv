@@ -1,0 +1,7 @@
+dataset,split,imagenes,esperadas,cajas,cajas_esperadas,etiquetas_encontradas,sin_etiqueta,etiquetas_vacias,corruptas,cache_vigente,cache_avisos,cache_imagenes,cache_corruptas
+fusion,train,3247,3247,9340,9340,3247,0,186,0,True,0,3247,0
+fusion,val,442,442,500,500,442,0,137,0,True,0,442,0
+rgb,train,3247,3247,9340,9340,3247,0,186,0,True,0,3247,0
+rgb,val,442,442,500,500,442,0,137,0,True,0,442,0
+termico,train,3247,3247,9340,9340,3247,0,186,0,True,0,3247,0
+termico,val,442,442,500,500,442,0,137,0,True,0,442,0

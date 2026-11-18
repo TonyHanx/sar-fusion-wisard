@@ -13,7 +13,8 @@ térmica con YOLOv5? ¿Hay algo mal en el código o en los datos?
 - **Dónde está cada cosa:**
   - código: `scripts/diagnostico.py`;
   - configuración: `configs/diagnostico.yaml` (las rutas y los parámetros van en configs, como pide CLAUDE.md);
-  - salidas: `runs/diagnostico/` (`a1` … `a6`, `datasets`, y una carpeta por corrida de B).
+  - salidas: `runs/diagnostico/` (`a1` … `a6`, `datasets`, y una carpeta por corrida de B);
+  - copia para git: `reports/diagnostico/` (ver "Archivos de apoyo" al final).
 - **Bitácora:** las evaluaciones de A4 y las corridas de B tienen su fila en `reports/bitacora.csv`.
 
 ```
@@ -607,3 +608,27 @@ imágenes):
   splits. Los conteos son exactos (3 247 / 9 340 y 442 / 500), y las cajas caen bien sobre las personas.
 - **La cantidad de datos, como causa principal:** B1 entrena con menos imágenes que B2 (2 213 contra 3 247) y llega a
   0.985. Igual queda el dato de que usamos el 13.5 % de las 24 084 térmicas anotadas de WiSARD (A1).
+
+---
+
+## Archivos de apoyo
+
+**Qué es esta carpeta:**
+- `reports/diagnostico/` es una copia de las salidas livianas de `runs/diagnostico/`, porque `runs/` no va a git.
+- La genera `scripts/diagnostico.py --parte copiar`, con la sección `copiar` de `configs/diagnostico.yaml`.
+- No se suben los pesos (`*.pt`), los datasets de enlaces duros ni las imágenes de `data/`, que por la regla del
+  proyecto no va a GitHub.
+- Las corridas de la fase 5b (fusión) están en `reports/fase5b/fusion_100ep/`.
+
+| Carpeta | Qué hay |
+|---|---|
+| `a1/` | `inventario.csv` (las 80 carpetas), `termicas_fuera.csv` (una fila por térmica anotada fuera de los 4 617, con el motivo), `tablas.md` y `resumen.json` |
+| `a2/` | `estado.json` y `results.csv` de las dos corridas de solo RGB cortadas |
+| `a3/` | `cajas.csv` (una fila por persona de entrenamiento y validación, con ancho, alto, lado mayor y tramo) y `tablas.md` |
+| `a4/` | `val.csv`, `tramos.csv` y `detectadas.csv`; predicciones de `model.val` (`fusion_{best,last}/todas/predictions.json`) y de `predict` (`predict_fusion_*_conf*.json`); `tablas.md` |
+| `a5/` | `hoja.png` (16 pares: térmica y RGB alineada; anotadas en verde, predicciones en rojo) y `hoja.csv` |
+| `a5/revision/` | Imágenes de la revisión a ojo, hechas fuera del script: `zoom_*.png` (ampliaciones de la hoja), `fp_0007.png` y `fp_0134.png` (los 84 FP a conf 0.25), `sospechas.png` y `fhl0134_112_116.png` (manchas sin caja en FHL 0134), y `vuelos.png` (2 fotogramas por vuelo) |
+| `a6/` | `conteos.csv`, `avisos.csv`, `choques.csv` y `resumen.json` |
+| `datasets/b1_termico_aleatoria/` | `b1.yaml` y `reparto.csv` (split de cada fotograma de B1) |
+| `b1_termico_aleatoria_30ep/` y `b2_termico_vuelo_30ep/` | Todo lo de la corrida menos los pesos: `args.yaml`, `results.csv`, curvas, lotes de entrenamiento y validación, `resumen.json`, `monitor.csv`, `evaluacion.json` y `por_vuelo.csv` |
+| `*.log` | Salida de A4 (`a4_salida.log`), de las corridas de B con las comprobaciones (`b_salida.log`) y de la evaluación por vuelo |

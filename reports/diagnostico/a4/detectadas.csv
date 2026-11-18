@@ -1,0 +1,41 @@
+modelo,pesos,conf,grupo,personas,detectadas,recall,falsos_positivos,imagenes
+fusion,best.pt,0.25,todas,500,152,0.304,84,442
+fusion,best.pt,0.25,210417_MtErie_Enterprise_0007,289,136,0.47058823529411764,50,169
+fusion,best.pt,0.25,210924_FHL_Enterprise_0134,211,16,0.07582938388625593,34,273
+fusion,best.pt,0.25,solo_termica,75,15,0.2,10,68
+fusion,best.pt,0.25,resto,425,137,0.32235294117647056,74,374
+fusion,best.pt,0.25,tramo <8,3,0,0.0,—,—
+fusion,best.pt,0.25,tramo 8-12,112,4,0.03571428571428571,—,—
+fusion,best.pt,0.25,tramo 12-20,97,12,0.12371134020618557,—,—
+fusion,best.pt,0.25,tramo 20-32,55,19,0.34545454545454546,—,—
+fusion,best.pt,0.25,tramo >=32,233,117,0.5021459227467812,—,—
+fusion,best.pt,0.5,todas,500,92,0.184,22,442
+fusion,best.pt,0.5,210417_MtErie_Enterprise_0007,289,87,0.30103806228373703,8,169
+fusion,best.pt,0.5,210924_FHL_Enterprise_0134,211,5,0.023696682464454975,14,273
+fusion,best.pt,0.5,solo_termica,75,4,0.05333333333333334,0,68
+fusion,best.pt,0.5,resto,425,88,0.20705882352941177,22,374
+fusion,best.pt,0.5,tramo <8,3,0,0.0,—,—
+fusion,best.pt,0.5,tramo 8-12,112,2,0.017857142857142856,—,—
+fusion,best.pt,0.5,tramo 12-20,97,3,0.030927835051546393,—,—
+fusion,best.pt,0.5,tramo 20-32,55,10,0.18181818181818182,—,—
+fusion,best.pt,0.5,tramo >=32,233,77,0.33047210300429186,—,—
+fusion,last.pt,0.25,todas,500,116,0.232,88,442
+fusion,last.pt,0.25,210417_MtErie_Enterprise_0007,289,94,0.32525951557093424,46,169
+fusion,last.pt,0.25,210924_FHL_Enterprise_0134,211,22,0.10426540284360189,42,273
+fusion,last.pt,0.25,solo_termica,75,24,0.32,9,68
+fusion,last.pt,0.25,resto,425,92,0.2164705882352941,79,374
+fusion,last.pt,0.25,tramo <8,3,0,0.0,—,—
+fusion,last.pt,0.25,tramo 8-12,112,0,0.0,—,—
+fusion,last.pt,0.25,tramo 12-20,97,22,0.2268041237113402,—,—
+fusion,last.pt,0.25,tramo 20-32,55,18,0.32727272727272727,—,—
+fusion,last.pt,0.25,tramo >=32,233,76,0.3261802575107296,—,—
+fusion,last.pt,0.5,todas,500,89,0.178,51,442
+fusion,last.pt,0.5,210417_MtErie_Enterprise_0007,289,77,0.2664359861591695,18,169
+fusion,last.pt,0.5,210924_FHL_Enterprise_0134,211,12,0.05687203791469194,33,273
+fusion,last.pt,0.5,solo_termica,75,13,0.17333333333333334,6,68
+fusion,last.pt,0.5,resto,425,76,0.17882352941176471,45,374
+fusion,last.pt,0.5,tramo <8,3,0,0.0,—,—
+fusion,last.pt,0.5,tramo 8-12,112,0,0.0,—,—
+fusion,last.pt,0.5,tramo 12-20,97,12,0.12371134020618557,—,—
+fusion,last.pt,0.5,tramo 20-32,55,12,0.21818181818181817,—,—
+fusion,last.pt,0.5,tramo >=32,233,65,0.27896995708154504,—,—

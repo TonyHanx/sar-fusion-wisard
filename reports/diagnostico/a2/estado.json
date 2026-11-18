@@ -1,0 +1,82 @@
+{
+  "corridas": [
+    {
+      "modelo": "fusion",
+      "corrida": "fusion_100ep",
+      "existe": true,
+      "terminada": true,
+      "epocas": 100,
+      "epoca_best_pt": 8,
+      "best_map50": 0.37404586400239015,
+      "best_map50_95": 0.16743542555418017,
+      "best_precision": 0.5592813948535341,
+      "best_recall": 0.37563126763126764,
+      "max_map50": 0.39506,
+      "epoca_max_map50": 27,
+      "ultima_map50": 0.24524,
+      "ultima_epoca": 100,
+      "pesos_guardados": "best.pt, last.pt"
+    },
+    {
+      "modelo": "rgb",
+      "corrida": "rgb_100ep",
+      "existe": false,
+      "terminada": false
+    },
+    {
+      "modelo": "termico",
+      "corrida": "termico_100ep",
+      "existe": false,
+      "terminada": false
+    }
+  ],
+  "cortadas": [
+    {
+      "corrida": "rgb_100ep_cortada",
+      "epocas_completas": 7,
+      "epoca_mayor_map50_95": 2,
+      "map50_esa_epoca": 0.16276,
+      "map50_95_esa_epoca": 0.05505,
+      "max_map50": 0.16276,
+      "epoca_max_map50": 2,
+      "ultima_map50": 0.06227,
+      "resumen_json": false
+    },
+    {
+      "corrida": "rgb_100ep_cortada2",
+      "epocas_completas": 67,
+      "epoca_mayor_map50_95": 2,
+      "map50_esa_epoca": 0.16276,
+      "map50_95_esa_epoca": 0.05505,
+      "max_map50": 0.16276,
+      "epoca_max_map50": 2,
+      "ultima_map50": 0.00975,
+      "resumen_json": false
+    }
+  ],
+  "log_noche": [
+    "[2026-11-03 23:26:38] === Noche: empieza. Corridas rgb_100ep, termico_100ep; luego las predicciones crudas de validacion y prueba (sin métricas).",
+    "[2026-11-03 23:26:38] Entrenando rgb_100ep (intento 1). Salida completa en runs/noche/entrenar_rgb_100ep.log.",
+    "[2026-11-04 05:55:00] (anotado a mano al revisar) A las 00:15:37 la laptop perdió la corriente y Windows la suspendió a las 00:15:40; se reanudó a las 05:50. rgb_100ep quedó en la época 67 de 100, sin resumen.json; noche.ps1 tampoco siguió. termico_100ep no empezó y no se guardaron predicciones.",
+    "[2026-11-04 05:57:53] (anotado a mano) rgb_100ep cortada se descarta y se mueve a runs/fase5/rgb_100ep_cortada2; solo RGB se entrena desde cero al relanzar noche.ps1."
+  ],
+  "runs_noche": [
+    "entrenar_rgb_100ep.cmd",
+    "entrenar_rgb_100ep.log",
+    "git.cmd",
+    "git.log",
+    "mensaje_commit.txt",
+    "seco_entrenar.cmd",
+    "seco_entrenar.log",
+    "seco_evaluar.cmd",
+    "seco_evaluar.log",
+    "seco_git.cmd",
+    "seco_git.log",
+    "seco_log.txt",
+    "seco_predecir.cmd",
+    "seco_predecir.log",
+    "seco_repo",
+    "seco_repo.cmd",
+    "seco_repo.log"
+  ]
+}

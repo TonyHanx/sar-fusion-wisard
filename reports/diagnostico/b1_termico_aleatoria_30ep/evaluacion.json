@@ -1,0 +1,36 @@
+{
+  "evaluacion": [
+    {
+      "corrida": "b1_termico_aleatoria_30ep",
+      "split": "test",
+      "pesos": "best.pt",
+      "imgsz": 640,
+      "map50": 0.985286065326115,
+      "map50_95": 0.7531394931908819,
+      "precision": 0.9811176262950743,
+      "recall": 0.958613554061045
+    },
+    {
+      "corrida": "b1_termico_aleatoria_30ep",
+      "split": "val",
+      "pesos": "best.pt",
+      "imgsz": 640,
+      "map50": 0.9827114979626443,
+      "map50_95": 0.7639803863119576,
+      "precision": 0.9841246387879872,
+      "recall": 0.9621369294605809
+    }
+  ],
+  "epoca_best_pt": 30,
+  "max_map50_val": 0.98318,
+  "epoca_max_map50": 30,
+  "ultima_epoca_val": {
+    "metrics/precision(B)": 0.98491,
+    "metrics/recall(B)": 0.96266,
+    "metrics/mAP50(B)": 0.98318,
+    "metrics/mAP50-95(B)": 0.76463
+  },
+  "s_total": 991.64,
+  "lote_final": 16,
+  "limite_w": 86.65
+}

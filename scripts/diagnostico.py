@@ -789,13 +789,39 @@ def b_por_vuelo(cfg, rutas, out, corrida):
     print(md(df, 4))
 
 
+def copiar(cfg, rutas, out):
+    """Copia para git las salidas livianas del diagnóstico a reports/<copiar.destino>/: los globs de
+    `copiar.desde_runs` (dentro de runs/<carpeta>/, con la misma estructura) y los archivos de `copiar.extra` (dentro de
+    runs/, solo lectura). No copia lo que coincide con `copiar.excluir` (los pesos)."""
+    import shutil
+
+    c = cfg["copiar"]
+    destino = rutas["reports"] / c["destino"]
+    pares = []
+    for patron in c["desde_runs"]:
+        hallados = [p for p in sorted(out.glob(patron))
+                    if p.is_file() and not any(p.match(e) for e in c.get("excluir", []))]
+        if not hallados:
+            raise SystemExit(f"copiar: '{patron}' no encontró nada en {rel(out)}")
+        pares += [(p, destino / p.relative_to(out)) for p in hallados]
+    for origen, dest in (c.get("extra") or {}).items():
+        p = rutas["runs"] / origen
+        if not p.is_file():
+            raise SystemExit(f"copiar: falta {rel(p)}")
+        pares.append((p, destino / dest))
+    for o, d in pares:
+        d.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(o, d)
+    print(f"{len(pares)} archivos, {sum(o.stat().st_size for o, _ in pares) / 1e6:.1f} MB en {rel(destino)}")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", required=True)
     ap.add_argument("--rutas", required=True)
     ap.add_argument("--parte", required=True,
                     choices=["inventario", "estado", "tamanos", "integridad", "validar", "hoja", "b1_datos", "b_evaluar",
-                             "b_por_vuelo"])
+                             "b_por_vuelo", "copiar"])
     ap.add_argument("--corrida")
     args = ap.parse_args()
     cfg = leer_yaml(args.config)

@@ -1,0 +1,17 @@
+stem,anotadas,predicciones,aciertos,detectadas,falsos_positivos,confianzas
+210417_MtErie_Enterprise_0007_0007,2,1,1,1,0,0.88
+210417_MtErie_Enterprise_0007_0017,2,1,1,1,0,0.88
+210417_MtErie_Enterprise_0007_0032,1,1,0,0,1,0.41
+210417_MtErie_Enterprise_0007_0079,2,1,1,1,0,0.59
+210417_MtErie_Enterprise_0007_0119,2,1,1,1,0,0.61
+210417_MtErie_Enterprise_0007_0135,2,2,2,2,0,"0.70, 0.32"
+210924_FHL_Enterprise_0134_0050,2,0,0,0,0,
+210924_FHL_Enterprise_0134_0052,2,0,0,0,0,
+210924_FHL_Enterprise_0134_0097,0,0,0,0,0,
+210924_FHL_Enterprise_0134_0103,0,0,0,0,0,
+210924_FHL_Enterprise_0134_0114,0,0,0,0,0,
+210924_FHL_Enterprise_0134_0153,1,1,1,1,0,0.50
+210924_FHL_Enterprise_0134_0185,0,0,0,0,0,
+210924_FHL_Enterprise_0134_0194,0,0,0,0,0,
+210924_FHL_Enterprise_0134_0230,0,0,0,0,0,
+210924_FHL_Enterprise_0134_0259,1,0,0,0,0,
