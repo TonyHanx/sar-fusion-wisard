@@ -1,0 +1,132 @@
+# Diagnóstico del mAP@0.5 de validación (18 de noviembre de 2026), con scripts/diagnostico.py y scripts/entrenar.py.
+# No cambia nada de lo ya hecho: solo lee runs/fase5, las etiquetas y los datasets, y escribe en runs/<carpeta>/ y en
+# reports/diagnostico.md. La prueba (FHL 0405) no se usa: solo se cuenta en el inventario (A1) y se comprueba que no
+# comparta archivos con entrenamiento ni validación (A6).
+# Uso:
+#   .venv\Scripts\python.exe scripts\diagnostico.py --config configs\diagnostico.yaml --rutas configs\rutas.yaml --parte inventario
+#   (partes: inventario, estado, tamanos, integridad, validar, hoja, b1_datos; b_evaluar y b_por_vuelo con --corrida)
+#   .venv\Scripts\python.exe scripts\entrenar.py --config configs\diagnostico.yaml --rutas configs\rutas.yaml --corrida b1_termico_aleatoria_30ep
+#   .venv\Scripts\python.exe scripts\diagnostico.py --config configs\diagnostico.yaml --rutas configs\rutas.yaml --parte b_evaluar --corrida b1_termico_aleatoria_30ep
+
+carpeta: diagnostico                 # dentro de runs/: salidas del diagnóstico
+fase_bitacora: diagnostico
+particion: configs/particion.yaml
+pares: pares.csv                     # dentro de data/
+indice: alineados/indice.csv         # dentro de data/
+transformaciones: configs/homografias_cajas.yaml   # semejanza congelada por vuelo (fase 2)
+tam_termica: [640, 512]
+
+# A1. Inventario de las carpetas de WiSARDv1 (solo lectura)
+inventario:
+  extensiones: [.jpeg, .jpg, .png]
+
+# A2. Estado de las corridas de la fase 5b
+estado:
+  corridas:                          # en este orden
+    fusion: fusion_100ep
+    rgb: rgb_100ep
+    termico: termico_100ep
+  cortadas: [rgb_100ep_cortada, rgb_100ep_cortada2]   # se describen, no se usan
+  log_noche: reports/noche_log.txt
+
+# A3. Tamaño de las personas (cajas térmicas sin repetidas, las de los tres modelos)
+tamanos:
+  datos: configs/termico.yaml
+  splits: {entrenamiento: train, validacion: val}     # la prueba no entra
+  tramos_px: [8, 12, 20, 32]         # lado mayor: <8, 8-12, 12-20, 20-32, >32 (tramos de QFDet)
+  percentiles: [10, 50, 90]
+
+# A6. Integridad de los datasets de los tres modelos
+integridad:
+  datasets: {fusion: configs/fusion.yaml, rgb: configs/rgb.yaml, termico: configs/termico.yaml}
+  splits_cargar: [train, val]        # se verifican con verify_image_label de Ultralytics, sin escribir cachés
+  splits_comparar: [train, val, test]   # solo nombres, archivos originales y contenido (hash): la prueba no se evalúa
+  esperado:                          # Tabla 12 (configs/particion.yaml, CLAUDE.md)
+    train: {imagenes: 3247, cajas: 9340}
+    val: {imagenes: 442, cajas: 500}
+    test: {imagenes: 928, cajas: 1501}
+
+# A4 y A5. Validación desglosada
+validar:
+  modelos:                           # solo los que terminaron sus 100 épocas (resumen.json)
+    fusion: {corrida: fusion_100ep, datos: configs/fusion.yaml}
+    rgb: {corrida: rgb_100ep, datos: configs/rgb.yaml}
+    termico: {corrida: termico_100ep, datos: configs/termico.yaml}
+  pesos: [best.pt, last.pt]          # la época de mayor mAP@0.5 no se guardó (save_period=-1)
+  split: val
+  val: {imgsz: 640, batch: 16, conf: 0.001, device: 0, workers: 4, plots: false}   # los de configs/fase6.yaml
+  predict: {imgsz: 640, device: 0, batch: 16}
+  confianzas: [0.25, 0.5]            # personas detectadas con predict
+  iou: 0.5                           # emparejamiento persona-predicción y mAP@0.5 de los tramos (pycocotools)
+  max_dets: 100
+
+hoja:
+  imagenes: 16
+  seed: 0
+  conf: 0.25
+  columnas: 4                        # 4 x 4 pares (térmica y RGB alineada, lado a lado)
+  escala: 1.0
+  color_anotada: [0, 200, 0]
+  color_prediccion: [255, 0, 0]
+  grosor: 1
+
+# B. Experimentos cortos, solo térmica (configuración de entrenar.py, como configs/fase5.yaml)
+b1:
+  vuelos: [220109_Baker_Enterprise_1, 210417_MtErie_Enterprise_0003, 210417_MtErie_Enterprise_0005,
+           210924_FHL_Enterprise_0401, 210924_FHL_Enterprise_0134, 210417_MtErie_Enterprise_0007]
+  origen: configs/termico.yaml       # las mismas imágenes y etiquetas (enlaces duros)
+  fracciones: {train: 0.6, val: 0.2, test: 0.2}
+  seed: 0
+  dataset: datasets/b1_termico_aleatoria   # dentro de runs/<carpeta>/
+evaluar_b:
+  b1_termico_aleatoria_30ep: {splits: [test, val]}
+  b2_termico_vuelo_30ep: {splits: [val]}
+  b3_termico_vuelo_1280_30ep: {splits: [val]}
+
+base:
+  fase: diagnostico
+  pesos: yolo26s.pt
+  datos: configs/termico.yaml
+  carpeta: diagnostico
+  inicio_cuarto_canal: azar          # no aplica: 3 canales
+  ultralytics:
+    seed: 0
+    deterministic: true
+    imgsz: 640
+    epochs: 30
+    batch: 16
+    hsv_h: 0.0
+    hsv_s: 0.0
+    hsv_v: 0.0
+    device: 0
+    workers: 4
+    cache: false
+
+potencia:                            # como configs/fase5.yaml
+  minimo_w: 90
+  segundos_carga: 30
+  plan: Performance
+  armoury_crate: Rendimiento
+
+cerrar_antes: [RobloxPlayerBeta, ChatGPT, chrome]
+
+codigos_salida:
+  otro: 1
+  aplicaciones: 3
+  potencia: 4
+  carpeta_existe: 5
+
+monitor:
+  intervalo_s: 1
+
+memoria:
+  fraccion_maxima: 0.95
+
+corridas:
+  b1_termico_aleatoria_30ep:         # 6 vuelos que no son FHL 0405, al azar por fotograma 60/20/20 (seed 0)
+    datos: runs/diagnostico/datasets/b1_termico_aleatoria/b1.yaml
+  b2_termico_vuelo_30ep:             # nuestra partición por vuelo
+    datos: configs/termico.yaml
+  b3_termico_vuelo_1280_30ep:        # solo si se confirma; el lote 16 a 1280 probablemente no entra en 8 GB
+    datos: configs/termico.yaml
+    ultralytics: {imgsz: 1280}
