@@ -1,0 +1,3 @@
+dataset,yaml,imagenes_train,imagenes_val,cajas_train,leidas_train,cajas_val,leidas_val
+termico_ampliado,data/fase7/datasets/termico_ampliado/termico_ampliado.yaml,14110,442,25305,14110,500,442
+fusion_ampliado,data/fase7/datasets/fusion_ampliado/fusion_ampliado.yaml,14110,442,25305,14110,500,442

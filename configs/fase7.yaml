@@ -186,7 +186,9 @@ c1:
   pares_reales:
     candidatos: {210924_FHL_Enterprise_0403: 210924_FHL_Enterprise_IR_0404,
                  210924_FHL_Enterprise_0564: 210924_FHL_Enterprise_IR_0565}
-    aprobados: []                    # se llena con los que pasen los puntos a mano (--parte puntos de C0)
+    # Los que pasan los puntos a mano (--parte puntos de C0). 18 de noviembre de 2026: ninguno. Error medio de 15.2 a
+    # 18.0 px en 0403 y de 23.2 a 28.3 px en 0564, sobre 13.2: los dos entran como térmica sin pareja.
+    aprobados: []
     semejanza: 210924_FHL_Enterprise_0401
   vacias:
     fraccion_maxima: 0.10            # vacías nuevas <= 10 % de todo el entrenamiento (base + nuevas)
@@ -196,3 +198,14 @@ c1:
     corridas: {termico: runs/diagnostico/b2_termico_vuelo_30ep, fusion: runs/fase5/fusion_100ep}
     epocas: 100
   salida: fase7                      # data/<salida>/ (no va a git)
+  # --parte construir: imágenes nuevas en data/<salida>/{termica,fusion,rgb,etiquetas}/<carpeta>/ y datasets de
+  # Ultralytics en data/<salida>/datasets/<nombre>/, con enlaces duros (la base y la validación enlazan a los datasets
+  # actuales, sin tocarlos). Térmica en gris (PNG, 1 canal) y TIFF B, G, R, T como en la fase 2 (`alinear` de
+  # configs/fase2.yaml); sin pareja, B, G, R = 0.
+  construir:
+    alinear: configs/fase2.yaml      # se leen nivel_png, tiff_*, prerreducir_area e interpolacion de su sección `alinear`
+    procesos: 6
+    enlace: duro
+    nombres: {termico: termico_ampliado, fusion: fusion_ampliado}
+    verificacion: 8                  # TIFF nuevos al azar (seed) que se leen con el dataset de Ultralytics
+    seed: 0

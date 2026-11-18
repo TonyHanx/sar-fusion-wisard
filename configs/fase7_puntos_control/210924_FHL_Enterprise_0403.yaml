@@ -1,0 +1,72 @@
+vuelo: 210924_FHL_Enterprise_0403
+guardado: '2026-11-18T11:44:16'
+formato_punto: '[x_rgb, y_rgb, x_termica, y_termica] en píxeles de las imágenes originales'
+tam_rgb:
+- 1920
+- 1080
+tam_termica:
+- 640
+- 512
+fotogramas:
+  primero:
+    posicion: 63
+    ruta_rgb: 210924_FHL_Enterprise_VIS_0403/DJI_0403.mp4_00063.jpg
+    ruta_termica: 210924_FHL_Enterprise_IR_0404/DJI_0404.mp4_00063.jpg
+    puntos:
+    - - 893.22
+      - 536.3
+      - 272.66
+      - 233.21
+    - - 366.16
+      - 314.38
+      - 23.67
+      - 131.51
+    - - 1470.21
+      - 273.7
+      - 568.99
+      - 102.58
+    - - 1198.36
+      - 948.7
+      - 442.74
+      - 455.89
+    - - 837.74
+      - 249.66
+      - 234.08
+      - 111.34
+    - - 1348.15
+      - 643.56
+      - 525.15
+      - 299.84
+    - - 1081.85
+      - 151.64
+      - 364.71
+      - 54.36
+  segundo:
+    posicion: 156
+    ruta_rgb: 210924_FHL_Enterprise_VIS_0403/DJI_0403.mp4_00156.jpg
+    ruta_termica: 210924_FHL_Enterprise_IR_0404/DJI_0404.mp4_00156.jpg
+    puntos:
+    - - 1089.25
+      - 567.74
+      - 375.23
+      - 249.86
+    - - 1366.64
+      - 976.44
+      - 547.07
+      - 474.3
+    - - 552.95
+      - 199.73
+      - 104.33
+      - 95.56
+    - - 1457.26
+      - 329.18
+      - 556.71
+      - 128.88
+    - - 1250.14
+      - 136.85
+      - 458.52
+      - 73.64
+    - - 382.81
+      - 266.3
+      - 30.68
+      - 105.21

@@ -1,0 +1,17 @@
+dataset,stem,forma,dif_max_termica,max_rgb
+termico_ampliado,200704_Baker_FLIR_IR_1_0637,"(3, 512, 640)",0,
+termico_ampliado,200910_Carnation_FLIR_IR_4_0295,"(3, 512, 640)",0,
+termico_ampliado,200929_Karen_FLIR_IR_2_0427,"(3, 512, 640)",0,
+termico_ampliado,200929_Karen_FLIR_IR_3_0407,"(3, 512, 640)",0,
+termico_ampliado,210327_Airfield_FLIR_IR_1_0929,"(3, 512, 640)",0,
+termico_ampliado,210327_Airfield_FLIR_IR_2_0436,"(3, 512, 640)",0,
+termico_ampliado,210327_Airfield_FLIR_IR_3_0337,"(3, 512, 640)",0,
+termico_ampliado,210924_FHL_Enterprise_IR_0567_0042,"(3, 512, 640)",0,
+fusion_ampliado,200704_Baker_FLIR_IR_1_0637,"(4, 512, 640)",0,0.0
+fusion_ampliado,200910_Carnation_FLIR_IR_4_0295,"(4, 512, 640)",0,0.0
+fusion_ampliado,200929_Karen_FLIR_IR_2_0427,"(4, 512, 640)",0,0.0
+fusion_ampliado,200929_Karen_FLIR_IR_3_0407,"(4, 512, 640)",0,0.0
+fusion_ampliado,210327_Airfield_FLIR_IR_1_0929,"(4, 512, 640)",0,0.0
+fusion_ampliado,210327_Airfield_FLIR_IR_2_0436,"(4, 512, 640)",0,0.0
+fusion_ampliado,210327_Airfield_FLIR_IR_3_0337,"(4, 512, 640)",0,0.0
+fusion_ampliado,210924_FHL_Enterprise_IR_0567_0042,"(4, 512, 640)",0,0.0

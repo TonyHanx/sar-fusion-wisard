@@ -213,16 +213,45 @@ alinea su RGB con la térmica.
   vale.
 - **Superposiciones** (`alineacion/superposicion_*`, los bordes de la RGB llevada sobre la térmica): los bordes de la
   vegetación lo llenan todo y no permiten juzgar a ojo. Quedan como referencia, pero no deciden.
-- **Puntos a mano: pendientes.** Hay que marcarlos tú, 2 fotogramas por vuelo y 6 puntos o más por fotograma.
-  - Usa la herramienta de la fase 2, sin cambiarla, con `scripts/fase7_marcar_puntos.py`.
+- **Puntos a mano.** Los marcó el usuario el 18 de noviembre de 2026, 2 fotogramas por vuelo y 6 puntos o más por
+  fotograma (`configs/fase7_puntos_control/`).
+  - Usó la herramienta de la fase 2, sin cambiarla, con `scripts/fase7_marcar_puntos.py`.
   - Fotogramas: los más nítidos cerca de 1/3 y 2/3 del rango (`c0.marcado.fotogramas`).
-    - 0403: 63 y 156.
-    - 0564: 345 y 663.
-    - 0566: 227 y 681, donde se ven luces. Ahí la RGB se aclara 6 veces, solo en pantalla.
-  - La sugerencia celeste es la de la fase 2: la franja nominal y luego la de tus propios puntos. No usa ninguna de las
-    semejanzas que se miden, así que no te ancla a ellas.
-  - Luego `--parte puntos` mide el error de las 3 semejanzas y la coherencia de los puntos (se quita uno y se ajusta con
-    los demás).
+    - 0403: 63 y 156 (7 y 6 puntos).
+    - 0564: 345 y 663 (6 y 6 puntos).
+    - 0566 no se marcó: el usuario decidió usarlo sin pareja.
+  - La sugerencia celeste es la de la fase 2: la franja nominal y luego la de los propios puntos. No usa ninguna de las
+    semejanzas que se miden, así que no ancla a ellas.
+  - `--parte puntos` mide el error de las 3 semejanzas (`alineacion/puntos.csv` y `puntos_resumen.csv`).
+
+**Resultado de los puntos:**
+
+| Vuelo | Semejanza | Puntos | Error medio (px) | Mediano (px) | Máximo (px) | ¿Pasa (≤ 13.2)? |
+|---|---|---:|---:|---:|---:|---|
+| FHL 0403 | 0134 | 13 | 15.9 | 14.6 | 33.1 | no |
+| FHL 0403 | 0401 | 13 | 18.0 | 17.0 | 39.2 | no |
+| FHL 0403 | 0405 | 13 | 15.2 | 13.7 | 32.8 | no |
+| FHL 0564 | 0134 | 12 | 24.4 | 17.1 | 84.7 | no |
+| FHL 0564 | 0401 | 12 | 28.3 | 21.3 | 89.8 | no |
+| FHL 0564 | 0405 | 12 | 23.2 | 14.7 | 81.5 | no |
+
+- **Ninguna semejanza pasa en ninguno de los dos vuelos.** Por la regla que fijó el usuario antes de medir, **FHL 0403 y
+  0564 entran solo como térmica sin pareja** (`c1.pares_reales.aprobados: []`).
+- **Limitación: los puntos no encajan entre sí.**
+  - Su propia semejanza, ajustada con todos los puntos del fotograma, les deja un error medio de 11.4 y 17.9 px en
+    0403, y de 24.1 y 17.9 px en 0564.
+  - Si se quita un punto y se ajusta la semejanza con los demás, el punto quitado cae a 20 px (mediana) en 0403 y a
+    28 px en 0564. En la fase 2 esa coherencia era de unos 10 px.
+  - En 0564 hay dos puntos de 49 y 85 px con las tres semejanzas: probablemente no son el mismo objeto en las dos
+    imágenes. En las copas y las orillas es difícil marcar.
+  - Así, esta medida está dominada por el error de marcado más que por la alineación. La del fondo (1.4 y 3.4 px con
+    0401) apuntaba a una buena alineación.
+  - Se aplica la regla tal como quedó fijada. El efecto es pequeño: 970 de las 14 110 imágenes de entrenamiento quedan
+    con la RGB en 0 en vez de real.
+- El cálculo de la coherencia se cambió antes de este resultado.
+  - Antes usaba `cv2.estimateAffinePartial2D` (LMEDS), que fallaba con este tipo de tabla.
+  - Ahora es una semejanza por mínimos cuadrados (Umeyama), comprobada con datos sintéticos.
+  - El error de las semejanzas candidatas no cambia.
 
 ### Decisiones del usuario al cerrar C0 (18 de noviembre de 2026)
 
@@ -239,6 +268,7 @@ Están en los comentarios de la sección `c1` de `configs/fase7.yaml`.
 5. **FHL 0403 y 0564:** el usuario marca sus puntos.
    - Si un vuelo no pasa el criterio de 13.2 px, entra solo como térmica sin pareja.
    - Si pasa, entra como pares reales con la semejanza de 0401.
+   - **Resultado: no pasa ninguno** (arriba), así que los dos entran como térmica sin pareja.
 
 ## C1. Datasets nuevos
 
@@ -285,8 +315,9 @@ Las nuevas, por sitio:
   imágenes, con su fuente y si su RGB es real, está en `c1/composicion.csv`.
 - Las 982 vacías de Airfield son el 70 % del cupo, porque Airfield tiene la mayoría de las vacías disponibles (5 022 de
   7 208).
-- **Pendiente:** si FHL 0403 y 0564 pasan los puntos, sus 970 imágenes (216 de 0404 y 754 de 0565) llevan RGB real en
-  `fusion_ampliado`. La composición no cambia.
+- **RGB real:** FHL 0403 y 0564 no pasaron los puntos. Así que en `fusion_ampliado` solo tienen RGB real las 3 247
+  imágenes de la base y las 442 de validación. Las 10 863 nuevas van con la RGB en 0, y la lista está en
+  `c1/rgb_real.csv`.
 
 ### Tiempo estimado por época
 
@@ -301,6 +332,44 @@ El tiempo por imagen de entrenamiento se midió con `epocas.csv` (mediana, sin l
 
 Con `patience=20` pueden parar antes. Es una estimación lineal: la primera época de cada corrida la confirma.
 
+### Construcción (`--parte construir`)
+
+**Imágenes nuevas.** Se escribieron las 10 863 elegidas en `data/fase7/`, que no va a git. Tardó 123 s con 6 procesos.
+
+- **Térmica:** en gris (PNG de 1 canal), como en la fase 2, en `termica/<carpeta>/`. Ocupa 1.7 GB.
+- **TIFF de 4 canales:** en `fusion/<carpeta>/`, con las muestras B, G, R y térmica, comprimido como en la fase 2
+  (deflate y predictor horizontal). Ocupa 2.5 GB.
+  - Como ninguna nueva tiene pareja real, B, G y R van en 0.
+- **Etiquetas:** las térmicas sin repetidas, con la misma regla que la fase 3a, en `etiquetas/<carpeta>/`.
+
+**Datasets.** Están en `data/fase7/datasets/{termico_ampliado,fusion_ampliado}/`, cada uno con su yaml, y se armaron
+con enlaces duros.
+
+- El entrenamiento base y la validación enlazan a los archivos de `data/datasets/termico` y `data/datasets/fusion`,
+  sin modificarlos ni escribir en ellos.
+- Las imágenes nuevas enlazan a `data/fase7/`.
+- `rgb_real.csv` marca qué imágenes de `fusion_ampliado` tienen RGB real: las 3 247 de la base y las 442 de
+  validación.
+
+**Verificación**, con el dataset de Ultralytics (`c1/datasets.csv` y `c1/verificacion.csv`):
+
+| Dataset | Entrenamiento: imágenes leídas | Cajas | Validación: imágenes | Cajas |
+|---|---:|---:|---:|---:|
+| `termico_ampliado` | 14 110 de 14 110 | 25 305 | 442 | 500 |
+| `fusion_ampliado` | 14 110 de 14 110 | 25 305 | 442 | 500 |
+
+- Las cajas de entrenamiento son las 9 340 de la base más las 15 965 nuevas de `composicion.csv`. No hay imágenes
+  corruptas.
+- **Muestra de 8 imágenes nuevas** (seed 0), leídas como las recibe el modelo:
+  - en `termico_ampliado`: tensor de 3 canales, los tres iguales a la térmica en gris (diferencia máxima 0);
+  - en `fusion_ampliado`: tensor de 4 canales, R, G y B en 0 y el cuarto igual a la térmica (diferencia máxima 0).
+- La creación del dataset escribió `labels/train.cache` y `labels/val.cache`, pero solo en las carpetas nuevas.
+- Ultralytics avisó de lectura lenta del disco (16 MB/s) mientras verificaba; lo vigilaré en la primera época de C3.
+- Bitácora: una fila con las cuentas de los dos datasets.
+- **Para C2:** en `fusion_ampliado`, el 77 % de las imágenes de entrenamiento (10 863 de 14 110) ya llevan la RGB en
+  0. Con el dropout de p = 0.3 de C2 encima, la RGB real quedaría en un 16 % de las imágenes de cada época
+  (0.7 × 3 247 / 14 110).
+
 ## Comandos
 
 ```
@@ -311,5 +380,6 @@ Con `patience=20` pueden parar antes. Es una estimación lineal: la primera épo
 .venv\Scripts\python.exe scripts\fase7_marcar_puntos.py --config configs\fase7.yaml --rutas configs\rutas.yaml --vuelo 210924_FHL_Enterprise_0403
 .venv\Scripts\python.exe scripts\fase7_c0_auditoria.py --config configs\fase7.yaml --rutas configs\rutas.yaml --parte puntos
 .venv\Scripts\python.exe scripts\fase7_c1_datasets.py --config configs\fase7.yaml --rutas configs\rutas.yaml --parte componer
+.venv\Scripts\python.exe scripts\fase7_c1_datasets.py --config configs\fase7.yaml --rutas configs\rutas.yaml --parte construir
 .venv\Scripts\python.exe scripts\fase7_copiar.py --config configs\fase7.yaml --rutas configs\rutas.yaml
 ```

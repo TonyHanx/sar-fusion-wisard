@@ -517,6 +517,18 @@ def clasificar(cfg, rutas, out):
     print(md(s, 1))
 
 
+def semejanza_mc(a, b):
+    """Semejanza (escala, giro y traslación) por mínimos cuadrados que lleva los puntos a (n, 2) a b (n, 2), como matriz
+    2 x 3 (Umeyama, sin reflexión)."""
+    ma, mb = a.mean(0), b.mean(0)
+    A, B = a - ma, b - mb
+    U, S, Vt = np.linalg.svd(B.T @ A / len(a))
+    d = np.sign(np.linalg.det(U @ Vt))
+    R = U @ np.diag([1, d]) @ Vt
+    s = (S * [1, d]).sum() / (A ** 2).sum(1).mean()
+    return np.c_[s * R, mb - s * R @ ma]
+
+
 def puntos(cfg, rutas, out):
     """Error de cada semejanza candidata en los puntos marcados a mano (scripts/fase7_marcar_puntos.py): distancia en
     la térmica entre el punto RGB llevado con la semejanza y el punto térmico marcado. Coherencia de los puntos: se quita
@@ -542,9 +554,8 @@ def puntos(cfg, rutas, out):
             if len(P) >= 3:
                 for i in range(len(P)):
                     resto = np.delete(P, i, axis=0)
-                    M, _ = cv2.estimateAffinePartial2D(resto[:, :2], resto[:, 2:], method=cv2.LMEDS)
-                    if M is not None:
-                        coh[i] = np.hypot(*(M @ np.r_[P[i, :2], 1] - P[i, 2:]))
+                    M = semejanza_mc(resto[:, :2], resto[:, 2:])
+                    coh[i] = np.hypot(*(M @ np.r_[P[i, :2], 1] - P[i, 2:]))
             for cand in a["candidatas"]:
                 H = np.array(T[cand]["H_rgb_a_termica"], dtype=np.float64)
                 q = (H @ np.c_[P[:, :2], np.ones(len(P))].T).T
