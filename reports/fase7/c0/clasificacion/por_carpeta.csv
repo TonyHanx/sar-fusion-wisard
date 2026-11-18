@@ -1,0 +1,27 @@
+carpeta,sitio,clase,fotogramas,usados,usados_con_persona,quitados_hueco,quitados_tramo,personas,lado_mediano,tramo <8,tramo 8-12,tramo 12-20,tramo 20-32,tramo >=32
+210327_Airfield_FLIR_IR_1,Airfield,con tramos,983,882,22,0,101,22,21.0,0,0,6,15,1
+210327_Airfield_FLIR_IR_2,Airfield,usable,922,873,413,49,0,499,19.0,1,4,256,192,46
+210327_Airfield_FLIR_IR_3,Airfield,con tramos,1062,985,218,0,77,367,49.0,0,1,38,8,320
+210327_Airfield_FLIR_IR_4,Airfield,con tramos,1061,1002,24,0,59,24,19.0,0,0,13,11,0
+210327_Airfield_FLIR_IR_5,Airfield,no usable,313,0,0,0,0,0,,0,0,0,0,0
+210327_Airfield_FLIR_IR_6,Airfield,usable,1059,1059,195,0,0,195,17.0,0,19,123,51,2
+210327_Airfield_FLIR_IR_7,Airfield,usable,1059,1057,280,2,0,280,17.0,30,41,89,119,1
+210327_Airfield_FLIR_IR_8,Airfield,usable,415,413,97,2,0,97,22.76,0,0,22,36,39
+200929_Karen_FLIR_IR_1,Karen,con tramos,452,316,316,0,136,316,63.0,0,0,0,0,316
+200929_Karen_FLIR_IR_2,Karen,con tramos,452,440,399,12,0,400,31.0,0,0,0,236,164
+200929_Karen_FLIR_IR_3,Karen,usable,452,444,432,8,0,432,51.0,0,0,0,1,431
+200929_Karen_FLIR_IR_4,Karen,usable,452,452,452,0,0,461,46.0,0,0,0,0,461
+200929_Karen_FLIR_IR_5,Karen,usable,452,452,452,0,0,919,42.0,0,0,0,0,919
+200929_Karen_FLIR_IR_6,Karen,usable,451,451,451,0,0,1291,25.0,0,3,384,622,282
+200910_Carnation_FLIR_IR_1,Carnation,usable,183,183,86,0,0,236,44.0,0,0,0,3,233
+200910_Carnation_FLIR_IR_2,Carnation,usable,450,450,423,0,0,1230,42.0,0,0,3,30,1197
+200910_Carnation_FLIR_IR_3,Carnation,usable,452,452,101,0,0,101,24.0,0,0,2,57,42
+200910_Carnation_FLIR_IR_4,Carnation,usable,452,452,61,0,0,61,33.0,0,0,0,10,51
+200910_Carnation_FLIR_IR_5,Carnation,usable,452,452,221,0,0,221,38.0,0,0,2,42,177
+200910_Carnation_FLIR_IR_6,Carnation,usable,452,452,204,0,0,208,31.0,0,0,0,161,47
+200910_Carnation_FLIR_IR_7,Carnation,usable,408,408,118,0,0,118,66.5,0,0,1,1,116
+200704_Baker_FLIR_IR_1,Baker,usable,912,912,873,0,0,994,19.0,0,8,679,305,2
+200704_Baker_FLIR_IR_2,Baker,usable,1081,1081,1060,0,0,2026,24.0,0,0,95,1624,307
+210924_FHL_Enterprise_IR_0404,FHL,con tramos,1417,216,216,0,1201,951,34.0,1,13,50,333,554
+210924_FHL_Enterprise_IR_0565,FHL,usable,982,925,712,57,0,1166,20.0,1,73,434,619,39
+210924_FHL_Enterprise_IR_0567,FHL,usable,909,899,690,10,0,1095,41.0,0,0,64,206,825
