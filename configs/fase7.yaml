@@ -44,6 +44,9 @@ c0:
     - 210924_FHL_Enterprise_IR_0404   # pareja de FHL 0403 (RGB sin etiquetas)
     - 210924_FHL_Enterprise_IR_0565   # pareja de FHL 0564
     - 210924_FHL_Enterprise_IR_0567   # pareja de FHL 0566
+    # Añadida el 18 de noviembre de 2026, cuando el usuario decidió usar la térmica de Carnation 0023/0024 (excluida
+    # de los tres modelos en la fase 2 por el zoom de la RGB): se audita igual que las demás.
+    - 210529_Carnation_Enterprise_IR_0024
   muestra: {con_cajas: 10, sin_cajas: 10, seed: 0}   # al azar por carpeta, cada una con su propio generador seed 0
   # Detector que solo señala candidatos para la revisión a ojo (personas sin caja, cajas sin persona); no decide nada.
   # Es el best.pt de B1 del diagnóstico (solo térmica, reparto al azar de los 6 vuelos; no vio FHL 0405).
@@ -122,7 +125,8 @@ c0:
              200910_Carnation_FLIR_IR_4, 200910_Carnation_FLIR_IR_5, 200910_Carnation_FLIR_IR_6,
              200910_Carnation_FLIR_IR_7, 200704_Baker_FLIR_IR_1, 200704_Baker_FLIR_IR_2, 210327_Airfield_FLIR_IR_2,
              210327_Airfield_FLIR_IR_6, 210327_Airfield_FLIR_IR_7, 210327_Airfield_FLIR_IR_8,
-             210924_FHL_Enterprise_IR_0565, 210924_FHL_Enterprise_IR_0567]
+             210924_FHL_Enterprise_IR_0565, 210924_FHL_Enterprise_IR_0567,
+             210529_Carnation_Enterprise_IR_0024]   # añadida: cajas bien; en 144 y 535-537, personas sin caja (huecos cortos)
     con_tramos:                      # tramos [a, b] de posiciones que se quitan
       200929_Karen_FLIR_IR_1: [[316, 451]]      # cola con cajas intermitentes; persona sin caja en 451
       200929_Karen_FLIR_IR_2: []                # solo los huecos cortos: personas sin caja en 100 y 337
@@ -158,5 +162,37 @@ copiar:
     - c0/revision/*.png
     - c0/alineacion/*
     - c0/clasificacion/*
+    - c1/*.csv
+    - c1/*.md
   excluir: ["*.pt"]
   jpeg_calidad: 85
+
+# C1. Datasets nuevos (scripts/fase7_c1_datasets.py). Decisiones del usuario del 18 de noviembre de 2026, al cerrar C0:
+#   - confirma la clasificación de C0 y la regla de los huecos cortos;
+#   - FHL 0566: solo como térmica sin pareja (RGB en 0); no se marcan sus puntos;
+#   - Carnation 0023/0024: su térmica entra (auditada en C0 como una carpeta más), y en la fusión sin pareja;
+#   - pares anotados y excluidos de los vuelos de entrenamiento: entran como térmica (sin pareja en la fusión), salvo
+#     el tramo de Baker 2031-2179 (personas sin caja en la térmica);
+#   - FHL 0403 y 0564: pares reales en la fusión solo si su semejanza pasa los puntos a mano (<= 13.2 px); si no,
+#     térmica sin pareja;
+#   - imágenes nuevas sin persona: como máximo el 10 % del total de entrenamiento, al azar (seed 0) y repartidas por
+#     carpeta.
+# termico_ampliado y fusion_ampliado tienen las mismas imágenes; cambia solo si la RGB es real o va en 0.
+c1:
+  particion: configs/particion.yaml
+  base: {termico: configs/termico.yaml, fusion: configs/fusion.yaml}   # entrenamiento y validación actuales
+  excluidos_entrenamiento:
+    salvo: {220109_Baker_Enterprise_1: [[2031, 2179]]}
+  pares_reales:
+    candidatos: {210924_FHL_Enterprise_0403: 210924_FHL_Enterprise_IR_0404,
+                 210924_FHL_Enterprise_0564: 210924_FHL_Enterprise_IR_0565}
+    aprobados: []                    # se llena con los que pasen los puntos a mano (--parte puntos de C0)
+    semejanza: 210924_FHL_Enterprise_0401
+  vacias:
+    fraccion_maxima: 0.10            # vacías nuevas <= 10 % de todo el entrenamiento (base + nuevas)
+    reparto: proporcional            # cupo por carpeta en proporción a sus vacías (restos mayores); al azar dentro
+    seed: 0
+  tiempo:                            # s por época = s por imagen de entrenamiento x imágenes + validación (epocas.csv)
+    corridas: {termico: runs/diagnostico/b2_termico_vuelo_30ep, fusion: runs/fase5/fusion_100ep}
+    epocas: 100
+  salida: fase7                      # data/<salida>/ (no va a git)

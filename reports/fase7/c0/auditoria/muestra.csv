@@ -481,3 +481,17 @@ carpeta,n,grupo,posicion,archivo,cajas,pred_dibujadas,pred_sin_caja,cajas_sin_pr
 210924_FHL_Enterprise_IR_0567,18,sin cajas,728,DJI_0567_00000729.jpeg,0,0,0,0
 210924_FHL_Enterprise_IR_0567,19,sin cajas,853,DJI_0567_00000854.jpeg,0,0,0,0
 210924_FHL_Enterprise_IR_0567,20,sin cajas,864,DJI_0567_00000867.jpeg,0,0,0,0
+210529_Carnation_Enterprise_IR_0024,1,con cajas,12,210529_Carnation_Enterprise_IR_0024_00000012.jpg,3,1,1,3
+210529_Carnation_Enterprise_IR_0024,2,con cajas,29,210529_Carnation_Enterprise_IR_0024_00000029.jpg,2,1,1,2
+210529_Carnation_Enterprise_IR_0024,3,con cajas,55,210529_Carnation_Enterprise_IR_0024_00000055.jpg,4,1,1,4
+210529_Carnation_Enterprise_IR_0024,4,con cajas,128,210529_Carnation_Enterprise_IR_0024_00000128.jpg,3,1,1,3
+210529_Carnation_Enterprise_IR_0024,5,con cajas,197,210529_Carnation_Enterprise_IR_0024_00000197.jpg,3,3,3,3
+210529_Carnation_Enterprise_IR_0024,6,con cajas,226,210529_Carnation_Enterprise_IR_0024_00000226.jpg,4,0,0,4
+210529_Carnation_Enterprise_IR_0024,7,con cajas,373,210529_Carnation_Enterprise_IR_0024_00000373.jpg,3,0,0,3
+210529_Carnation_Enterprise_IR_0024,8,con cajas,464,210529_Carnation_Enterprise_IR_0024_00000770.jpg,2,0,0,2
+210529_Carnation_Enterprise_IR_0024,9,con cajas,602,210529_Carnation_Enterprise_IR_0024_00000908.jpg,1,1,0,0
+210529_Carnation_Enterprise_IR_0024,10,con cajas,622,210529_Carnation_Enterprise_IR_0024_00000928.jpg,1,0,0,0
+210529_Carnation_Enterprise_IR_0024,11,sin cajas,144,210529_Carnation_Enterprise_IR_0024_00000144.jpg,0,2,2,0
+210529_Carnation_Enterprise_IR_0024,12,sin cajas,535,210529_Carnation_Enterprise_IR_0024_00000841.jpg,0,0,0,0
+210529_Carnation_Enterprise_IR_0024,13,sin cajas,536,210529_Carnation_Enterprise_IR_0024_00000842.jpg,0,0,0,0
+210529_Carnation_Enterprise_IR_0024,14,sin cajas,537,210529_Carnation_Enterprise_IR_0024_00000843.jpg,0,0,0,0

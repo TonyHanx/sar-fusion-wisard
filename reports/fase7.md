@@ -134,9 +134,27 @@ Columnas de la tabla:
 | FHL 0404 | costa rocosa con troncos y bosque, oblicua | 1 417 | 216 | 216 | 951 | 34 | con tramos | 216–1416 (sin anotar) |
 | FHL 0565 | dosel de coníferas, cenital | 982 | 712 | 925 | 1 166 | 20 | usable | 57 en huecos cortos |
 | FHL 0567 | costa con acantilado, sendero y casas, oblicua, de noche | 909 | 690 | 899 | 1 095 | 41 | usable | 10 en huecos cortos |
+| Carnation Enterprise 0024 (añadida) | campo y borde del bosque, oblicua; después franja de pasto, cenital | 740 | 736 | 736 | 1 714 | 11.3 | usable | 4 en huecos cortos |
 
-**Lo que quedaría para `termico_ampliado`**, por sitio (`clasificacion/por_sitio.csv`), comparado con el entrenamiento
-actual (diagnóstico, A3):
+**Carnation Enterprise 0024** se auditó después, igual que las demás, cuando decidiste usar su térmica.
+
+- Las cajas están bien.
+- En 144 y en 535–537 hay personas sin caja, en huecos cortos que la regla ya quita.
+- Las detecciones en las copas de los árboles, arriba del todo, son errores del detector.
+- Tiene las personas más chicas de todo el material: mediana de 11 px, 294 de menos de 8 px y 710 de 8 a 12 px.
+
+**FHL 0565 se parece a FHL 0134**, uno de los vuelos de validación: dosel de coníferas visto desde arriba, el mismo
+sitio y el mismo día (24 de septiembre de 2021), con el mismo dron.
+
+- Pero es **otro vuelo**, otra grabación (DJI 0564/0565 frente a 0134/0135), así que **no rompe la partición por
+  vuelo**: ningún fotograma de validación ni sus vecinos entran en entrenamiento.
+- Lo mismo vale para FHL 0404 y 0567, y para los pares excluidos de FHL 0401, que ya era de entrenamiento.
+- Lo que sí cambia es que el entrenamiento se parece más a la validación. Era justamente uno de los problemas del
+  diagnóstico, y hay que tenerlo en cuenta al leer la mejora.
+- La prueba (FHL 0405) también es de ese sitio y día, pero no se usa en esta fase.
+
+**Lo que quedaba sin tope de vacías** con las 26 carpetas, antes de añadir Carnation 0024 (`clasificacion/por_sitio.csv`),
+comparado con el entrenamiento actual (diagnóstico, A3). La composición final, con el tope, está en C1:
 
 | Sitio | Fotogramas usados | Con persona | Personas | <8 | 8–12 | 12–20 | 20–32 | ≥32 |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
@@ -148,13 +166,7 @@ actual (diagnóstico, A3):
 | **Nuevo, total** | **15 708** | **8 516** | **13 710** | **33** | **162** | **2 261** | **4 682** | **6 572** |
 | Entrenamiento actual | 3 247 | — | 9 340 | 22 | 159 | 1 459 | 2 411 | 5 289 |
 
-- Las personas de menos de 12 px pasan de 181 a 376, y las de 12 a 20 px, de 1 459 a 3 720. En FHL 0134, el 22 % de las
-  personas de validación mide de 8 a 12 px.
-- 7 192 de los fotogramas nuevos (46 %) no tienen personas. 5 022 son de Airfield.
-- **Tiempo:** el entrenamiento pasaría de 3 247 a unas 18 955 imágenes, unas 5.8 veces más.
-  - Con 42–44 s por época hoy, serían unos 4 min por época: unas 7 h para 100 épocas. Con `patience=20` puede parar
-    antes.
-  - Lo confirmo con una medida antes de C3.
+- 7 192 de esos fotogramas (46 %) no tienen personas. 5 022 son de Airfield. Por eso se puso el tope de vacías de C1.
 
 ### Alineación de FHL 0403, 0564 y 0566 (RGB sin etiquetas)
 
@@ -212,23 +224,84 @@ alinea su RGB con la térmica.
   - Luego `--parte puntos` mide el error de las 3 semejanzas y la coherencia de los puntos (se quita uno y se ajusta con
     los demás).
 
-### Preguntas abiertas de C0
+### Decisiones del usuario al cerrar C0 (18 de noviembre de 2026)
 
-1. ¿Confirmas la clasificación de las 26 carpetas y la regla de los huecos cortos?
-2. **FHL 0566 (RGB de noche):** propongo usar su térmica en `fusion_ampliado` como térmica sin pareja (RGB en 0).
-   - La RGB casi negra no aporta, y su alineación no se puede medir con el fondo. Con los puntos, quizá sí, en las
-     luces.
-   - Otra opción: incluirla con la semejanza de 0401.
-3. **Carnation Enterprise 0023/0024** (739 pares anotados, 1 713 cajas térmicas): se excluyó de los tres modelos en la
-   fase 2 por el zoom variable de la RGB.
-   - Su térmica no tiene ese problema. ¿Entra en `termico_ampliado`?
-   - En `fusion_ampliado` iría como térmica sin pareja.
-4. **Pares excluidos de nuestros vuelos de entrenamiento:** son 365 anotados, con 575 cajas térmicas.
-   - 149 son el tramo de Baker con personas sin caja en la térmica, y no se usan nunca.
-   - El resto (desfases, despegue y aterrizaje) tiene la térmica bien. ¿Entran en `termico_ampliado` y, como térmica sin
-     pareja, en `fusion_ampliado`?
+Están en los comentarios de la sección `c1` de `configs/fase7.yaml`.
 
-### Comandos
+1. **Se confirman** la clasificación de las 26 carpetas y la regla de los huecos cortos.
+   - Además, las imágenes nuevas sin persona serán como máximo el 10 % del total de entrenamiento, al azar (seed 0) y
+     repartidas por carpeta.
+2. **FHL 0566:** solo como térmica sin pareja (RGB en 0). No se marcan sus puntos.
+3. **Carnation 0023/0024:** su térmica entra en `termico_ampliado` y, como térmica sin pareja, en `fusion_ampliado`.
+   Se auditó como una carpeta más (arriba).
+4. **Pares anotados y excluidos de los vuelos de entrenamiento:** entran, menos el tramo de Baker 2031–2179. En
+   `fusion_ampliado` van como térmica sin pareja.
+5. **FHL 0403 y 0564:** el usuario marca sus puntos.
+   - Si un vuelo no pasa el criterio de 13.2 px, entra solo como térmica sin pareja.
+   - Si pasa, entra como pares reales con la semejanza de 0401.
+
+## C1. Datasets nuevos
+
+`scripts/fase7_c1_datasets.py`, sección `c1` de `configs/fase7.yaml`. Salidas en `runs/fase7/c1/`.
+
+### Composición (`--parte componer`)
+
+- **`termico_ampliado` y `fusion_ampliado` tienen las mismas imágenes.** Solo cambia si los canales RGB son reales
+  o van en 0. Así, la diferencia entre los dos modelos es solo la modalidad.
+- **Base:** el entrenamiento actual (3 247 imágenes de los 4 vuelos), sin cambios.
+- **Nuevas:**
+  - los fotogramas de C0 que quedan tras la clasificación y los huecos cortos;
+  - los 216 pares anotados y excluidos de los vuelos de entrenamiento: 28 de MtErie 0003, 15 de MtErie 0005, 113 de
+    FHL 0401 y 60 de Baker, sin el tramo 2031–2179. A estos no se les aplica la regla de los huecos cortos, porque
+    sus etiquetas ya se revisaron en las fases 1 y 2.
+- **Tope de vacías nuevas:**
+  - E ≤ 0.10 × (base + nuevas con persona + E), es decir, E ≤ (3 247 + 9 452) / 9 = **1 411**, de 7 208 disponibles.
+  - El cupo se reparte por carpeta en proporción a sus vacías, con restos mayores, y se elige al azar dentro de cada
+    una (seed 0).
+- **Controles:** el script sale si alguna carpeta nueva es de validación o de prueba, o si una imagen nueva ya está en la
+  base o tiene el nombre repetido.
+- **Validación:** la de siempre, 442 imágenes.
+
+| Parte | Imágenes | Con persona | Vacías | Personas | <8 | 8–12 | 12–20 | 20–32 | ≥32 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Base (entrenamiento actual) | 3 247 | 3 061 | 186 | 9 340 | 22 | 159 | 1 459 | 2 411 | 5 289 |
+| Nuevas | 10 863 | 9 452 | 1 411 | 15 965 | 327 | 891 | 3 086 | 4 917 | 6 744 |
+| **Total de entrenamiento** | **14 110** | **12 513** | **1 597** | **25 305** | **349** | **1 050** | **4 545** | **7 328** | **12 033** |
+
+Las nuevas, por sitio:
+
+| Sitio | Imágenes | Con persona | Vacías | Personas | <8 | 8–12 | 12–20 | 20–32 | ≥32 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Airfield | 2 231 | 1 249 | 982 | 1 484 | 31 | 65 | 547 | 432 | 409 |
+| Baker (FLIR 2020 y excluidos) | 1 992 | 1 977 | 15 | 3 075 | 0 | 8 | 774 | 1 930 | 363 |
+| Carnation (FLIR 2020 y Enterprise 0024) | 2 271 | 1 950 | 321 | 3 889 | 294 | 710 | 652 | 362 | 1 871 |
+| FHL (0404, 0565, 0567 y excluidos de 0401) | 1 814 | 1 731 | 83 | 3 565 | 2 | 105 | 696 | 1 242 | 1 520 |
+| Karen | 2 512 | 2 502 | 10 | 3 819 | 0 | 3 | 384 | 859 | 2 573 |
+| MtErie (excluidos) | 43 | 43 | 0 | 133 | 0 | 0 | 33 | 92 | 8 |
+
+- Las personas de menos de 12 px pasan de 181 a 1 399. 1 004 de ellas son de Carnation 0024. En validación, 115 de las
+  500 personas miden menos de 12 px.
+- El detalle por carpeta, con las vacías disponibles y las elegidas, está en `c1/por_carpeta.csv`. La lista de
+  imágenes, con su fuente y si su RGB es real, está en `c1/composicion.csv`.
+- Las 982 vacías de Airfield son el 70 % del cupo, porque Airfield tiene la mayoría de las vacías disponibles (5 022 de
+  7 208).
+- **Pendiente:** si FHL 0403 y 0564 pasan los puntos, sus 970 imágenes (216 de 0404 y 754 de 0565) llevan RGB real en
+  `fusion_ampliado`. La composición no cambia.
+
+### Tiempo estimado por época
+
+El tiempo por imagen de entrenamiento se midió con `epocas.csv` (mediana, sin la época 1). Es de 12.0 ms en la térmica
+(B2) y 12.3 ms en la fusión (`fusion_100ep`), más unos 3 s de validación.
+
+| Modelo | Imágenes de entrenamiento | s por época | 100 épocas |
+|---|---:|---:|---:|
+| `termico_ampliado` | 14 110 | ≈ 173 | ≈ 4.8 h |
+| `fusion_ampliado` | 14 110 | ≈ 176 | ≈ 4.9 h |
+| Base actual (como referencia) | 3 247 | ≈ 42 | ≈ 1.2 h |
+
+Con `patience=20` pueden parar antes. Es una estimación lineal: la primera época de cada corrida la confirma.
+
+## Comandos
 
 ```
 .venv\Scripts\python.exe scripts\fase7_c0_auditoria.py --config configs\fase7.yaml --rutas configs\rutas.yaml --parte auditar
@@ -237,5 +310,6 @@ alinea su RGB con la térmica.
 .venv\Scripts\python.exe scripts\fase7_c0_auditoria.py --config configs\fase7.yaml --rutas configs\rutas.yaml --parte clasificar
 .venv\Scripts\python.exe scripts\fase7_marcar_puntos.py --config configs\fase7.yaml --rutas configs\rutas.yaml --vuelo 210924_FHL_Enterprise_0403
 .venv\Scripts\python.exe scripts\fase7_c0_auditoria.py --config configs\fase7.yaml --rutas configs\rutas.yaml --parte puntos
+.venv\Scripts\python.exe scripts\fase7_c1_datasets.py --config configs\fase7.yaml --rutas configs\rutas.yaml --parte componer
 .venv\Scripts\python.exe scripts\fase7_copiar.py --config configs\fase7.yaml --rutas configs\rutas.yaml
 ```
