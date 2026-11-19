@@ -451,6 +451,61 @@ Se agregó a `scripts/evaluar.py` la opción `--rgb-cero`.
   - `--modelos fusion termico`: la RGB en 0 va solo para la fusión.
   - `--modelos termico`: se niega, porque ningún modelo tiene 4 canales.
 
+## C3. Corridas
+
+Se corren con `scripts/fase7_entrenar.py --corrida NOMBRE`, en este orden: `termico_base`, `termico_ampliado`,
+`fusion_base` y `fusion_ampliado`.
+
+- **Receta común**, comprobada al mezclar `c3.base` con cada corrida:
+  - seed 0 (`deterministic: true`), lote 16, como máximo 100 épocas y `patience: 20`;
+  - imgsz 640, 4 procesos de lectura y `hsv = 0`;
+  - AdamW con lr0 = 0.002, momentum 0.9 y `warmup_bias_lr = 0`;
+  - `p_sin_rgb = 0`.
+- **Lo que cambia:** los datos, y el inicio del cuarto canal (`promedio`, solo en la fusión).
+- **Decisión previa** (19 de noviembre de 2026, en la bitácora): el usuario confirma el optimizador fijo.
+
+### Intentos que no entrenaron
+
+| Fecha | Corrida | Comprobación que falló | Qué se hizo |
+|---|---|---|---|
+| 19 de noviembre de 2026, 10:57 | `termico_base` | Chrome abierto (`cerrar_antes`). Salió con el código 3, antes de la prueba de potencia. | Nada se entrenó ni se escribió en `runs/fase7/termico_base/`. El registro está en `runs/fase7/termico_base_intento1.log`. Se pide al usuario cerrar Chrome. |
+
+### Corrida 1: `termico_base` (19 de noviembre de 2026)
+
+Se lanzó después de cerrar Chrome.
+
+- **Comprobaciones:** enchufada, plan Performance, 97.5 W en la prueba previa (mediana) y AdamW con lr0 = 0.002, como
+  se pidió.
+- **Durante el entrenamiento:** límite aplicado de 85.5 W (mediana), pico de memoria de la GPU de 5 287 de 8 188 MiB,
+  pico de RAM del 99.8 % y 43 s por época (mediana).
+- **Paró por `patience` en la época 30:** 20 épocas seguidas sin superar la 10.
+  - Las 30 épocas fueron con mosaico, porque `close_mosaic` actúa en las 10 últimas de 100.
+  - La tasa de aprendizaje bajó poco, de 0.0020 a 0.0014, porque el descenso lineal está pensado para 100 épocas.
+- **`best.pt` es la época 10.** `resumen.json` comprueba que coincide con la de mayor mAP@0.5 de `results.csv`.
+
+| | Época | mAP@0.5 | mAP@0.5:0.95 | P | R |
+|---|---:|---:|---:|---:|---:|
+| Elegida (`best.pt`) | 10 | 0.384 | 0.174 | 0.550 | 0.402 |
+| Validación final de `best.pt` (Ultralytics) | — | 0.383 | 0.173 | 0.546 | 0.396 |
+| Última (`last.pt`) | 30 | 0.195 | 0.100 | 0.397 | 0.248 |
+
+**mAP@0.5 de validación por época:**
+
+| Épocas | Valores |
+|---|---|
+| 1–10 | 0.211, 0.314, 0.314, 0.263, 0.255, 0.237, 0.251, 0.355, 0.166, **0.384** |
+| 11–20 | 0.230, 0.370, 0.233, 0.244, 0.185, 0.326, 0.215, 0.274, 0.227, 0.298 |
+| 21–30 | 0.227, 0.194, 0.266, 0.193, 0.247, 0.240, 0.286, 0.280, 0.207, 0.195 |
+
+- **Curva muy ruidosa:**
+  - de la época 9 a la 10 sube 0.217 (de 0.166 a 0.384), y en la 11 vuelve a 0.230;
+  - en las épocas 21–30 va de 0.193 a 0.286, con mediana 0.234;
+  - las tres mejores son la 10 (0.384), la 12 (0.370) y la 8 (0.355).
+- **Limitación:** elegir el máximo de una curva tan ruidosa sobre la misma validación da una cifra optimista. El 0.384
+  es en parte una época con suerte, y C4 tiene que leerse con eso en cuenta.
+- **Referencia, mismo dataset:** B2 (30 épocas con la receta de la fase 5) tuvo un máximo de 0.327 en la época 3 y
+  0.189 en la última.
+
 ## Comandos
 
 ```

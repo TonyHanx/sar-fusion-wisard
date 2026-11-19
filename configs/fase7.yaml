@@ -165,6 +165,17 @@ copiar:
     - c1/*.csv
     - c1/*.md
     - c2/*.csv
+    # corridas de C3 (sin pesos)
+    - termico_*/results.csv
+    - termico_*/results.png
+    - termico_*/epocas.csv
+    - termico_*/resumen.json
+    - termico_*/args.yaml
+    - fusion_*/results.csv
+    - fusion_*/results.png
+    - fusion_*/epocas.csv
+    - fusion_*/resumen.json
+    - fusion_*/args.yaml
   excluir: ["*.pt"]
   jpeg_calidad: 85
 
