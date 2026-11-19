@@ -3,14 +3,16 @@
 Reutiliza de scripts/entrenar.py, sin cambiarlo, las comprobaciones previas (aplicaciones cerradas, enchufe, plan de
 energía y potencia; los valores son los de `c3.comprobaciones`), el monitor de nvidia-smi y la RAM, el registro por
 época y el inicio del cuarto canal. Lo nuevo de la receta (C2):
-- **Criterio de la mejor época:** best.pt y la parada temprana (`patience`) van por el mAP@0.5 de validación
-  (`c2.fitness`), no por la combinación de Ultralytics (que es el mAP@0.5:0.95). last.pt queda con la última época.
+- **Criterio de la mejor época:** best.pt y la parada temprana (`patience`; con 0 no hay) van por el mAP@0.5 de
+  validación (`c2.fitness`), no por el fitness de Ultralytics (el mAP@0.5:0.95). last.pt queda con la última época.
+  resumen.json y la bitácora llevan la última época, el promedio de las `c3.ultimas_epocas` últimas (la cifra
+  principal en C4) y best.pt (secundaria).
 - **Dropout de modalidad:** en la fusión, cada imagen de entrenamiento pierde la RGB (los 3 canales de color en 0) con
   probabilidad `p_sin_rgb` (scripts/modalidad.py). Nunca en la validación. Con p = 0, el dataset es el de Ultralytics.
 
 Antes de entrenar comprueba que la carpeta de la corrida no exista y que ni el entrenamiento ni la validación tengan
 imágenes de FHL 0405/0406 (la prueba). Guarda lo mismo que scripts/entrenar.py (monitor.csv, epocas.csv,
-resumen.json), y en resumen.json además la época elegida, la última y si paró antes.
+resumen.json), y en resumen.json además la época elegida, la última, el promedio de las últimas y si paró antes.
 
 Con --verificar no entrena: comprueba el criterio (con un validador simulado) y el dropout con `c2.verificacion.imagenes`
 imágenes, y escribe runs/<carpeta>/c2/verificacion_*.csv.
@@ -130,14 +132,20 @@ def verificar(cfg, rutas):
                         "fitness_en_metricas": "fitness" in metrics})
     from ultralytics.utils.torch_utils import EarlyStopping
 
+    # parada temprana con la `patience` de la receta: la época 1 es la mejor y las demás no mejoran. Con patience = 0,
+    # Ultralytics no para nunca (EarlyStopping usa `patience or inf`); se prueba con todas las épocas de la receta.
     parada = EarlyStopping(patience=ultra["patience"])
-    serie = [0.30] + [0.25] * (ultra["patience"] + 1)
-    para = next(e for e, f in enumerate(serie, 1) if parada(e, f))
+    largo = ultra["patience"] + 1 if ultra["patience"] else ultra["epochs"]
+    serie = [0.30] + [0.25] * largo
+    para = next((e for e, f in enumerate(serie, 1) if parada(e, f)), None)
+    esperada = ultra["patience"] + 1 if ultra["patience"] else None
     fit = pd.DataFrame(filas_f)
+    fit["patience"] = ultra["patience"]
+    fit["epocas_probadas"] = len(serie)
     fit["parada_temprana_en_epoca"] = para
     fit.to_csv(out / "verificacion_fitness.csv", index=False)
     if not (fit.fitness_fase7.tolist() == [0.30, 0.25] and fit.best_fitness.tolist() == [0.30, 0.30]
-            and not fit.fitness_en_metricas.any() and para == ultra["patience"] + 1):
+            and not fit.fitness_en_metricas.any() and para == esperada):
         raise SystemExit(f"El criterio no hace lo esperado:\n{fit}")
 
     # 2. dropout: los datasets como los arma el entrenador, con las mismas imágenes y la misma semilla
@@ -329,6 +337,10 @@ def entrenar(cfg, rutas, nombre):
         elegida = res.loc[res[EntrenadorFase7.clave_fitness].idxmax()]  # la primera, si hay empate (como best.pt)
         resumen["val_elegida"] = {k: float(elegida[k]) for k in CLAVES} | {"epoca": int(elegida["epoch"])}
         resumen["val_ultima_epoca"] = {k: float(ultima[k]) for k in CLAVES} | {"epoca": int(ultima["epoch"])}
+        n_ult = c3["ultimas_epocas"]
+        ult = res.tail(n_ult)
+        resumen["val_promedio_ultimas"] = {k: float(ult[k].mean()) for k in CLAVES} | {
+            "epocas": [int(e) for e in ult["epoch"]]}
         resumen["epocas_corridas"] = len(res)
         resumen["paro_antes"] = len(res) < ultra["epochs"]
         resumen["val_best_pt_final_eval"] = {k: float(v) for k, v in tr.metrics.items() if k in CLAVES}
@@ -353,13 +365,15 @@ def entrenar(cfg, rutas, nombre):
                   + (f"; optimizador {reg.info['optimizador']} lr0={reg.info['lr0']}" if reg.info else "")
                   + f"; potencia bajo carga {potencia['limite_mediana_w']} W; {carpeta.relative_to(RAIZ).as_posix()}")
     if error is None:
-        e, u = resumen["val_elegida"], resumen["val_ultima_epoca"]
+        e, u, pm = resumen["val_elegida"], resumen["val_ultima_epoca"], resumen["val_promedio_ultimas"]
         res_txt = (f"{'entra' if entra else 'no entra'} (lote {lote_final}); {resumen['epocas_corridas']} épocas"
                    f"{' (paró antes, patience)' if resumen['paro_antes'] else ''}; pico de memoria GPU {pico_mib:.0f} de "
                    f"{total_mib:.0f} MiB; mediana por época {np.median(tiempos):.0f} s; "
-                   f"val época elegida {e['epoca']}: mAP50 {e['metrics/mAP50(B)']:.4f}, mAP50-95 "
-                   f"{e['metrics/mAP50-95(B)']:.4f}, P {e['metrics/precision(B)']:.3f}, R {e['metrics/recall(B)']:.3f}; "
-                   f"última época {u['epoca']}: mAP50 {u['metrics/mAP50(B)']:.4f}; best.pt es la elegida: "
+                   f"val última época {u['epoca']}: mAP50 {u['metrics/mAP50(B)']:.4f}, mAP50-95 "
+                   f"{u['metrics/mAP50-95(B)']:.4f}, P {u['metrics/precision(B)']:.3f}, R {u['metrics/recall(B)']:.3f}; "
+                   f"promedio de las épocas {pm['epocas'][0]}-{pm['epocas'][-1]}: mAP50 {pm['metrics/mAP50(B)']:.4f}, "
+                   f"mAP50-95 {pm['metrics/mAP50-95(B)']:.4f}; best.pt (época {e['epoca']}): mAP50 "
+                   f"{e['metrics/mAP50(B)']:.4f}, mAP50-95 {e['metrics/mAP50-95(B)']:.4f}; best.pt es la elegida: "
                    f"{'sí' if resumen['best_pt_es_la_elegida'] else 'NO'}")
     else:
         res_txt = f"error: {repr(error)[:300]}; pico de memoria GPU {pico_mib:.0f} de {total_mib:.0f} MiB"

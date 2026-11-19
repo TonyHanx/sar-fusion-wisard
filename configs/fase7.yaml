@@ -239,15 +239,21 @@ c3:
   pesos: yolo26s.pt
   # potencia, cerrar_antes, codigos_salida, monitor y memoria: las mismas comprobaciones que en la fase 5
   comprobaciones: configs/fase5.yaml
+  # Cifra principal de cada corrida en C4: la última época y el promedio de las `ultimas_epocas` últimas de results.csv;
+  # best.pt (mayor mAP@0.5 de validación) va como dato secundario (decisión del usuario, 19 de noviembre de 2026).
+  ultimas_epocas: 5
   base:
     fase: "7"
     inicio_cuarto_canal: azar        # solo con 4 canales; la fusión usa promedio (fase 5a)
     p_sin_rgb: 0.0                   # dropout de modalidad, solo en el entrenamiento y con 4 canales
-    ultralytics:                     # Tabla 8 (fase 5), más patience; lo demás, por omisión de Ultralytics 8.4.194
+    # Receta cambiada el 19 de noviembre de 2026, antes de las corridas 2 a 4 (decisión del usuario): con patience = 20,
+    # termico_base paró en la época 30 de 100, con la tasa de aprendizaje alta (0.0014) y el mosaico activo, así que no
+    # completó la receta (quedó como termico_base_p20). Ahora: 50 épocas, sin parada temprana y close_mosaic = 10.
+    ultralytics:                     # Tabla 8 (fase 5), con 50 épocas; lo demás, por omisión de Ultralytics 8.4.194
       seed: 0
       deterministic: true
       imgsz: 640
-      epochs: 100
+      epochs: 50
       batch: 16
       hsv_h: 0.0
       hsv_s: 0.0
@@ -255,16 +261,22 @@ c3:
       device: 0
       workers: 4
       cache: false
-      patience: 20                   # épocas sin mejorar el mAP@0.5 de validación
+      patience: 0                    # sin parada temprana: en 8.4.194, EarlyStopping usa `patience or inf`
+      close_mosaic: 10               # las 10 últimas épocas sin mosaico (el valor por omisión, explícito)
       # Optimizador fijo, el que eligió optimizer=auto en la fase 5 (AdamW, lr0 = 0.002 = 0.002 x 5 / (4 + 1), betas
       # 0.9 y 0.999, y warmup_bias_lr = 0, que auto también fija). Con auto, los datasets ampliados (14 110 imágenes,
-      # 221 x 100 = 22 100 iteraciones > 10 000) cambiarían a MuSGD con lr0 = 0.01, y la corrida cambiaría algo más
+      # 221 x 50 = 11 050 iteraciones > 10 000) cambiarían a MuSGD con lr0 = 0.01, y la corrida cambiaría algo más
       # que los datos.
       optimizer: AdamW
       lr0: 0.002
       momentum: 0.9
       warmup_bias_lr: 0.0
   corridas:
+    # Ya corrida con la receta anterior (19 de noviembre de 2026, renombrada desde termico_base): evidencia de que
+    # patience = 20 cortó el calendario (paró en la época 30 de 100). No se vuelve a correr.
+    termico_base_p20:
+      datos: configs/termico.yaml
+      ultralytics: {epochs: 100, patience: 20}
     termico_base:
       datos: configs/termico.yaml
     termico_ampliado:

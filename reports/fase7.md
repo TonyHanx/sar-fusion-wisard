@@ -383,7 +383,7 @@ canal.
 
 - **Mejor época por el mAP@0.5 de validación.**
   - El entrenador reemplaza `validate` de Ultralytics, cuyo fitness en 8.4.194 es solo el mAP@0.5:0.95.
-  - Con eso, `best.pt`, `best_fitness` y la parada temprana (`patience: 20`) van por `metrics/mAP50(B)`.
+  - Con eso, `best.pt`, `best_fitness` y la parada temprana (cuando la hay) van por `metrics/mAP50(B)`.
   - `last.pt` queda con la última época corrida.
   - `resumen.json` guarda la época elegida, la última y si paró antes. También comprueba que `best.pt` sea la elegida.
 - **Dropout de modalidad** (`p_sin_rgb`, por corrida):
@@ -392,13 +392,14 @@ canal.
   - nunca en la validación;
   - con p = 0, el entrenador deja el dataset de Ultralytics sin cambios y no gasta ningún número al azar.
 - **Lo demás, como en la Tabla 8:**
-  - imgsz 640, lote 16, como máximo 100 épocas y seed 0;
+  - imgsz 640, lote 16 y seed 0; las épocas, en C3 (primero 100 con `patience: 20`, luego 50 sin parada temprana);
   - `hsv_h = hsv_s = hsv_v = 0`;
   - 4 procesos de lectura y `cache: false`.
 - **Optimizador fijo:** AdamW con lr0 = 0.002, momentum (beta1) 0.9 y `warmup_bias_lr = 0`.
   - Es justo lo que eligió `optimizer=auto` en la fase 5.
   - Hay que fijarlo porque `auto` elige por el número de iteraciones. Con los datasets ampliados son 221 lotes de 64 ×
-    100 épocas = 22 100 iteraciones, más de 10 000, y `auto` cambiaría a MuSGD con lr0 = 0.01.
+    100 épocas = 22 100 iteraciones (con 50 épocas, 11 050), más de 10 000, y `auto` cambiaría a MuSGD con
+    lr0 = 0.01.
   - Así, las corridas 2 y 4 solo cambian los datos. En las corridas base da lo mismo que `auto`: 5 100 iteraciones,
     AdamW con 0.002. `resumen.json` lo confirma en cada corrida.
 - **Sin FHL 0405:** el script no entrena si en el entrenamiento o la validación aparece alguna imagen de FHL 0405/0406.
@@ -420,7 +421,7 @@ Se corrió con 8 imágenes del entrenamiento base de la fusión, que tienen RGB 
 
 | Prueba | Imágenes | Resultado |
 |---|---:|---|
-| Criterio, con un validador simulado de 2 épocas: mAP@0.5 de 0.30 y 0.25, mAP@0.5:0.95 de 0.10 y 0.12 | — | Elige la época 1 (Ultralytics elegiría la 2). El `fitness` de Ultralytics sale de las métricas. Con `patience: 20`, para en la época 21. |
+| Criterio, con un validador simulado de 2 épocas: mAP@0.5 de 0.30 y 0.25, mAP@0.5:0.95 de 0.10 y 0.12 | — | Elige la época 1 (Ultralytics elegiría la 2). El `fitness` de Ultralytics sale de las métricas. Con `patience: 20`, paraba en la época 21; con la receta nueva (`patience: 0`), no para en 51 épocas sin mejora. |
 | Entrenamiento con p = 0.3: la imagen leída, donde actúa el dropout | 8 | 1 sin RGB, la que tocaba por la semilla. La térmica, igual en las 8. Las otras 7, iguales al TIFF. |
 | Entrenamiento con p = 1: el tensor con todos los aumentos (mosaico) | 8 | No llega nada de la RGB, solo el relleno gris de Ultralytics. La térmica, igual a la del mismo dataset sin dropout con las mismas semillas. |
 | Entrenamiento con p = 0 | — | El entrenador deja el `YOLODataset` de Ultralytics. |
@@ -457,22 +458,31 @@ Se corren con `scripts/fase7_entrenar.py --corrida NOMBRE`, en este orden: `term
 `fusion_base` y `fusion_ampliado`.
 
 - **Receta común**, comprobada al mezclar `c3.base` con cada corrida:
-  - seed 0 (`deterministic: true`), lote 16, como máximo 100 épocas y `patience: 20`;
-  - imgsz 640, 4 procesos de lectura y `hsv = 0`;
+  - seed 0 (`deterministic: true`) y lote 16;
+  - **50 épocas, sin parada temprana (`patience: 0`) y `close_mosaic: 10`** (receta nueva, abajo);
+  - imgsz 640, 4 procesos de lectura (`workers: 4`), `cache: false` y `hsv = 0`;
   - AdamW con lr0 = 0.002, momentum 0.9 y `warmup_bias_lr = 0`;
   - `p_sin_rgb = 0`.
 - **Lo que cambia:** los datos, y el inicio del cuarto canal (`promedio`, solo en la fusión).
-- **Decisión previa** (19 de noviembre de 2026, en la bitácora): el usuario confirma el optimizador fijo.
+- **Decisiones previas** (19 de noviembre de 2026, en la bitácora):
+  - el usuario confirma el optimizador fijo;
+  - después de `termico_base_p20`, el usuario cambia la receta (abajo).
+- **Cifra principal en C4:** la de la última época y el promedio de las 5 últimas de `results.csv`
+  (`c3.ultimas_epocas`). `best.pt` (mayor mAP@0.5 de validación) va como dato secundario. `resumen.json` y la
+  bitácora ya llevan las tres.
 
 ### Intentos que no entrenaron
 
 | Fecha | Corrida | Comprobación que falló | Qué se hizo |
 |---|---|---|---|
-| 19 de noviembre de 2026, 10:57 | `termico_base` | Chrome abierto (`cerrar_antes`). Salió con el código 3, antes de la prueba de potencia. | Nada se entrenó ni se escribió en `runs/fase7/termico_base/`. El registro está en `runs/fase7/termico_base_intento1.log`. Se pide al usuario cerrar Chrome. |
+| 19 de noviembre de 2026, 10:57 | `termico_base` (la que luego fue `termico_base_p20`) | Chrome abierto (`cerrar_antes`). Salió con el código 3, antes de la prueba de potencia. | Nada se entrenó ni se escribió en la carpeta de la corrida. El registro está en `runs/fase7/termico_base_p20_intento1.log`. Se pide al usuario cerrar Chrome. |
 
-### Corrida 1: `termico_base` (19 de noviembre de 2026)
+### Corrida 1, receta anterior: `termico_base_p20` (19 de noviembre de 2026)
 
-Se lanzó después de cerrar Chrome.
+Se corrió como `termico_base`, con 100 épocas y `patience: 20`. Después se renombró a `termico_base_p20`: la carpeta
+`runs/fase7/termico_base_p20/`, su registro y la copia en `reports/fase7/termico_base_p20/`. Su `resumen.json`,
+`args.yaml` y su fila de entrenamiento en la bitácora conservan el nombre con que se corrió. Otra fila de la bitácora
+la deja como evidencia de que `patience: 20` cortó el calendario. Se lanzó después de cerrar Chrome.
 
 - **Comprobaciones:** enchufada, plan Performance, 97.5 W en la prueba previa (mediana) y AdamW con lr0 = 0.002, como
   se pidió.
@@ -505,6 +515,43 @@ Se lanzó después de cerrar Chrome.
   es en parte una época con suerte, y C4 tiene que leerse con eso en cuenta.
 - **Referencia, mismo dataset:** B2 (30 épocas con la receta de la fase 5) tuvo un máximo de 0.327 en la época 3 y
   0.189 en la última.
+
+### Receta nueva, antes de las corridas 2 a 4 (decisión del usuario, 19 de noviembre de 2026)
+
+- **Motivo:** `termico_base_p20` paró por `patience` en la época 30 de 100.
+  - La tasa de aprendizaje seguía alta (0.0014 de 0.0020).
+  - El mosaico estaba activo en las 30 épocas.
+  - Así que no completó la receta.
+- **Cambio, en las cuatro corridas:** 50 épocas, sin parada temprana (`patience: 0`) y `close_mosaic: 10`. Lo demás,
+  igual: seed 0, lote 16 y AdamW con lr0 = 0.002.
+  - En Ultralytics 8.4.194, `patience: 0` desactiva la parada temprana, porque `EarlyStopping` usa `patience or inf`.
+  - La verificación de C2 se repitió con la receta nueva: no para en 51 épocas sin mejora.
+- **Se siguen guardando** `best.pt` (por mAP@0.5) y `last.pt`.
+- **Con 50 épocas:**
+  - la tasa de aprendizaje baja de 0.002 a 0.00002 (`lrf: 0.01`) a lo largo de las 50;
+  - las épocas 41 a 50 van sin mosaico.
+- **Tiempo:** unos 36 min `termico_base` y unos 2.4 h `termico_ampliado` (50 épocas de unos 43 s y 175 s).
+
+### RAM al entrenar
+
+- **Configuración:** `cache: false` (las imágenes se leen del disco en cada lote) y `workers: 4`. El caché no está en
+  RAM, así que, por la regla del usuario, no se cambia nada y el tiempo por época sigue igual.
+- **Por qué llega al 99.8 %** (`monitor.csv` de `termico_base_p20`, 16 GB en total):
+  - **Antes de entrenar ya había 9.3 GB usados (58 %).** Lo midió `psutil` con la laptop en reposo, sin ningún
+    entrenamiento.
+    - Son Windows y las aplicaciones abiertas: en ese momento Chrome (1.7 GB, vuelto a abrir), VS Code (0.7 GB),
+      Discord (0.5 GB), WhatsApp y Copilot (0.3 GB).
+    - Solo Chrome, ChatGPT y Roblox están en `cerrar_antes`.
+  - **Al arrancar:** el proceso de entrenamiento con CUDA llega a 11.5 GB (72 %).
+    - Los 4 procesos de lectura del entrenamiento lo suben a 13.4–15.3 GB.
+    - En la primera validación, Ultralytics abre 8 más (`workers × 2`), y llega a 15.6 GB (97.7 %).
+    - En Windows cada proceso de lectura es un Python nuevo que vuelve a cargar torch.
+  - **A lo largo de la corrida:** mediana del 88.7 %, más del 95 % el 16.7 % del tiempo y más del 98 % solo el 1.6 %.
+    - El pico (99.8 %) es un instante.
+    - Mientras la GPU trabaja (uso ≥ 50 %), la mediana es del 88.4 %; en las validaciones y los cambios de época, del
+      93.3 %.
+  - No hubo errores, y Windows usó poco el archivo de paginación (7.9 % de 20 GB).
+  - Igual que en la fase 5a (98.7–99.9 %).
 
 ## Comandos
 
