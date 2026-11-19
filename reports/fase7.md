@@ -628,6 +628,109 @@ Datos: `results.csv` de cada corrida. La pérdida de validación es la que calcu
   validación. Es lo más cercano a un sobreajuste de las tres modalidades.
 - En la térmica y en la fusión, en cambio, la validación se queda en una meseta.
 
+### Corrida 1 válida: `termico_base`, receta nueva (19 de noviembre de 2026)
+
+Es la corrida de `termico_base` que se usa en C4. `termico_base_cortada` y `termico_base_p20` quedan como evidencia.
+
+- **Dónde y cuándo:** la corrió el usuario en su propia ventana de PowerShell, fuera de Claude Code, de 13:36 a 14:12.
+  Terminó con salida 0, y el script escribió su fila en la bitácora.
+- **Comprobaciones previas:** las tres aplicaciones cerradas, límite aplicado de 99.0 W (mediana de 30 s) y 9 012 MiB
+  de RAM usados antes de empezar.
+- **Durante el entrenamiento:**
+  - límite aplicado de 88.5 W (mediana), pico de memoria de la GPU de 5 287 de 8 188 MiB y 88 °C como máximo;
+  - 42 s por época (mediana) y 36 min en total (2 158 s);
+  - la época 41 tardó 53 s: los 11 s de más son los de volver a abrir los procesos de lectura al quitar el mosaico.
+- **Se reproduce exactamente:** las épocas 1 a 40 son idénticas a las de `termico_base_cortada` en las 14 columnas de
+  `results.csv` (pérdidas, métricas y tasas de aprendizaje, con diferencia 0). La época 1 también da lo mismo en
+  `termico_base_p20` y en B2 (0.2115).
+- **`best.pt` es la época 12.** `resumen.json` comprueba que coincide con la de mayor mAP@0.5 de `results.csv`.
+
+| | Época | mAP@0.5 | mAP@0.5:0.95 | P | R |
+|---|---:|---:|---:|---:|---:|
+| **Última (`last.pt`)** | 50 | **0.223** | 0.111 | 0.400 | 0.272 |
+| **Promedio de las 5 últimas** | 46–50 | **0.222** | 0.109 | 0.397 | 0.274 |
+| `best.pt` (secundaria) | 12 | 0.391 | 0.190 | 0.472 | 0.437 |
+| Validación final de `best.pt` (Ultralytics) | — | 0.390 | 0.190 | 0.470 | 0.436 |
+
+**mAP@0.5 de validación por época:**
+
+| Épocas | Valores |
+|---|---|
+| 1–10 | 0.211, 0.267, 0.227, 0.179, 0.178, 0.179, 0.210, 0.339, 0.182, 0.253 |
+| 11–20 | 0.348, **0.391**, 0.279, 0.152, 0.255, 0.322, 0.238, 0.291, 0.219, 0.266 |
+| 21–30 | 0.257, 0.203, 0.328, 0.187, 0.313, 0.245, 0.259, 0.347, 0.301, 0.244 |
+| 31–40 | 0.311, 0.258, 0.314, 0.225, 0.257, 0.325, 0.294, 0.255, 0.264, 0.223 |
+| 41–50 (sin mosaico) | 0.228, 0.221, 0.224, 0.200, 0.198, 0.203, 0.231, 0.225, 0.228, 0.223 |
+
+**Comparación** (mismo dataset, `configs/termico.yaml`, y misma validación):
+
+| Corrida | Receta | Máximo (época) | Última | Promedio de las 5 últimas | Mediana de las 10 últimas |
+|---|---|---|---:|---:|---:|
+| **`termico_base`** | 50 épocas, sin parada, `close_mosaic: 10` | 0.391 (12) | **0.223** | **0.222** | 0.223 |
+| `termico_base_cortada` | la misma, cortada en la época 40 | 0.391 (12) | 0.223 (40) | 0.272 | 0.261 |
+| `termico_base_p20` | 100 épocas, `patience: 20`; paró en la 30, todas con mosaico | 0.384 (10) | 0.195 | 0.242 | 0.234 |
+| B2 | 30 épocas, receta de la fase 5 (`close_mosaic: 10`) | 0.327 (3) | 0.189 | 0.197 | 0.204 |
+
+- **Contra B2:** +0.034 en la última época y +0.025 en el promedio de las 5 últimas. B2 tiene la misma época 1, pero su
+  calendario es de 30 épocas.
+- **Contra `termico_base_p20`:** +0.028 en la última, pero −0.020 en el promedio de las 5 últimas, porque las de
+  `termico_base_p20` tenían mosaico.
+- **Las 10 épocas sin mosaico** (41–50) dan una curva más estable pero más baja que las 10 anteriores:
+  - mAP@0.5 de 0.273 de media (desviación 0.037, saltos de hasta 0.089) a 0.218 (desviación 0.013, saltos de hasta
+    0.028);
+  - baja sobre todo el recall (0.321 a 0.266); la precisión casi no cambia (0.408 a 0.394);
+  - la pérdida de entrenamiento sigue bajando (`box` de 0.92 a 0.81), y la de validación sube un poco (`box` de 2.15
+    a 2.32 y `cls` de 4.20 a 4.46). Es una señal leve de sobreajuste al final, aunque la comparación de las pérdidas
+    de entrenamiento con y sin mosaico no es directa;
+  - en B2 pasa lo mismo: mediana de 0.232 en las épocas 11–20 y de 0.204 en las 21–30, las sin mosaico.
+- **Para C4:** la cifra principal (la última época y el promedio de las 5 últimas) cae en el tramo sin mosaico, que en
+  las dos corridas térmicas queda unas 0.05 por debajo del tramo anterior. `best.pt` queda 0.17 por encima.
+
+### RAM de `termico_base`
+
+`monitor.csv`: 2 049 lecturas, una cada 1.1 s, de 13:36:20 a 14:12:22. RAM total: 15 996 MiB.
+
+- **Pico de 99.8 % (15 971 MiB): una sola lectura, a las 13:37:26, en la validación de la época 1.**
+  - Es cuando Ultralytics abre los 8 procesos de lectura de la validación, con los 4 del entrenamiento abiertos.
+  - De 99 % o más: 5 lecturas, entre 13:37:24 y 13:37:32 (unos 7 s).
+  - De 98 % o más: 9 lecturas, entre 13:37:22 y 13:37:32 (unos 10 s).
+  - Después baja a 95–97 %.
+- **No coincide con la época 41.** En la época 41 el máximo fue de 98.8 %:
+  - a las 14:05:06 la GPU para: Ultralytics cierra los 4 procesos de lectura del entrenamiento para quitar el mosaico,
+    y la RAM baja de 15.3 a 13.5 GB;
+  - abre 4 nuevos, y en 10 s la RAM vuelve a 15.8 GB: 98.8 % a las 14:05:18, y 98 % o más en 4 lecturas de unos 7 s;
+  - después queda en 97–98 % (mediana de 97.0 % en la época 41).
+  - Es el mismo momento en que se cortó `termico_base_cortada` (época 41, 13:04).
+- **En toda la corrida:** mediana de 92.9 %, 95 % o más el 26.3 % del tiempo y 98 % o más el 0.8 % (17 lecturas). En
+  `termico_base_p20`, 88.7 %, 16.7 % y 1.6 %.
+- No hubo errores, y el tiempo por época no cambió.
+
+**¿`termico_ampliado` usaría más RAM?** Estimación, sin entrenar:
+- `cache: false` en `configs/fase7.yaml`, así que las imágenes no se guardan en RAM. Cada proceso de lectura del
+  entrenamiento guarda solo el búfer del mosaico, de hasta 128 imágenes (`min(n, 8 × lote, 1000)`). Son las mismas
+  en los dos datasets, de 640 × 512 (cerca de 1 MB cada una, unos 125 MB por proceso).
+- **Lo que crece es la lista de etiquetas y de archivos.** En Windows cada proceso de lectura recibe una copia del
+  dataset por pickle:
+  - 1.7 MiB con 3 247 imágenes y 7.6 MiB con 14 110, medido con los `YOLODataset` de entrenamiento construidos como en
+    el entrenador;
+  - unos 6 MiB más por proceso, y unos 30 MiB en total con el proceso principal y los 4 de lectura (0.2 % de los
+    16 GB);
+  - la validación es la misma (442 imágenes).
+- **El número de procesos y los momentos de los picos son los mismos:** la primera validación y la época 41.
+- **Así que el pico tendría que ser el mismo**, salvo lo que cambie de las aplicaciones abiertas, que mueve más (la
+  RAM de antes de entrenar va de 9.0 a 9.3 GB entre corridas).
+- **Lo que sí cambia es la duración:** unas 2.4 h, con la época 41 a unas 2 h de empezar.
+
+**Archivo de paginación de Windows** (19 de noviembre de 2026):
+- `C:\pagefile.sys` de 20 480 MB, administrado por Windows (puede crecer); el disco C: tiene 66 GB libres de 449.
+- Uso actual de 1.1 GB, y máximo de 4.5 GB (22 %) desde el último arranque (12 de noviembre de 2026, 09:37). Ese
+  máximo incluye todas las corridas de la fase 7.
+- Límite de memoria comprometida de 36 476 MB (RAM más paginación); ahora en uso 15.3 GB (41 %).
+- **Alcanza como respaldo para Windows:** los errores de memoria de Windows al abrir procesos aparecen cuando lo
+  comprometido llega al límite, y quedan unos 15 GB por encima del máximo registrado.
+- **No protege de la detención de Claude Code**, que mira la RAM física. Por eso las corridas se lanzan fuera de
+  Claude Code.
+
 ## Comandos
 
 ```
