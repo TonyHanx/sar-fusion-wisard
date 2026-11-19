@@ -12,7 +12,7 @@ energía y potencia; los valores son los de `c3.comprobaciones`), el monitor de 
 
 Antes de entrenar comprueba que la carpeta de la corrida no exista y que ni el entrenamiento ni la validación tengan
 imágenes de FHL 0405/0406 (la prueba). Guarda lo mismo que scripts/entrenar.py (monitor.csv, epocas.csv,
-resumen.json), y en resumen.json además la época elegida, la última, el promedio de las últimas y si paró antes.
+resumen.json); monitor.csv y epocas.csv, además, al final de cada época, por si el proceso se corta, y en resumen.json además la época elegida, la última, el promedio de las últimas y si paró antes.
 
 Con --verificar no entrena: comprueba el criterio (con un validador simulado) y el dropout con `c2.verificacion.imagenes`
 imágenes, y escribe runs/<carpeta>/c2/verificacion_*.csv.
@@ -23,6 +23,7 @@ Uso:
 """
 import argparse
 import json
+import os
 import random
 import sys
 import traceback
@@ -72,8 +73,29 @@ class EntrenadorFase7(en.Entrenador):
         return quitar_rgb(ds, self.p_sin_rgb) if mode == "train" else ds
 
 
+COLUMNAS_MONITOR = ["s", *[c.replace(".", "_") for c in en.CAMPOS_GPU], "ram_usada_mib", "ram_pct"]  # las de en.Monitor
+
+
+def escribir_csv(df, ruta):
+    """Escribe en un temporal y lo cambia de nombre: si el proceso se corta, queda el archivo anterior entero."""
+    tmp = Path(ruta).with_suffix(".csv.tmp")
+    df.to_csv(tmp, index=False)
+    os.replace(tmp, ruta)
+
+
+class MonitorFase7(en.Monitor):
+    """El monitor de la fase 5, que además puede guardar lo leído hasta ahora sin pararse."""
+
+    def guardar(self, ruta):
+        escribir_csv(pd.DataFrame(list(self.filas), columns=COLUMNAS_MONITOR), ruta)
+
+
 class RegistroFase7(en.Registro):
-    """El registro de la fase 5, sin la fila de más de la validación final de best.pt cuando la corrida para antes."""
+    """El registro de la fase 5, sin la fila de más de la validación final de best.pt cuando la corrida para antes,
+    y que al final de cada época guarda epocas.csv y monitor.csv (si tiene `monitor`) en la carpeta de la corrida. Así,
+    si el proceso se corta, quedan hasta la última época terminada. Solo escribe archivos: no cambia el entrenamiento,
+    y lo hace después de medir el tiempo de la época."""
+    monitor = None
 
     def inicio_epoca(self, tr):
         super().inicio_epoca(tr)
@@ -83,6 +105,10 @@ class RegistroFase7(en.Registro):
         if tr.epoch != getattr(self, "epoca_en_curso", None):  # final_eval sube tr.epoch en 1 para registrar best.pt
             return
         super().fin_epoca(tr)
+        carpeta = Path(tr.save_dir)
+        escribir_csv(pd.DataFrame(self.epocas), carpeta / "epocas.csv")
+        if self.monitor is not None:
+            self.monitor.guardar(carpeta / "monitor.csv")
 
 
 def prohibidos(cfg):
@@ -297,7 +323,8 @@ def entrenar(cfg, rutas, nombre):
     EntrenadorFase7.clave_fitness = cfg["c2"]["fitness"]
     EntrenadorFase7.p_sin_rgb = float(c["p_sin_rgb"])
 
-    monitor = en.Monitor(comp["monitor"]["intervalo_s"])
+    monitor = MonitorFase7(comp["monitor"]["intervalo_s"])
+    reg.monitor = monitor  # epocas.csv y monitor.csv se guardan al final de cada época
     monitor.start()
     error = None
     try:

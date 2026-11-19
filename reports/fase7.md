@@ -477,7 +477,7 @@ Se corren con `scripts/fase7_entrenar.py --corrida NOMBRE`, en este orden: `term
 |---|---|---|---|
 | 19 de noviembre de 2026, 10:57 | `termico_base` (la que luego fue `termico_base_p20`) | Chrome abierto (`cerrar_antes`). Salió con el código 3, antes de la prueba de potencia. | Nada se entrenó ni se escribió en la carpeta de la corrida. El registro está en `runs/fase7/termico_base_p20_intento1.log`. Se pide al usuario cerrar Chrome. |
 | 19 de noviembre de 2026, 12:11 | `termico_base` (receta nueva) | Chrome abierto otra vez: se vio antes de lanzar, así que no se lanzó. | Se pidió al usuario cerrarlo. |
-| 19 de noviembre de 2026, 13:04 | `termico_base` (receta nueva) | Pasó las comprobaciones (96.8 W) y entrenó 40 épocas. Claude Code detuvo el proceso en la época 41 de 50, la primera sin mosaico, porque la RAM del sistema estaba casi agotada. No fue un error del entrenamiento. | `results.csv` y `last.pt` llegan a la época 40. No hay `resumen.json`, `epocas.csv` ni `monitor.csv`, porque el script no llegó a escribirlos. Fila en la bitácora. No se usa ni se relanza sin confirmación del usuario. La carpeta `runs/fase7/termico_base/` queda como estaba. |
+| 19 de noviembre de 2026, 13:04 | `termico_base` (receta nueva) | Pasó las comprobaciones (96.8 W) y entrenó 40 épocas. Claude Code detuvo el proceso en la época 41 de 50, la primera sin mosaico, porque la RAM del sistema estaba casi agotada. No fue un error del entrenamiento. | `results.csv` y `last.pt` llegan a la época 40. No hay `resumen.json`, `epocas.csv` ni `monitor.csv`, porque el script no llegó a escribirlos. Fila en la bitácora. No se usa ni se relanza sin confirmación del usuario. A pedido del usuario se renombró a `runs/fase7/termico_base_cortada/` (y su registro a `termico_base_cortada.log`), como `rgb_100ep_cortada` en la fase 5. |
 
 ### Corrida 1, receta anterior: `termico_base_p20` (19 de noviembre de 2026)
 
@@ -555,6 +555,79 @@ la deja como evidencia de que `patience: 20` cortó el calendario. Se lanzó des
   - No hubo errores, y Windows usó poco el archivo de paginación (7.9 % de 20 GB).
   - Igual que en la fase 5a (98.7–99.9 %).
 
+### Antes de relanzar `termico_base` (19 de noviembre de 2026)
+
+**Dónde se corre.** El usuario la corre en su propia ventana de PowerShell, fuera de Claude Code. Así no la corta la
+protección de memoria de Claude Code. Las comprobaciones del script son las mismas.
+
+**Guardado por época** (`scripts/fase7_entrenar.py`):
+- `epocas.csv` y `monitor.csv` se escriben al final de cada época, en la carpeta de la corrida. Al terminar se
+  escriben completos, como antes.
+- Se escriben en un temporal que luego se renombra, así que un corte no deja un archivo a medias.
+- Solo cambian los callbacks, que escriben archivos después de medir el tiempo de la época. El entrenamiento no
+  cambia.
+- Se probó sin entrenar, con un entrenador simulado de 3 épocas y el monitor real:
+  - tras cada época, los dos archivos tienen las filas hasta esa época;
+  - la validación final de `best.pt` no agrega una fila.
+
+**`cache`:**
+- En `configs/fase7.yaml` es `false`.
+- También es `false` en `configs/fase5.yaml` y en `configs/diagnostico.yaml`, y en el `args.yaml` de todas las corridas
+  anteriores: las de la fase 5, B1, B2, `termico_base_p20` y `termico_base_cortada`.
+- `workers: 4` en todas, salvo `fusion_lote16_2ep` (8).
+- No se cambian épocas ni workers.
+
+### Pérdidas de entrenamiento y de validación, y el pico temprano
+
+Datos: `results.csv` de cada corrida. La pérdida de validación es la que calcula Ultralytics en cada época, sobre los
+442 fotogramas de validación. Las medianas son por tramo de 10 épocas.
+
+**`termico_base_cortada`** (épocas 1 a 40 de 50, todas con mosaico):
+
+| Épocas | mAP@0.5 | box (entren.) | cls (entren.) | box (val.) | cls (val.) |
+|---|---:|---:|---:|---:|---:|
+| 1–10 | 0.211 | 1.268 | 0.598 | 2.186 | 8.546 |
+| 11–20 | 0.273 | 1.091 | 0.430 | 2.225 | 5.215 |
+| 21–30 | 0.258 | 1.001 | 0.370 | 2.119 | 4.393 |
+| 31–40 | 0.261 | 0.918 | 0.317 | 2.148 | 4.167 |
+
+- **La pérdida de entrenamiento baja en todas las épocas.** La `box` va de 1.32 a 0.89, y la `cls`, de 1.33 a 0.30.
+  La correlación de Spearman con la época es −1.00 en las dos.
+- **La de validación no sube:**
+  - la `box` queda plana, entre 2.01 y 2.46, con Spearman −0.03;
+  - la `cls` baja de 8.5 a 4.2 (Spearman −0.55), con mucho ruido (3.6 a 14.5).
+- **No es el sobreajuste clásico**, en que la validación empeora mientras el entrenamiento mejora.
+  - El mAP@0.5 de validación sube en las primeras 10–15 épocas y después queda en una meseta de 0.26 (mediana),
+    con saltos de época a época de hasta 0.24.
+  - Lo que sí hay es una **brecha grande y constante**: en las épocas 31–40, la `box` es 2.15 en validación contra 0.92
+    en entrenamiento, y la `cls`, 4.2 contra 0.32.
+  - Desde la época 10–15, el modelo sigue ajustando los vuelos de entrenamiento sin mejorar en los de validación.
+    Apunta a la diferencia entre esos vuelos (FHL 0134 y MtErie 0007, bajo el dosel), no a que memorice.
+  - La parte sin mosaico (épocas 41–50) no llegó a correr.
+- **En la térmica, el pico no se repite:**
+  - las corridas térmicas tienen su máximo en épocas distintas: la 12 (0.391) en esta, la 10 (0.384) en
+    `termico_base_p20` y la 3 (0.327) en B2;
+  - las medianas por tramo no bajan después del máximo;
+  - es una época alta dentro del ruido de una meseta, no un pico seguido de caída.
+  - La época 1 de `termico_base_cortada` y de `termico_base_p20` da lo mismo (0.2115): es la misma semilla, y el
+    calendario de la tasa solo se separa después.
+
+**Las corridas RGB sí tienen un pico temprano, y luego caen:**
+
+| Corrida | Épocas | Máximo de mAP@0.5 | Última | Medianas de mAP@0.5 por tramo de 10 épocas |
+|---|---:|---|---:|---|
+| `rgb_100ep_cortada` | 7 | 0.163 (época 2) | 0.062 | 0.063 |
+| `rgb_100ep_cortada2` | 67 | 0.163 (época 2) | 0.010 | 0.076, 0.038, 0.040, 0.037, 0.029, 0.018, 0.014 |
+| `fusion_100ep` (referencia) | 100 | 0.395 (época 27) | 0.245 | de 0.252 a 0.310, sin tendencia |
+
+- **En las dos corridas RGB** el máximo es la época 2 (0.163), y después el mAP@0.5 baja casi sin parar: Spearman
+  −0.59 en `rgb_100ep_cortada2`.
+- **La pérdida de entrenamiento** de la RGB baja en todas las épocas (Spearman −1.00).
+- **La de validación** no mejora: la `box` queda en 4.0–4.2 y la `cls`, en 6–9 con mucho ruido.
+- Así que **en la RGB sí hay una divergencia sostenida**: mejora en los vuelos de entrenamiento y empeora en los de
+  validación. Es lo más cercano a un sobreajuste de las tres modalidades.
+- En la térmica y en la fusión, en cambio, la validación se queda en una meseta.
+
 ## Comandos
 
 ```
@@ -567,6 +640,7 @@ la deja como evidencia de que `patience: 20` cortó el calendario. Se lanzó des
 .venv\Scripts\python.exe scripts\fase7_c1_datasets.py --config configs\fase7.yaml --rutas configs\rutas.yaml --parte componer
 .venv\Scripts\python.exe scripts\fase7_c1_datasets.py --config configs\fase7.yaml --rutas configs\rutas.yaml --parte construir
 .venv\Scripts\python.exe scripts\fase7_entrenar.py --config configs\fase7.yaml --rutas configs\rutas.yaml --verificar
+$env:PYTHONIOENCODING = "utf-8"; cmd /c ".venv\Scripts\python.exe -u scripts\fase7_entrenar.py --config configs\fase7.yaml --rutas configs\rutas.yaml --corrida termico_base > runs\fase7\termico_base.log 2>&1"
 .venv\Scripts\python.exe scripts\evaluar.py --config configs\fase6.yaml --rutas configs\rutas.yaml --particion validacion --modelos fusion termico --rgb-cero --solo-verificar
 .venv\Scripts\python.exe scripts\fase7_copiar.py --config configs\fase7.yaml --rutas configs\rutas.yaml
 ```

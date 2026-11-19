@@ -277,6 +277,8 @@ c3:
     termico_base_p20:
       datos: configs/termico.yaml
       ultralytics: {epochs: 100, patience: 20}
+    # El primer intento con la receta nueva se cortó en la época 41 (Claude Code lo detuvo por falta de RAM del
+    # sistema): está en runs/fase7/termico_base_cortada/ y no se usa.
     termico_base:
       datos: configs/termico.yaml
     termico_ampliado:
