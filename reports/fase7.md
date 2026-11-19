@@ -598,7 +598,7 @@ Datos: `results.csv` de cada corrida. La pérdida de validación es la que calcu
   - la `cls` baja de 8.5 a 4.2 (Spearman −0.55), con mucho ruido (3.6 a 14.5).
 - **No es el sobreajuste clásico**, en que la validación empeora mientras el entrenamiento mejora.
   - El mAP@0.5 de validación sube en las primeras 10–15 épocas y después queda en una meseta de 0.26 (mediana),
-    con saltos de época a época de hasta 0.24.
+    con saltos de época a época de hasta 0.16.
   - Lo que sí hay es una **brecha grande y constante**: en las épocas 31–40, la `box` es 2.15 en validación contra 0.92
     en entrenamiento, y la `cls`, 4.2 contra 0.32.
   - Desde la época 10–15, el modelo sigue ajustando los vuelos de entrenamiento sin mejorar en los de validación.
