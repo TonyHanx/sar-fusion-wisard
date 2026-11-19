@@ -476,6 +476,8 @@ Se corren con `scripts/fase7_entrenar.py --corrida NOMBRE`, en este orden: `term
 | Fecha | Corrida | Comprobación que falló | Qué se hizo |
 |---|---|---|---|
 | 19 de noviembre de 2026, 10:57 | `termico_base` (la que luego fue `termico_base_p20`) | Chrome abierto (`cerrar_antes`). Salió con el código 3, antes de la prueba de potencia. | Nada se entrenó ni se escribió en la carpeta de la corrida. El registro está en `runs/fase7/termico_base_p20_intento1.log`. Se pide al usuario cerrar Chrome. |
+| 19 de noviembre de 2026, 12:11 | `termico_base` (receta nueva) | Chrome abierto otra vez: se vio antes de lanzar, así que no se lanzó. | Se pidió al usuario cerrarlo. |
+| 19 de noviembre de 2026, 13:04 | `termico_base` (receta nueva) | Pasó las comprobaciones (96.8 W) y entrenó 40 épocas. Claude Code detuvo el proceso en la época 41 de 50, la primera sin mosaico, porque la RAM del sistema estaba casi agotada. No fue un error del entrenamiento. | `results.csv` y `last.pt` llegan a la época 40. No hay `resumen.json`, `epocas.csv` ni `monitor.csv`, porque el script no llegó a escribirlos. Fila en la bitácora. No se usa ni se relanza sin confirmación del usuario. La carpeta `runs/fase7/termico_base/` queda como estaba. |
 
 ### Corrida 1, receta anterior: `termico_base_p20` (19 de noviembre de 2026)
 
