@@ -15,11 +15,18 @@ Ultralytics (faster-coco-eval) se salta. Luego calcula con pycocotools, a IoU 0.
 Escribe las salidas de la partición (resultados, mcnemar y el gráfico de recall, en configs/fase6.yaml) y una fila por
 modelo en la bitácora. En la prueba corre una sola vez: si ya existe alguna salida, no evalúa.
 
+Con --rgb-cero (fase 7), los modelos de 4 canales (la fusión) reciben la RGB en 0: los 3 canales de color de cada imagen
+se ponen en 0 al leerla (scripts/modalidad.py, p = 1), y la térmica queda igual. Los modelos de 3 canales no cambian.
+Sirve para ver cuánto depende la fusión de la RGB. Las predicciones van a <modelo>_rgb0/ y las salidas llevan el sufijo
+_rgb0, así que no se mezclan con las de siempre ni cuentan para "una sola vez".
+
 Uso:
   python scripts/evaluar.py --config configs/fase6.yaml --rutas configs/rutas.yaml --particion prueba
   python scripts/evaluar.py --config configs/fase6.yaml --rutas configs/rutas.yaml --particion prueba --solo-verificar
   python scripts/evaluar.py --config configs/fase6.yaml --rutas configs/rutas.yaml --particion validacion \
       --modelos fusion fusion_last
+  python scripts/evaluar.py --config configs/fase6.yaml --rutas configs/rutas.yaml --particion prueba \
+      --modelos fusion --rgb-cero --solo-predecir
 """
 import argparse
 import contextlib
@@ -42,6 +49,7 @@ from statsmodels.stats.contingency_tables import mcnemar  # noqa: E402
 from comun import RAIZ, agregar_a_bitacora, fijar_semilla, leer_rutas, leer_yaml, pares_anotados  # noqa: E402
 
 METRICAS = ["recall", "precision", "f2", "map50"]
+SUFIJO_RGB_CERO = "_rgb0"  # carpeta de predicciones y sufijo de las salidas con --rgb-cero
 
 
 @contextlib.contextmanager
@@ -202,13 +210,22 @@ def verificar(datos, nombre_part):
 
 # ------------------------------------------------------------------------------------------------------- predicción
 
-def predecir(clave, info, cfg, rutas, nombre_part, part, sin_metricas=False):
+def predecir(clave, info, cfg, rutas, nombre_part, part, sin_metricas=False, rgb_cero=False):
     """predictions.json del validador de Ultralytics (se reutiliza si ya existe). Con `sin_metricas`, el validador
-    solo guarda las predicciones: no calcula ni imprime ninguna métrica (tampoco su P y R con umbral)."""
+    solo guarda las predicciones: no calcula ni imprime ninguna métrica (tampoco su P y R con umbral). Con `rgb_cero`,
+    cada imagen llega con la RGB en 0 (solo 4 canales) y las predicciones van a <clave>_rgb0/."""
     from ultralytics import YOLO
     from ultralytics.models.yolo.detect import DetectionValidator
 
     class Validador(DetectionValidator):
+        def build_dataset(self, img_path, mode="val", batch=None):
+            ds = super().build_dataset(img_path, mode, batch)
+            if rgb_cero:
+                from modalidad import quitar_rgb
+
+                ds = quitar_rgb(ds, 1.0)
+            return ds
+
         def eval_json(self, stats):  # sin faster-coco-eval: la evaluación se hace aquí con pycocotools
             return stats
 
@@ -219,7 +236,7 @@ def predecir(clave, info, cfg, rutas, nombre_part, part, sin_metricas=False):
             if not sin_metricas:
                 super().print_results()
 
-    carpeta = rutas["runs"] / cfg["carpeta"] / nombre_part / clave
+    carpeta = rutas["runs"] / cfg["carpeta"] / nombre_part / (clave + (SUFIJO_RGB_CERO if rgb_cero else ""))
     pj = carpeta / "predictions.json"
     pesos = rutas["runs"] / cfg["corridas"] / info["corrida"] / info.get("pesos", cfg["pesos"])
     if pj.exists():
@@ -232,7 +249,8 @@ def predecir(clave, info, cfg, rutas, nombre_part, part, sin_metricas=False):
         t = time.time()
         met = modelo.val(validator=Validador, data=str(ruta(info["datos"])), split=part["split"], save_json=True,
                          project=str(carpeta.parent), name=clave, exist_ok=True, **cfg["prediccion"])
-        ultra = {"pesos": rel(pesos), "segundos": round(time.time() - t, 1), "sin_metricas": sin_metricas}
+        ultra = {"pesos": rel(pesos), "segundos": round(time.time() - t, 1), "sin_metricas": sin_metricas,
+                 "rgb_cero": rgb_cero}
         if not sin_metricas:
             ultra.update({"map50": float(met.box.map50), "map50_95": float(met.box.map),
                           "precision": float(met.box.mp), "recall": float(met.box.mr)})
@@ -240,6 +258,8 @@ def predecir(clave, info, cfg, rutas, nombre_part, part, sin_metricas=False):
         if not pj.exists():  # sin ninguna predicción, Ultralytics no escribe el archivo
             pj.write_text("[]", encoding="utf-8")
         (carpeta / "ultralytics.json").write_text(json.dumps(ultra, indent=2), encoding="utf-8")
+    if ultra.get("rgb_cero", False) != rgb_cero:
+        raise SystemExit(f"{pj}: rgb_cero={ultra.get('rgb_cero', False)}, se pidió {rgb_cero}")
     return json.loads(pj.read_text(encoding="utf-8")), ultra
 
 
@@ -434,6 +454,8 @@ def main():
     ap.add_argument("--solo-verificar", action="store_true", help="etiquetas, niveles, dudosas y bloques; sin predecir")
     ap.add_argument("--solo-predecir", action="store_true",
                     help="solo guarda las predicciones crudas (conf de `prediccion`); no calcula ninguna métrica")
+    ap.add_argument("--rgb-cero", action="store_true",
+                    help="los modelos de 4 canales reciben la RGB en 0 (la térmica igual); salidas con sufijo _rgb0")
     args = ap.parse_args()
     cfg = leer_yaml(args.config)
     rutas = leer_rutas(args.rutas)
@@ -445,6 +467,15 @@ def main():
         raise SystemExit("En la prueba solo se evalúan los modelos de `modelos`.")
     modelos = {k: todos[k] for k in claves}
     salidas = {k: ruta(v) for k, v in part["salidas"].items()}
+    rgb0 = {k: args.rgb_cero and leer_yaml(ruta(info["datos"])).get("channels", 3) == 4 for k, info in modelos.items()}
+    if args.rgb_cero:
+        if not any(rgb0.values()):
+            raise SystemExit("--rgb-cero: ninguno de los modelos tiene 4 canales.")
+        modelos = {k: {**info, "nombre": f"{info['nombre']} (RGB en 0)"} if rgb0[k] else info
+                   for k, info in modelos.items()}
+        salidas = {k: v.with_name(v.stem + SUFIJO_RGB_CERO + v.suffix) for k, v in salidas.items()}
+        print("RGB en 0: " + ", ".join(k for k in modelos if rgb0[k]) + "; salidas: "
+              + ", ".join(rel(v) for v in salidas.values()))
 
     datos = preparar(cfg, rutas, args.particion, modelos)
     verificar(datos, args.particion)
@@ -452,13 +483,15 @@ def main():
         return
     if args.solo_predecir:
         for k, info in modelos.items():
-            p, u = predecir(k, info, cfg, rutas, args.particion, part, sin_metricas=True)
-            destino = rutas["runs"] / cfg["carpeta"] / args.particion / k / "predictions.json"
+            p, u = predecir(k, info, cfg, rutas, args.particion, part, sin_metricas=True, rgb_cero=rgb0[k])
+            destino = (rutas["runs"] / cfg["carpeta"] / args.particion / (k + (SUFIJO_RGB_CERO if rgb0[k] else ""))
+                       / "predictions.json")
             print(f"{k}: {len(p)} predicciones (confianza >= {cfg['prediccion']['conf']}) en {rel(destino)}")
             agregar_a_bitacora(rutas["bitacora"], part["fase_bitacora"], f"YOLO26s {k}",
                                f"partición {args.particion} (split {part['split']}); pesos {u['pesos']}; solo "
                                f"predicciones crudas (confianza >= {cfg['prediccion']['conf']}, validador de "
-                               f"Ultralytics con save_json)",
+                               f"Ultralytics con save_json)"
+                               + ("; RGB en 0 (los 3 canales de color)" if rgb0[k] else ""),
                                f"{len(p)} predicciones en {rel(destino)}; no se calculó ninguna métrica")
         return
     if args.particion == "prueba":  # hasta implementar la regla del 3 de noviembre de 2026 (CLAUDE.md, "Métricas")
@@ -480,7 +513,7 @@ def main():
 
     preds, ultra = {}, {}
     for k, info in modelos.items():
-        preds[k], ultra[k] = predecir(k, info, cfg, rutas, args.particion, part)
+        preds[k], ultra[k] = predecir(k, info, cfg, rutas, args.particion, part, rgb_cero=rgb0[k])
         print(f"{k}: {len(preds[k])} predicciones; Ultralytics: mAP@0.5 {ultra[k].get('map50', float('nan')):.4f}")
 
     per = datos["per"]
@@ -571,7 +604,8 @@ def main():
             resumen.append(f"{sc['nombre']} ({dudosas[0]} dudosas): recall {d.recall:.3f} "
                            f"[{d.recall_ic_inf:.3f}, {d.recall_ic_sup:.3f}], P {d.precision:.3f}, F2 {d.f2:.3f}, "
                            f"mAP50 {d.map50:.3f}")
-        config = (f"partición {args.particion} (split {part['split']}); pesos {ultra[k]['pesos']}; conf {ev['conf']} "
+        config = (f"partición {args.particion} (split {part['split']}); pesos {ultra[k]['pesos']}; "
+                  + ("RGB en 0 (los 3 canales de color); " if rgb0[k] else "") + f"conf {ev['conf']} "
                   f"e IoU {ev['iou']} (mAP@0.5 con conf {cfg['prediccion']['conf']}), maxDets {ev['max_dets']}; "
                   f"bootstrap {B} remuestreos de {nb} bloques (episodios), seed={cfg['bootstrap']['seed']}; "
                   f"salidas {', '.join(rel(p) for p in salidas.values())}")

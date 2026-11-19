@@ -368,7 +368,88 @@ con enlaces duros.
 - Bitácora: una fila con las cuentas de los dos datasets.
 - **Para C2:** en `fusion_ampliado`, el 77 % de las imágenes de entrenamiento (10 863 de 14 110) ya llevan la RGB en
   0. Con el dropout de p = 0.3 de C2 encima, la RGB real quedaría en un 16 % de las imágenes de cada época
-  (0.7 × 3 247 / 14 110).
+  (0.7 × 3 247 / 14 110). Por eso el usuario fijó p = 0 (C2, abajo).
+
+## C2. Receta para objetos pequeños
+
+Va en `scripts/fase7_entrenar.py`, con las secciones `c2` y `c3` de `configs/fase7.yaml`. El dropout está en
+`scripts/modalidad.py`.
+
+### Qué cambia frente a la fase 5
+
+`scripts/entrenar.py` no cambia: se reutilizan sus comprobaciones previas (aplicaciones cerradas, enchufe, plan de
+energía y potencia, con los valores de `configs/fase5.yaml`), el monitor, el registro por época y el inicio del cuarto
+canal.
+
+- **Mejor época por el mAP@0.5 de validación.**
+  - El entrenador reemplaza `validate` de Ultralytics, cuyo fitness en 8.4.194 es solo el mAP@0.5:0.95.
+  - Con eso, `best.pt`, `best_fitness` y la parada temprana (`patience: 20`) van por `metrics/mAP50(B)`.
+  - `last.pt` queda con la última época corrida.
+  - `resumen.json` guarda la época elegida, la última y si paró antes. También comprueba que `best.pt` sea la elegida.
+- **Dropout de modalidad** (`p_sin_rgb`, por corrida):
+  - en la fusión, cada imagen de entrenamiento pierde la RGB con probabilidad p: sus 3 canales de color van en 0;
+  - actúa al leer la imagen, así que en el mosaico cada una de las 4 imágenes se decide por separado;
+  - nunca en la validación;
+  - con p = 0, el entrenador deja el dataset de Ultralytics sin cambios y no gasta ningún número al azar.
+- **Lo demás, como en la Tabla 8:**
+  - imgsz 640, lote 16, como máximo 100 épocas y seed 0;
+  - `hsv_h = hsv_s = hsv_v = 0`;
+  - 4 procesos de lectura y `cache: false`.
+- **Optimizador fijo:** AdamW con lr0 = 0.002, momentum (beta1) 0.9 y `warmup_bias_lr = 0`.
+  - Es justo lo que eligió `optimizer=auto` en la fase 5.
+  - Hay que fijarlo porque `auto` elige por el número de iteraciones. Con los datasets ampliados son 221 lotes de 64 ×
+    100 épocas = 22 100 iteraciones, más de 10 000, y `auto` cambiaría a MuSGD con lr0 = 0.01.
+  - Así, las corridas 2 y 4 solo cambian los datos. En las corridas base da lo mismo que `auto`: 5 100 iteraciones,
+    AdamW con 0.002. `resumen.json` lo confirma en cada corrida.
+- **Sin FHL 0405:** el script no entrena si en el entrenamiento o la validación aparece alguna imagen de FHL 0405/0406.
+- **Registro:** al parar antes, la validación final de `best.pt` no se anota como una época más en `epocas.csv`.
+
+### Decisión del usuario: p = 0 en `fusion_ampliado` (19 de noviembre de 2026)
+
+Está anotada en la bitácora antes de C3, con sus palabras:
+
+> p se cambia de 0.3 a 0 porque el 77 % de las imágenes de entrenamiento ya tienen la RGB en 0; así la corrida 4 solo
+> cambia los datos frente a la base. El dropout queda como ablación posterior.
+
+El dropout queda programado y verificado, con p = 0 en las cuatro corridas de C3 (`c3.corridas`).
+
+### Verificación (`--verificar`, sin entrenar)
+
+Se corrió con 8 imágenes del entrenamiento base de la fusión, que tienen RGB real (seed 0). Las salidas están en
+`c2/verificacion_fitness.csv` y `c2/verificacion_dropout.csv`.
+
+| Prueba | Imágenes | Resultado |
+|---|---:|---|
+| Criterio, con un validador simulado de 2 épocas: mAP@0.5 de 0.30 y 0.25, mAP@0.5:0.95 de 0.10 y 0.12 | — | Elige la época 1 (Ultralytics elegiría la 2). El `fitness` de Ultralytics sale de las métricas. Con `patience: 20`, para en la época 21. |
+| Entrenamiento con p = 0.3: la imagen leída, donde actúa el dropout | 8 | 1 sin RGB, la que tocaba por la semilla. La térmica, igual en las 8. Las otras 7, iguales al TIFF. |
+| Entrenamiento con p = 1: el tensor con todos los aumentos (mosaico) | 8 | No llega nada de la RGB, solo el relleno gris de Ultralytics. La térmica, igual a la del mismo dataset sin dropout con las mismas semillas. |
+| Entrenamiento con p = 0 | — | El entrenador deja el `YOLODataset` de Ultralytics. |
+| Tensor sin aumentos, como entra al modelo, con p = 0.3 | 8 | 1 sin RGB. Las demás, iguales al TIFF en R, G, B y T. |
+| Validación armada por el entrenador con p = 0.3 | 8 | Sin dropout: `YOLODataset`, y las 8 con su RGB. |
+| Evaluación con la RGB en 0 (p = 1) | 8 | Las 8 sin RGB, con la térmica igual. |
+
+- **Relleno:** lo que queda fuera de la imagen (letterbox y mosaico), Ultralytics lo rellena con gris 114 en los 4
+  canales.
+  - Por eso, con la RGB en 0, el modelo ve la RGB negra rodeada de gris.
+  - En el mosaico, los píxeles con RGB distinta de 0 coinciden con el relleno del mismo tensor sin dropout: de 0 % a
+    34.8 % de la imagen según el mosaico, con a lo más 0.3 puntos de diferencia, que son los bordes interpolados.
+  - Pasa igual con las 10 863 imágenes sin pareja de `fusion_ampliado`. No se cambia: es lo que hace Ultralytics en
+    todas las corridas.
+
+### Evaluador: la prueba con la RGB en 0
+
+Se agregó a `scripts/evaluar.py` la opción `--rgb-cero`.
+
+- Los modelos de 4 canales (la fusión) reciben la RGB en 0: los 3 canales de color de cada imagen van en 0 al leerla,
+  con el mismo `scripts/modalidad.py` y p = 1. La térmica queda igual. Los modelos de 3 canales no cambian.
+- Las predicciones van a `<modelo>_rgb0/` y las salidas llevan el sufijo `_rgb0`. Así no se mezclan con las de
+  siempre ni cuentan para "una sola vez".
+- Sin la opción, el evaluador hace exactamente lo mismo que antes.
+- **En la prueba** funciona ya con `--solo-predecir`. La evaluación completa de la prueba sigue esperando los umbrales
+  por modelo de validación (F2), como antes.
+- **En la fase 7 no se corre en la prueba** (FHL 0405). Solo se probó con `--solo-verificar` en validación.
+  - `--modelos fusion termico`: la RGB en 0 va solo para la fusión.
+  - `--modelos termico`: se niega, porque ningún modelo tiene 4 canales.
 
 ## Comandos
 
@@ -381,5 +462,7 @@ con enlaces duros.
 .venv\Scripts\python.exe scripts\fase7_c0_auditoria.py --config configs\fase7.yaml --rutas configs\rutas.yaml --parte puntos
 .venv\Scripts\python.exe scripts\fase7_c1_datasets.py --config configs\fase7.yaml --rutas configs\rutas.yaml --parte componer
 .venv\Scripts\python.exe scripts\fase7_c1_datasets.py --config configs\fase7.yaml --rutas configs\rutas.yaml --parte construir
+.venv\Scripts\python.exe scripts\fase7_entrenar.py --config configs\fase7.yaml --rutas configs\rutas.yaml --verificar
+.venv\Scripts\python.exe scripts\evaluar.py --config configs\fase6.yaml --rutas configs\rutas.yaml --particion validacion --modelos fusion termico --rgb-cero --solo-verificar
 .venv\Scripts\python.exe scripts\fase7_copiar.py --config configs\fase7.yaml --rutas configs\rutas.yaml
 ```

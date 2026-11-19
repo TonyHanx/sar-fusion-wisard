@@ -164,6 +164,7 @@ copiar:
     - c0/clasificacion/*
     - c1/*.csv
     - c1/*.md
+    - c2/*.csv
   excluir: ["*.pt"]
   jpeg_calidad: 85
 
@@ -209,3 +210,61 @@ c1:
     nombres: {termico: termico_ampliado, fusion: fusion_ampliado}
     verificacion: 8                  # TIFF nuevos al azar (seed) que se leen con el dataset de Ultralytics
     seed: 0
+
+# C2: receta para objetos pequeños (scripts/fase7_entrenar.py; el dropout de modalidad está en scripts/modalidad.py).
+c2:
+  fitness: metrics/mAP50(B)          # best.pt y la parada temprana por el mAP@0.5 de validación (Ultralytics: mAP@0.5:0.95)
+  verificacion:                      # --verificar: sin entrenar
+    datos: configs/fusion.yaml       # el entrenamiento base: todas sus imágenes tienen RGB real
+    imagenes: 8
+    p: 0.3                           # solo para la verificación; en cada corrida va su p_sin_rgb
+    relleno: 114                     # gris con que Ultralytics rellena el LetterBox y el mosaico (4 canales)
+    seed: 0
+    carpeta: c2                      # runs/<carpeta>/c2/
+
+# C3: corridas, en este orden (scripts/fase7_entrenar.py --corrida NOMBRE). Cada una toma `base` y cambia lo que dice.
+c3:
+  carpeta: fase7                     # runs/fase7/<corrida>/
+  pesos: yolo26s.pt
+  # potencia, cerrar_antes, codigos_salida, monitor y memoria: las mismas comprobaciones que en la fase 5
+  comprobaciones: configs/fase5.yaml
+  base:
+    fase: "7"
+    inicio_cuarto_canal: azar        # solo con 4 canales; la fusión usa promedio (fase 5a)
+    p_sin_rgb: 0.0                   # dropout de modalidad, solo en el entrenamiento y con 4 canales
+    ultralytics:                     # Tabla 8 (fase 5), más patience; lo demás, por omisión de Ultralytics 8.4.194
+      seed: 0
+      deterministic: true
+      imgsz: 640
+      epochs: 100
+      batch: 16
+      hsv_h: 0.0
+      hsv_s: 0.0
+      hsv_v: 0.0
+      device: 0
+      workers: 4
+      cache: false
+      patience: 20                   # épocas sin mejorar el mAP@0.5 de validación
+      # Optimizador fijo, el que eligió optimizer=auto en la fase 5 (AdamW, lr0 = 0.002 = 0.002 x 5 / (4 + 1), betas
+      # 0.9 y 0.999, y warmup_bias_lr = 0, que auto también fija). Con auto, los datasets ampliados (14 110 imágenes,
+      # 221 x 100 = 22 100 iteraciones > 10 000) cambiarían a MuSGD con lr0 = 0.01, y la corrida cambiaría algo más
+      # que los datos.
+      optimizer: AdamW
+      lr0: 0.002
+      momentum: 0.9
+      warmup_bias_lr: 0.0
+  corridas:
+    termico_base:
+      datos: configs/termico.yaml
+    termico_ampliado:
+      datos: data/fase7/datasets/termico_ampliado/termico_ampliado.yaml
+    fusion_base:                     # sin dropout de modalidad
+      datos: configs/fusion.yaml
+      inicio_cuarto_canal: promedio
+    fusion_ampliado:
+      datos: data/fase7/datasets/fusion_ampliado/fusion_ampliado.yaml
+      inicio_cuarto_canal: promedio
+      # 19 de noviembre de 2026, decisión del usuario antes de C3: p se cambia de 0.3 a 0 porque el 77 % de las imágenes
+      # de entrenamiento ya tienen la RGB en 0; así la corrida 4 solo cambia los datos frente a la base. El dropout
+      # queda como ablación posterior.
+      p_sin_rgb: 0.0
