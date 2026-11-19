@@ -731,6 +731,80 @@ Es la corrida de `termico_base` que se usa en C4. `termico_base_cortada` y `term
 - **No protege de la detención de Claude Code**, que mira la RAM física. Por eso las corridas se lanzan fuera de
   Claude Code.
 
+### Corrida 2: `termico_ampliado` (19 de noviembre de 2026)
+
+- **Dónde y cuándo:** la corrió el usuario en su PowerShell, fuera de Claude Code y con VS Code cerrado, de 14:39 a
+  17:03. Terminó con salida 0, y el script escribió su fila en la bitácora.
+- **Datos:** `data/fase7/datasets/termico_ampliado/`, con 14 110 imágenes de entrenamiento (3 247 de la base y 10 863
+  nuevas) y la misma validación de 442 fotogramas.
+- **Comprobaciones previas:** las tres aplicaciones cerradas, límite aplicado de 99.8 W y 6 995 MiB de RAM usados
+  antes de empezar (9 012 en `termico_base`).
+- **Durante el entrenamiento:**
+  - límite aplicado de 88.2 W (mediana), pico de memoria de la GPU de 5 291 MiB y 87 °C como máximo;
+  - 172 s por época (mediana; se estimaron 175) y 2 h 24 min en total (8 637 s).
+- **`best.pt` es la época 9.** `resumen.json` comprueba que coincide con la de mayor mAP@0.5 de `results.csv`.
+
+| | Época | mAP@0.5 | mAP@0.5:0.95 | P | R |
+|---|---:|---:|---:|---:|---:|
+| **Última (`last.pt`)** | 50 | **0.363** | 0.163 | 0.605 | 0.354 |
+| **Promedio de las 5 últimas** | 46–50 | **0.361** | 0.162 | 0.617 | 0.366 |
+| `best.pt` (secundaria) | 9 | 0.507 | 0.244 | 0.576 | 0.544 |
+| Validación final de `best.pt` (Ultralytics) | — | 0.506 | 0.245 | 0.577 | 0.542 |
+
+**mAP@0.5 de validación por época:**
+
+| Épocas | Valores |
+|---|---|
+| 1–10 | 0.245, 0.333, 0.469, 0.345, 0.259, 0.348, 0.417, 0.429, **0.507**, 0.360 |
+| 11–20 | 0.328, 0.461, 0.376, 0.390, 0.397, 0.420, 0.381, 0.393, 0.407, 0.338 |
+| 21–30 | 0.398, 0.400, 0.323, 0.419, 0.387, 0.375, 0.394, 0.380, 0.375, 0.343 |
+| 31–40 | 0.385, 0.351, 0.400, 0.354, 0.360, 0.365, 0.378, 0.405, 0.410, 0.422 |
+| 41–50 (sin mosaico) | 0.402, 0.365, 0.376, 0.348, 0.350, 0.358, 0.360, 0.357, 0.367, 0.363 |
+
+**`termico_base` frente a `termico_ampliado`** (misma receta y misma validación; solo cambian los datos):
+
+| Cifra | `termico_base` | `termico_ampliado` | Diferencia |
+|---|---:|---:|---:|
+| mAP@0.5, promedio de las 5 últimas | 0.222 | **0.361** | +0.139 |
+| mAP@0.5, `best.pt` | 0.391 (época 12) | **0.507** (época 9) | +0.116 |
+| Recall, promedio de las 5 últimas | 0.274 | **0.366** | +0.091 |
+| Recall, `best.pt` | 0.437 | **0.544** | +0.107 |
+
+- **Caída desde `best.pt` hasta el promedio de las 5 últimas:**
+  - en mAP@0.5 es menor: 0.146 (de 0.507 a 0.361, un 29 %), contra 0.169 (de 0.391 a 0.222, un 43 %);
+  - en recall no: 0.178 (de 0.544 a 0.366), contra 0.163 (de 0.437 a 0.274);
+  - la precisión, en cambio, sube al final (de 0.576 a 0.617).
+- **La curva:** las medianas por tramo de 10 épocas son 0.354, 0.391, 0.384, 0.382 y 0.362. Después de la época 10 queda
+  en una meseta de unas 0.38. `best.pt` (época 9, 0.507) es una época aislada: las de al lado dan 0.429 y 0.360.
+- **El tramo sin mosaico baja menos que en `termico_base`:**
+  - mAP@0.5 de 0.383 de media en las épocas 31–40 a 0.365 en las 41–50 (−0.018, contra −0.055 en `termico_base`);
+  - recall de 0.375 a 0.362, y precisión de 0.581 a 0.625;
+  - la pérdida de validación casi no cambia (`box` de 2.23 a 2.20 y `cls` de 3.30 a 3.40).
+
+### RAM de `termico_ampliado`
+
+`monitor.csv`: 8 199 lecturas, una cada 1.1 s, de 14:39:55 a 17:03:57.
+
+- **Pico de 99.7 % (15 940 MiB): una sola lectura, a las 14:43:16, en la validación de la época 1.**
+  - Es el mismo momento que en `termico_base` (99.8 %): cuando Ultralytics abre los 8 procesos de lectura de la
+    validación.
+  - Fue la única lectura de 98 % o más en toda la corrida.
+- **En la época 41** (16:35:10 a 16:35:19, al quitar el mosaico), la RAM bajó de 12.7 a 10.8 GB al cerrar los 4
+  procesos de lectura. Con los 4 nuevos subió hasta 14.3 GB (89.4 %), contra 98.8 % en `termico_base`.
+- **En toda la corrida:** mediana de 83.0 %, y 95 % o más el 0.2 % del tiempo. En `termico_base` fueron 92.9 % y
+  26.3 %.
+- **Contra la estimación** (el mismo pico, en los mismos momentos, y unos 30 MiB más por la lista de etiquetas):
+  - **momentos: coinciden** (la primera validación y la época 41);
+  - **lo que ocupa el entrenamiento sobre la RAM de antes de empezar**, en las épocas 2–40: 5 918 MiB de mediana,
+    contra 5 791 en `termico_base`. Son unos 130 MiB más, cuatro veces lo estimado, pero menos del 1 % de los 16 GB;
+  - **el pico: coincide en el nivel (99.7 % contra 99.8 %), pero no por la razón que supuse.** Esperaba que bajara si
+    había menos aplicaciones abiertas, y había 2 GB menos. Sin embargo, la apertura de los 8 procesos de la validación
+    subió 3.3 GB sobre el entrenamiento de la época 1, contra 1.9 GB en `termico_base`.
+  - Mi interpretación, que no está comprobada: al abrir los procesos de la validación, Windows deja que ocupen la RAM
+    libre que haya y después la recorta. Así, ese pico llega cerca del 100 % aunque haya más memoria libre. Esa
+    validación duró 21.7 s, contra 34.9 s en `termico_base`.
+  - **Cerrar aplicaciones sí bajó el resto de la corrida**, pero no ese instante.
+
 ## Comandos
 
 ```
@@ -744,6 +818,7 @@ Es la corrida de `termico_base` que se usa en C4. `termico_base_cortada` y `term
 .venv\Scripts\python.exe scripts\fase7_c1_datasets.py --config configs\fase7.yaml --rutas configs\rutas.yaml --parte construir
 .venv\Scripts\python.exe scripts\fase7_entrenar.py --config configs\fase7.yaml --rutas configs\rutas.yaml --verificar
 $env:PYTHONIOENCODING = "utf-8"; cmd /c ".venv\Scripts\python.exe -u scripts\fase7_entrenar.py --config configs\fase7.yaml --rutas configs\rutas.yaml --corrida termico_base > runs\fase7\termico_base.log 2>&1"
+$env:PYTHONIOENCODING = "utf-8"; cmd /c ".venv\Scripts\python.exe -u scripts\fase7_entrenar.py --config configs\fase7.yaml --rutas configs\rutas.yaml --corrida termico_ampliado > runs\fase7\termico_ampliado.log 2>&1"
 .venv\Scripts\python.exe scripts\evaluar.py --config configs\fase6.yaml --rutas configs\rutas.yaml --particion validacion --modelos fusion termico --rgb-cero --solo-verificar
 .venv\Scripts\python.exe scripts\fase7_copiar.py --config configs\fase7.yaml --rutas configs\rutas.yaml
 ```
