@@ -780,6 +780,23 @@ Es la corrida de `termico_base` que se usa en C4. `termico_base_cortada` y `term
   - mAP@0.5 de 0.383 de media en las épocas 31–40 a 0.365 en las 41–50 (−0.018, contra −0.055 en `termico_base`);
   - recall de 0.375 a 0.362, y precisión de 0.581 a 0.625;
   - la pérdida de validación casi no cambia (`box` de 2.23 a 2.20 y `cls` de 3.30 a 3.40).
+- **La mejora no se explica por más iteraciones.** `termico_ampliado` tiene 882 lotes por época, contra 203 en la base,
+  así que en 50 épocas da 4.3 veces más pasos. Pero las tres corridas térmicas con el dataset base llegan a su máximo
+  antes de la época 13 y después empeoran (no lo vuelven a alcanzar):
+
+  | Corrida | Máximo (época, lotes) | Mejor después del máximo | Mediana después del máximo | Promedio de las 5 últimas | Lotes en total |
+  |---|---|---:|---:|---:|---:|
+  | `termico_base` | 0.391 (12, 2 436) | 0.347 | 0.250 | 0.222 | 10 150 |
+  | `termico_base_p20` | 0.384 (10, 2 030) | 0.370 | 0.236 | 0.242 | 6 090 |
+  | B2 | 0.327 (3, 609) | 0.306 | 0.217 | 0.197 | 6 090 |
+
+  - Con la base, pasar de unos 2 000 lotes a 10 150 no sube el mAP@0.5: baja.
+  - Con los mismos lotes, `termico_ampliado` ya va por encima:
+    - en la época 3 (2 646 lotes) da 0.469, más que el máximo de `termico_base` en sus 10 150 lotes (0.391);
+    - en sus primeras 11 épocas (9 702 lotes, menos que los 10 150 de `termico_base`), la mediana es 0.348, contra
+      0.244 en las 50 épocas de `termico_base`.
+  - Un matiz: la tasa de aprendizaje no está en el mismo punto del calendario con los mismos lotes, porque las dos
+    corridas la bajan a lo largo de 50 épocas.
 
 ### RAM de `termico_ampliado`
 
@@ -805,6 +822,105 @@ Es la corrida de `termico_base` que se usa en C4. `termico_base_cortada` y `term
     validación duró 21.7 s, contra 34.9 s en `termico_base`.
   - **Cerrar aplicaciones sí bajó el resto de la corrida**, pero no ese instante.
 
+### Antes de `fusion_base` (19 de noviembre de 2026)
+
+**De qué vuelo viene cada imagen de los datasets ampliados**, comprobado con los archivos y no con `composicion.csv`
+(`scripts/fase7_origen.py`, sección `origen` de `configs/fase7.yaml`):
+- **Enlace duro:** el identificador de archivo de cada imagen se busca entre los de `data/alineados/` (la base de la
+  fase 2) y los de `data/fase7/{termica,fusion}/` (las nuevas de C1). Solo se miran metadatos.
+- **Contenido:** los píxeles de la térmica de cada imagen (el PNG o la cuarta muestra del TIFF) se comparan con los de
+  las 28 935 térmicas originales de las 40 carpetas IR del dataset WiSARD. Se pasan a gris como en la fase 2 y en C1.
+- **FHL 0405/0406 no se leyó.** Se descarta porque cada imagen es igual a una original de otro vuelo, y porque ninguna
+  enlaza a sus archivos.
+- Tarda 70 s.
+
+| Comprobación (los dos datasets, 29 104 imágenes) | Resultado |
+|---|---|
+| Con enlace a la base de la fase 2 o a las nuevas de C1 | 29 104 |
+| Con su térmica igual a una original | 29 104 |
+| Con originales iguales en más de un vuelo | 0 |
+| Vuelo por el contenido distinto del vuelo por el enlace | 0 |
+| TIFF con la térmica distinta del PNG del mismo nombre | 0 de 14 552 |
+| TIFF nuevos con la RGB distinta de 0 (no hay pares reales aprobados) | 0 de 10 863 |
+| Imágenes nuevas de MtErie 0007 o de FHL 0405 | **0** |
+| Imágenes nuevas de MtErie 0005 | **15 en cada dataset** |
+
+- 32 imágenes nuevas (16 en cada dataset) son iguales a dos fotogramas originales seguidos del mismo vuelo. El vídeo
+  repite el fotograma, y las dos copias están en el entrenamiento.
+- **MtErie 0007** (`IR_0008`) está solo en la validación: 169 de los 442 fotogramas, por la partición. No hay ninguna
+  en el entrenamiento.
+- **FHL 0405** no aparece en ninguna parte.
+- **MtErie 0005** (`IR_0006`) sí está en el entrenamiento:
+  - **257 imágenes de la base**: es un vuelo de entrenamiento de la partición, desde la fase 3;
+  - **15 nuevas**, las posiciones 160–162, 202–204, 207–211, 220–221 y 226–227;
+  - son pares anotados que la fase 2 excluyó por desfase entre la RGB y la térmica, y que C1 devolvió al
+    entrenamiento: la fuente "excluido de entrenamiento", igual que 28 de MtErie 0003;
+  - en `fusion_ampliado` llevan la RGB en 0;
+  - no es un vuelo de validación ni de prueba, pero va contra lo que se esperaba. Queda para que decida el usuario.
+  - `termico_ampliado` ya se entrenó con ellas. `fusion_base` usa el dataset de siempre (`configs/fusion.yaml`), así
+    que no le afecta.
+
+**Vuelos de origen de las imágenes agregadas** (10 863, las mismas en `termico_ampliado` y en `fusion_ampliado`):
+
+| Vuelo (carpeta IR) | Imágenes |
+|---|---:|
+| 200704_Baker_FLIR_IR_1 | 881 |
+| 200704_Baker_FLIR_IR_2 | 1 064 |
+| 200910_Carnation_FLIR_IR_1 a IR_7 | 105, 428, 170, 138, 266, 253 y 175 (1 535) |
+| 200929_Karen_FLIR_IR_1 a IR_6 | 316, 407, 434, 452, 452 y 451 (2 512) |
+| 210327_Airfield_FLIR_IR_1, 2, 3, 4, 6, 7 y 8 | 190, 503, 368, 215, 364, 432 y 159 (2 231) |
+| 210529_Carnation_Enterprise_0023 (`IR_0024`) | 736 |
+| 210924_FHL_Enterprise_0403 (`IR_0404`) | 216 |
+| 210924_FHL_Enterprise_0564 (`IR_0565`) | 754 |
+| 210924_FHL_Enterprise_0566 (`IR_0567`) | 731 |
+| 210924_FHL_Enterprise_0401 (`IR_0402`), excluidas en la fase 2 | 113 |
+| 220109_Baker_Enterprise_1 (`IR_1`), excluidas en la fase 2 | 47 |
+| 210417_MtErie_Enterprise_0003 (`IR_0004`), excluidas en la fase 2 | 28 |
+| 210417_MtErie_Enterprise_0005 (`IR_0006`), excluidas en la fase 2 | 15 |
+
+La base de entrenamiento (3 247) es la de siempre: Baker 1 971, FHL 0401 783, MtErie 0005 257 y MtErie 0003 236.
+
+**Receta de `fusion_base`**, mezclando `c3.base` con la corrida como hace el script, y comparada con lo que guardaron
+los `resumen.json` de `termico_base` y `termico_ampliado`:
+- **Los parámetros de Ultralytics son todos iguales:**
+  - seed 0 (`deterministic: true`), lote 16 y 50 épocas;
+  - AdamW con lr0 = 0.002, momentum 0.9 y `warmup_bias_lr = 0`;
+  - `cache: false`, `workers: 4`, `patience: 0`, `close_mosaic: 10`, imgsz 640 y `hsv = 0`.
+- **Solo cambian:**
+  - los datos: `configs/fusion.yaml`, con `channels: 4`;
+  - el inicio del cuarto canal: `promedio`. En las térmicas dice `azar`, pero no se usa con 3 canales.
+- En las dos térmicas, `args.yaml` y el optimizador real (AdamW, 0.002) coinciden con eso.
+
+**RAM esperada de `fusion_base`.** Corridas medidas con el mismo monitor, con 4 procesos de lectura y lote 16:
+
+| Corrida | Canales | RAM antes (MiB) | Pico | Momento del pico | Mediana sin la época 1 (MiB) | Al quitar el mosaico |
+|---|---:|---:|---:|---|---:|---:|
+| `fusion_100ep` (fase 5, el mismo dataset) | 4 | 9 620 | 99.8 % | 1.ª validación | 13 796 | 94.1 % (época 91) |
+| `fusion_azar_10ep` (fase 5) | 4 | 7 109 | 99.9 % | 1.ª validación | 14 868 | — |
+| `fusion_promedio_10ep` (fase 5) | 4 | 6 479 | 99.5 % | época 2 | 15 303 | — |
+| `termico_base` | 3 | 9 012 | 99.8 % | 1.ª validación | 14 857 | 98.8 % (época 41) |
+| `termico_ampliado` | 3 | 6 995 | 99.7 % | 1.ª validación | 13 254 | 89.4 % (época 41) |
+| B2 | 3 | 8 825 | 99.9 % | época 2 | 15 186 | — |
+
+- **En teoría, el TIFF de 4 canales suma poco:**
+  - el búfer del mosaico de cada proceso de lectura (128 imágenes) pasa de 1.0 a 1.3 MB por imagen, unos 160 MB más
+    con los 4 procesos;
+  - los lotes en camino, unos 50 MB más;
+  - en total, del orden de 0.2–0.3 GB.
+- **En las medidas no se nota.** Las diferencias entre corridas por lo que hay abierto, y por cómo Windows reparte la
+  memoria, son de ±1 GB. `fusion_100ep`, con 9.6 GB antes, quedó más abajo (13.8 GB) que `termico_base` con 9.0 GB
+  (14.9 GB).
+- **Estimación:**
+  - el mismo pico que en todas las corridas medidas (98.7–99.9 %), en la primera validación;
+  - en la época 41, entre un 90 % y un 99 %, según la RAM de antes;
+  - unos 36 min (`fusion_100ep`: 42.8 s por época).
+- **Riesgos:**
+  - no veo uno nuevo frente a las térmicas: ninguna de las 10 corridas medidas tuvo errores de memoria;
+  - el archivo de paginación deja unos 15 GB de margen;
+  - el único corte, `termico_base_cortada`, lo hizo Claude Code, y se evita corriéndola fuera;
+  - lo que más acerca la época 41 al 99 % es tener más aplicaciones abiertas (98.8 % con 9.0 GB antes, 89.4 % con
+    7.0 GB). Conviene correrla como `termico_ampliado`, con VS Code cerrado.
+
 ## Comandos
 
 ```
@@ -820,5 +936,6 @@ Es la corrida de `termico_base` que se usa en C4. `termico_base_cortada` y `term
 $env:PYTHONIOENCODING = "utf-8"; cmd /c ".venv\Scripts\python.exe -u scripts\fase7_entrenar.py --config configs\fase7.yaml --rutas configs\rutas.yaml --corrida termico_base > runs\fase7\termico_base.log 2>&1"
 $env:PYTHONIOENCODING = "utf-8"; cmd /c ".venv\Scripts\python.exe -u scripts\fase7_entrenar.py --config configs\fase7.yaml --rutas configs\rutas.yaml --corrida termico_ampliado > runs\fase7\termico_ampliado.log 2>&1"
 .venv\Scripts\python.exe scripts\evaluar.py --config configs\fase6.yaml --rutas configs\rutas.yaml --particion validacion --modelos fusion termico --rgb-cero --solo-verificar
+.venv\Scripts\python.exe scripts\fase7_origen.py --config configs\fase7.yaml --rutas configs\rutas.yaml
 .venv\Scripts\python.exe scripts\fase7_copiar.py --config configs\fase7.yaml --rutas configs\rutas.yaml
 ```

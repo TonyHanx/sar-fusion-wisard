@@ -222,6 +222,18 @@ c1:
     verificacion: 8                  # TIFF nuevos al azar (seed) que se leen con el dataset de Ultralytics
     seed: 0
 
+# Antes de fusion_base (19 de noviembre de 2026, pedido del usuario): de qué vuelo viene cada imagen de los datasets
+# ampliados, comprobado con los archivos (enlaces duros y píxeles de la térmica contra las originales) y no con
+# composicion.csv (scripts/fase7_origen.py). Las carpetas `prohibidas` no se leen.
+origen:
+  datasets: [termico_ampliado, fusion_ampliado]   # en data/<c1.salida>/datasets/; primero el térmico
+  vigilar:                           # vuelos (columna `vuelo` de pares.csv): ninguna imagen nueva puede venir de ellos
+    - 210417_MtErie_Enterprise_0005
+    - 210417_MtErie_Enterprise_0007
+    - 210924_FHL_Enterprise_0405
+  procesos: 6
+  carpeta: c1                        # runs/<carpeta>/c1/; el detalle por imagen, en c1/origen/ (no se copia a git)
+
 # C2: receta para objetos pequeños (scripts/fase7_entrenar.py; el dropout de modalidad está en scripts/modalidad.py).
 c2:
   fitness: metrics/mAP50(B)          # best.pt y la parada temprana por el mAP@0.5 de validación (Ultralytics: mAP@0.5:0.95)

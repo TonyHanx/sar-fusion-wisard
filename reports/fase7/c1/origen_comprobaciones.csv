@@ -1,0 +1,21 @@
+comprobacion,valor,nota
+imágenes de los dos datasets,29104,
+con enlace a data/alineados o a las nuevas de C1,29104,de 29104
+con su térmica igual a una original,29104,de 29104
+con originales iguales en más de un vuelo,0,tiene que ser 0
+vuelo por contenido distinto del vuelo del enlace,0,tiene que ser 0
+térmicas originales ilegibles,0,
+TIFF con la térmica distinta del PNG del mismo nombre,0,de 14552; tiene que ser 0
+TIFF nuevos sin pareja real con RGB distinta de 0,0,de 10863; tiene que ser 0
+210417_MtErie_Enterprise_0005: imágenes nuevas en train (los dos datasets),30,tiene que ser 0
+210417_MtErie_Enterprise_0005: imágenes nuevas en val (los dos datasets),0,tiene que ser 0
+210417_MtErie_Enterprise_0005: imágenes bases en train (los dos datasets),514,de la partición por vuelo
+210417_MtErie_Enterprise_0005: imágenes bases en val (los dos datasets),0,de la partición por vuelo
+210417_MtErie_Enterprise_0007: imágenes nuevas en train (los dos datasets),0,tiene que ser 0
+210417_MtErie_Enterprise_0007: imágenes nuevas en val (los dos datasets),0,tiene que ser 0
+210417_MtErie_Enterprise_0007: imágenes bases en train (los dos datasets),0,de la partición por vuelo
+210417_MtErie_Enterprise_0007: imágenes bases en val (los dos datasets),338,de la partición por vuelo
+210924_FHL_Enterprise_0405: imágenes nuevas en train (los dos datasets),0,tiene que ser 0
+210924_FHL_Enterprise_0405: imágenes nuevas en val (los dos datasets),0,tiene que ser 0
+210924_FHL_Enterprise_0405: imágenes bases en train (los dos datasets),0,de la partición por vuelo
+210924_FHL_Enterprise_0405: imágenes bases en val (los dos datasets),0,de la partición por vuelo
