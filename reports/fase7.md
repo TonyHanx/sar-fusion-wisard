@@ -1097,6 +1097,169 @@ como **limitación que solo afecta los tiempos**:
     (0.2–0.3 GB), pero dentro de la variación entre corridas (en `fusion_100ep` fueron 4 176 MiB);
   - **tiempo:** 37 min, contra 36 estimados. La diferencia es el tramo sin cargador (41 s).
 
+### Corrida 4: `fusion_ampliado` (20 de noviembre de 2026)
+
+- **Dónde y cuándo:** la corrió el usuario en su PowerShell, fuera de Claude Code, de 15:11 a 17:38. Terminó con
+  salida 0, y el script escribió su fila en la bitácora.
+- **Datos:** `data/fase7/datasets/fusion_ampliado/`, en TIFF de 4 canales:
+  - 14 110 imágenes de entrenamiento: las 3 247 de la base, con la RGB real, y 10 863 nuevas con la RGB en 0;
+  - 1 597 sin persona y ninguna dañada, como en `termico_ampliado`;
+  - la misma validación de 442 fotogramas.
+- **Primera capa:** los canales de color son los preentrenados, y el cuarto empieza con su promedio
+  (`max_dif_cuarto_vs_promedio_color` de 0 en `resumen.json`). `p_sin_rgb = 0`.
+- **Comprobaciones previas:** enchufada, plan Performance y las tres aplicaciones cerradas. Límite aplicado de 97.7 W
+  (de 96.6 a 99.4) y 8 519 MiB de RAM usados antes de empezar, contra 6 995 en `termico_ampliado` y 7 186 en
+  `fusion_base`.
+- **Durante el entrenamiento:**
+  - límite aplicado de 89.4 W (mediana) y nunca por debajo de 70.0 W;
+  - pico de memoria de la GPU de 5 291 MiB;
+  - **89 °C como máximo, la temperatura más alta de la fase 7** (88 °C en `termico_base`): 83 lecturas de 88 °C o más
+    y 2 de 89 °C, con una mediana de 85 °C;
+  - 175 s por época (mediana; se estimaron 176) y 2 h 27 min en total (8 828 s);
+  - la época 1 tardó 213.8 s, con 29.8 s de la primera validación, y la 41, la primera sin mosaico, 182.8 s de
+    entrenamiento, contra 172.0 s de mediana.
+- **`best.pt` es la época 3.** `resumen.json` comprueba que coincide con la de mayor mAP@0.5 de `results.csv`.
+- **El log no tiene advertencias ni errores.** Solo trae el aviso de la versión nueva de Ultralytics. Sus 54 líneas que
+  no son barras de progreso ni métricas por época son las mismas que en `fusion_base`, salvo los datos, el nombre y las
+  rutas de la corrida.
+
+**Estuvo enchufada toda la corrida:**
+- **Registro de Windows** (Kernel-Power, evento 105, "Cambio de fuente de energía"): no hay ningún cambio entre las
+  15:11 y las 17:38. El último es de las 14:52:36, 19 min antes de empezar, al salir de la suspensión, y la deja
+  enchufada (`AcOnline=true`). Tampoco hay eventos de suspensión durante la corrida.
+- **`monitor.csv`:** el límite aplicado no baja de 70.0 W en ninguna de las 8 338 lecturas. Sin cargador, en
+  `fusion_base`, bajaba a 55.0 W.
+
+| | Época | mAP@0.5 | mAP@0.5:0.95 | P | R |
+|---|---:|---:|---:|---:|---:|
+| **Última (`last.pt`)** | 50 | **0.338** | 0.166 | 0.590 | 0.354 |
+| **Promedio de las 5 últimas** | 46–50 | **0.343** | 0.167 | 0.605 | 0.350 |
+| `best.pt` (secundaria) | 3 | 0.475 | 0.185 | 0.579 | 0.458 |
+| Validación final de `best.pt` (Ultralytics) | — | 0.475 | 0.186 | 0.579 | 0.458 |
+
+**mAP@0.5 de validación por época:**
+
+| Épocas | Valores |
+|---|---|
+| 1–10 | 0.305, 0.361, **0.475**, 0.352, 0.270, 0.232, 0.314, 0.442, 0.382, 0.277 |
+| 11–20 | 0.368, 0.305, 0.298, 0.291, 0.291, 0.364, 0.357, 0.198, 0.323, 0.357 |
+| 21–30 | 0.340, 0.342, 0.271, 0.304, 0.345, 0.451, 0.381, 0.288, 0.379, 0.377 |
+| 31–40 | 0.378, 0.397, 0.343, 0.288, 0.304, 0.343, 0.339, 0.358, 0.379, 0.379 |
+| 41–50 (sin mosaico) | 0.383, 0.365, 0.348, 0.338, 0.356, 0.354, 0.343, 0.342, 0.337, 0.338 |
+
+**`fusion_base` frente a `fusion_ampliado`** (misma receta y misma validación; solo cambian los datos):
+
+| Cifra | `fusion_base` | `fusion_ampliado` | Diferencia |
+|---|---:|---:|---:|
+| mAP@0.5, promedio de las 5 últimas | 0.317 | **0.343** | +0.026 |
+| mAP@0.5, `best.pt` | 0.425 (época 23) | **0.475** (época 3) | +0.050 |
+| Recall, promedio de las 5 últimas | 0.322 | **0.350** | +0.028 |
+| Recall, `best.pt` | 0.448 | **0.458** | +0.010 |
+
+- **Caída desde `best.pt` hasta el promedio de las 5 últimas:**
+  - en mAP@0.5, 0.132 (de 0.475 a 0.343, un 28 %), contra 0.108 (25 %) en `fusion_base` y 0.146 (29 %) en
+    `termico_ampliado`;
+  - en recall, 0.108 (de 0.458 a 0.350), contra 0.126 y 0.178.
+- **La curva es una meseta desde el principio:**
+  - las medianas por tramo de 10 épocas son 0.333, 0.314, 0.344, 0.350 y 0.345;
+  - en `fusion_base` subían de 0.245 a 0.355.
+- **`best.pt` es una época aislada:**
+  - la época 3 es la última del calentamiento (`warmup_epochs: 3`);
+  - las épocas de al lado dan 0.361 y 0.352, y las siguientes mejores son la 26 (0.451) y la 8 (0.442);
+  - en `termico_ampliado`, la época 3 también fue la segunda mejor (0.469).
+- **Sin mosaico no baja:**
+  - mAP@0.5 de 0.351 de media en las épocas 31–40 a 0.350 en las 41–50 (−0.001). Bajaba 0.029 en `fusion_base`, 0.055
+    en `termico_base` y 0.018 en `termico_ampliado`;
+  - recall de 0.377 a 0.363, y precisión de 0.526 a 0.585;
+  - la pérdida de validación casi no cambia (`box` de 2.41 a 2.39 y `cls` de 2.45 a 2.48);
+  - las épocas 41–50 van de 0.337 a 0.383 (rango de 0.046), contra 0.034 en `termico_base`, 0.054 en
+    `termico_ampliado` y 0.082 en `fusion_base`.
+- **Con los mismos lotes, la ampliada ya va por encima,** como en las térmicas:
+  - en la época 3 (2 646 lotes) da 0.475, más que el máximo de `fusion_base` en sus 10 150 lotes (0.425, en la época
+    23 y con 4 669 lotes);
+  - en sus primeras 11 épocas (9 702 lotes), la mediana es 0.352, contra 0.308 en las 50 épocas de `fusion_base`;
+  - el mismo matiz que en las térmicas: con los mismos lotes, la tasa de aprendizaje no está en el mismo punto del
+    calendario.
+- Es una sola semilla y la validación tiene dos vuelos. Entre épocas seguidas el mAP@0.5 salta hasta 0.16 (de 0.357 a
+  0.198, épocas 17 y 18).
+
+### RAM de `fusion_ampliado`
+
+`monitor.csv`: 8 338 lecturas, una cada 1.1 s, de 15:11:37 a 17:38:51.
+
+- **Pico de 99.9 % (15 982 MiB) a las 15:15:06, en la validación de la época 1** (de 15:14:55 a 15:15:24).
+  - Es el mismo momento que en las otras tres corridas: cuando Ultralytics abre los 8 procesos de lectura de la
+    validación.
+  - Subió 1.95 GB sobre el entrenamiento de la época 1.
+  - Hubo 12 lecturas de 98 % o más y 7 de 99 % o más. Todas están en esos 13 s (de 15:15:04 a 15:15:16).
+  - Esa validación duró 29.8 s, contra 21.6 s en `fusion_base` y 21.7 s en `termico_ampliado`.
+  - No hubo errores.
+- **En la época 41** (desde las 17:09:38, al quitar el mosaico):
+  - la RAM bajó de 14.0 a 11.1 GB al cerrar los 4 procesos de lectura;
+  - con los 4 nuevos subió hasta 15.3 GB (95.4 %), a las 17:10:09;
+  - fue 97.2 % en `fusion_base` y 89.4 % en `termico_ampliado`.
+- **En toda la corrida:** mediana de 87.6 %, y 95 % o más el 0.6 % del tiempo.
+
+  | Corrida | RAM antes (MiB) | Pico | Época 41 | Mediana | 95 % o más | Sobre la RAM de antes, épocas 2–40 (MiB) |
+  |---|---:|---:|---:|---:|---:|---:|
+  | `termico_base` | 9 012 | 99.8 % | 98.8 % | 92.9 % | 26.3 % | 5 791 |
+  | `termico_ampliado` | 6 995 | 99.7 % | 89.4 % | 83.0 % | 0.2 % | 5 916 |
+  | `fusion_base` | 7 186 | 100.0 % | 97.2 % | 86.6 % | 15.6 % | 6 413 |
+  | `fusion_ampliado` | 8 519 | 99.9 % | 95.4 % | 87.6 % | 0.6 % | 5 461 |
+
+- **Empezó con 1.3–1.5 GB más ocupados** que `termico_ampliado` y `fusion_base`. No sé qué había abierto.
+- **El entrenamiento ocupó menos sobre esa RAM de antes** que en las otras tres: 5 461 MiB de mediana. Esto concuerda
+  con la interpretación de `termico_ampliado`, que sigue sin comprobar: Windows ajusta lo que deja a los procesos según
+  la RAM libre.
+- **Lo que se esperaba:** el pico en la primera validación y la subida de la época 41. Las dos se cumplieron.
+
+### Las cuatro corridas de C3
+
+Las cuatro tienen la misma receta y la misma validación (FHL 0134 y MtErie 0007). Solo cambian la entrada (térmica o
+fusión) y los datos de entrenamiento (base o ampliado).
+
+| Cifra (validación) | `termico_base` | `termico_ampliado` | `fusion_base` | `fusion_ampliado` |
+|---|---:|---:|---:|---:|
+| Imágenes de entrenamiento | 3 247 | 14 110 | 3 247 | 14 110 |
+| **mAP@0.5, última época (50)** | 0.223 | **0.363** | 0.307 | 0.338 |
+| **mAP@0.5, promedio de las 5 últimas** | 0.222 | **0.361** | 0.317 | 0.343 |
+| mAP@0.5:0.95, promedio de las 5 últimas | 0.109 | 0.162 | 0.138 | **0.167** |
+| Recall, promedio de las 5 últimas | 0.274 | **0.366** | 0.322 | 0.350 |
+| Precisión, promedio de las 5 últimas | 0.397 | **0.617** | 0.494 | 0.605 |
+| mAP@0.5, `best.pt` (época) | 0.391 (12) | **0.507** (9) | 0.425 (23) | 0.475 (3) |
+| Recall, `best.pt` | 0.437 | **0.544** | 0.448 | 0.458 |
+| Caída de `best.pt` al promedio de las 5 últimas | 0.169 (43 %) | 0.146 (29 %) | 0.108 (25 %) | 0.132 (28 %) |
+| Segundos por época (mediana) | 42 | 172 | 43 | 175 |
+| Tiempo total | 36 min | 2 h 24 min | 37 min | 2 h 27 min |
+| Límite aplicado de la GPU (mediana) | 88.5 W | 88.2 W | 84.7 W (con el tramo sin cargador) | 89.4 W |
+
+**Efecto de cada cambio**, en el mAP@0.5 del promedio de las 5 últimas (y en `best.pt`):
+
+| | Base | Ampliado | Ampliado − base |
+|---|---:|---:|---:|
+| Térmica | 0.222 (0.391) | 0.361 (0.507) | **+0.139** (+0.116) |
+| Fusión | 0.317 (0.425) | 0.343 (0.475) | **+0.026** (+0.050) |
+| Fusión − térmica | **+0.095** (+0.034) | **−0.018** (−0.032) | |
+
+- **Con los datos de siempre, la fusión supera a la térmica:** +0.095 en el promedio de las 5 últimas y +0.034 en
+  `best.pt`.
+- **Con los datos ampliados, se invierte:** la térmica queda por encima en las dos cifras (−0.018 y −0.032 para la
+  fusión).
+  - Por época, `fusion_ampliado` queda debajo de `termico_ampliado` en 37 de las 50, con una diferencia media de
+    −0.037; en las 10 últimas, de −0.014.
+  - En mAP@0.5:0.95 las dos quedan casi iguales (0.167 contra 0.162).
+  - Las diferencias de 0.018 a 0.037 son menores que los saltos de una época a la siguiente (hasta 0.16).
+- **Ampliar los datos ayuda mucho más a la térmica (+0.139) que a la fusión (+0.026).**
+- **Una explicación posible, sin comprobar:**
+  - en `fusion_ampliado`, el 77 % de las imágenes de entrenamiento (10 863 de 14 110) llevan la RGB en 0;
+  - en la validación, todas tienen la RGB real;
+  - así, el modelo aprende sobre todo con la térmica sola y se valida con una entrada que vio solo en el 23 % de las
+    imágenes.
+  - Se puede probar en C4 con `evaluar.py --rgb-cero` en validación: si `fusion_ampliado` mejora con la RGB en 0, es la
+    RGB real la que la empeora en la validación.
+- **Es una sola semilla por corrida y la validación tiene dos vuelos.** Estas cifras son de la validación de
+  Ultralytics. Las de C4 salen del evaluador propio.
+
 ## Comandos
 
 ```
@@ -1112,6 +1275,7 @@ como **limitación que solo afecta los tiempos**:
 $env:PYTHONIOENCODING = "utf-8"; cmd /c ".venv\Scripts\python.exe -u scripts\fase7_entrenar.py --config configs\fase7.yaml --rutas configs\rutas.yaml --corrida termico_base > runs\fase7\termico_base.log 2>&1"
 $env:PYTHONIOENCODING = "utf-8"; cmd /c ".venv\Scripts\python.exe -u scripts\fase7_entrenar.py --config configs\fase7.yaml --rutas configs\rutas.yaml --corrida termico_ampliado > runs\fase7\termico_ampliado.log 2>&1"
 $env:PYTHONIOENCODING = "utf-8"; cmd /c ".venv\Scripts\python.exe -u scripts\fase7_entrenar.py --config configs\fase7.yaml --rutas configs\rutas.yaml --corrida fusion_base > runs\fase7\fusion_base.log 2>&1"
+$env:PYTHONIOENCODING = "utf-8"; cmd /c ".venv\Scripts\python.exe -u scripts\fase7_entrenar.py --config configs\fase7.yaml --rutas configs\rutas.yaml --corrida fusion_ampliado > runs\fase7\fusion_ampliado.log 2>&1"
 .venv\Scripts\python.exe scripts\evaluar.py --config configs\fase6.yaml --rutas configs\rutas.yaml --particion validacion --modelos fusion termico --rgb-cero --solo-verificar
 .venv\Scripts\python.exe scripts\fase7_origen.py --config configs\fase7.yaml --rutas configs\rutas.yaml
 .venv\Scripts\python.exe scripts\fase7_copiar.py --config configs\fase7.yaml --rutas configs\rutas.yaml
