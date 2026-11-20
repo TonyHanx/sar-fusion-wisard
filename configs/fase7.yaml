@@ -228,7 +228,9 @@ c1:
 origen:
   datasets: [termico_ampliado, fusion_ampliado]   # en data/<c1.salida>/datasets/; primero el térmico
   vigilar:                           # vuelos (columna `vuelo` de pares.csv): ninguna imagen nueva puede venir de ellos
-    - 210417_MtErie_Enterprise_0005
+    - 210417_MtErie_Enterprise_0005  # tiene 15 nuevas en cada dataset (pares excluidos por desfase en la fase 2); el
+                                     # usuario decidió el 19 nov 2026 que se quedan (reports/fase7.md), así que el
+                                     # script sale con código 1 por esa comprobación
     - 210417_MtErie_Enterprise_0007
     - 210924_FHL_Enterprise_0405
   procesos: 6

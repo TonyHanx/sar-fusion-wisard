@@ -856,9 +856,30 @@ Es la corrida de `termico_base` que se usa en C4. `termico_base_cortada` y `term
   - son pares anotados que la fase 2 excluyó por desfase entre la RGB y la térmica, y que C1 devolvió al
     entrenamiento: la fuente "excluido de entrenamiento", igual que 28 de MtErie 0003;
   - en `fusion_ampliado` llevan la RGB en 0;
-  - no es un vuelo de validación ni de prueba, pero va contra lo que se esperaba. Queda para que decida el usuario.
+  - no es un vuelo de validación ni de prueba, pero va contra lo que se esperaba. Quedó para que decidiera el usuario:
+    se quedan (abajo).
   - `termico_ampliado` ya se entrenó con ellas. `fusion_base` usa el dataset de siempre (`configs/fusion.yaml`), así
     que no le afecta.
+
+**Decisión del usuario (19 de noviembre de 2026): las 15 de MtErie 0005 se quedan** en `termico_ampliado` y en
+`fusion_ampliado`. Motivo:
+- MtErie 0005 es un vuelo de entrenamiento, así que no hay fuga hacia la validación ni hacia la prueba;
+- la fase 2 las excluyó por el desfase entre la RGB y la térmica, que no afecta a una imagen solo térmica, y en
+  `fusion_ampliado` llevan la RGB en 0;
+- son el 0.1 % de las 14 110 imágenes de entrenamiento, y `termico_ampliado` ya se entrenó con ellas.
+
+`scripts/fase7_origen.py` sigue saliendo con código 1 por esa comprobación; está anotado en `configs/fase7.yaml`.
+
+**Sus etiquetas son las de la térmica**, comprobado con los archivos para todas las imágenes nuevas:
+- En los dos datasets, la etiqueta de cada imagen nueva es un enlace duro a `data/fase7/etiquetas/` y tiene las mismas
+  cajas que el `.txt` de la térmica original, sin las repetidas: 21 726 de 21 726 (10 863 en cada dataset).
+- La original se toma por el contenido de la imagen (el hash de los píxeles de `origen_imagenes.csv`), no por
+  `composicion.csv`.
+- **Las 15 de MtErie 0005** tienen 32 cajas en cada dataset, iguales a las de sus `.txt` de `IR_0006` en las 15. La
+  etiqueta es el mismo archivo en los dos datasets.
+- De las 16 imágenes por dataset que son iguales a dos fotogramas originales seguidos, 14 tienen las mismas cajas en
+  los dos `.txt`, y 2 no (Karen IR_5, posiciones 203 y 204). Su etiqueta es la del fotograma de su posición, el que
+  usó C1.
 
 **Vuelos de origen de las imágenes agregadas** (10 863, las mismas en `termico_ampliado` y en `fusion_ampliado`):
 
@@ -921,6 +942,150 @@ los `resumen.json` de `termico_base` y `termico_ampliado`:
   - lo que más acerca la época 41 al 99 % es tener más aplicaciones abiertas (98.8 % con 9.0 GB antes, 89.4 % con
     7.0 GB). Conviene correrla como `termico_ampliado`, con VS Code cerrado.
 
+### Corrida 3: `fusion_base` (19 de noviembre de 2026)
+
+- **Dónde y cuándo:** la corrió el usuario en su PowerShell, fuera de Claude Code, de 20:38 a 21:15. Terminó con
+  salida 0, y el script escribió su fila en la bitácora.
+- **Datos:** `configs/fusion.yaml`, el dataset de siempre en TIFF de 4 canales (3 247 imágenes de entrenamiento y
+  442 de validación). El cuarto canal empieza con el promedio de los pesos de color (`max_dif_cuarto_vs_promedio_color`
+  de 0 en `resumen.json`).
+- **Comprobaciones previas:** enchufada, las tres aplicaciones cerradas, límite aplicado de 99.5 W y 7 186 MiB de RAM
+  usados antes de empezar.
+- **Durante el entrenamiento:** pico de memoria de la GPU de 5 327 MiB y 86 °C como máximo; 43 s por época (mediana) y
+  37 min en total (2 226 s; se estimaron 36).
+- **`best.pt` es la época 23.** `resumen.json` comprueba que coincide con la de mayor mAP@0.5 de `results.csv`.
+- **El log no tiene advertencias ni errores.** Solo trae el aviso de que hay una versión nueva de Ultralytics (8.4.215),
+  como en las térmicas. Sus 106 líneas que no son barras de progreso son las mismas que en `termico_base`, salvo los
+  4 canales de la primera capa y las rutas.
+
+**Corrió sin cargador en las épocas 31 a 41.** `monitor.csv` no registra si la laptop está enchufada, pero se ve en el
+límite aplicado de la GPU, que baja a 55.0 W. Lo confirma el registro de Windows (Kernel-Power, evento 105, "Cambio de
+fuente de energía"):
+
+| Hora (Windows) | Evento | En `monitor.csv` | Época |
+|---|---|---|---|
+| 21:00:45 | se desconecta | 55 W desde las 21:00:46 | 31, a los 36 s |
+| 21:01:27 | se conecta | 77 W a las 21:01:28 | 32 |
+| 21:02:13 | se desconecta | 55 W desde las 21:02:15 | 33, al final |
+| 21:08:12 | se conecta | 78 W a las 21:08:13 | 41, a los 18 s, poco después de abrir los procesos de lectura sin mosaico |
+
+- **Duración:** 6 min 41 s con batería (42 s y 5 min 59 s), entre las 21:00:45 y las 21:08:12, con 46 s enchufada en
+  medio.
+- **Épocas:** de la 34 a la 40 enteras. En parte, la 31 (17 % de sus lecturas), la 32 (74 %), la 33 (22 %) y la 41
+  (33 %).
+- **Batería:** de 75.1 a 66.0 Wh según el registro de Windows (un 12 %).
+- A las 21:47, media hora después de terminar, hubo otra desconexión de 2 s, ya sin entrenamiento.
+
+| Mediana por época | Con cargador (épocas 11–30) | Sin cargador (32 y 34–40) | Cambio |
+|---|---:|---:|---:|
+| Límite aplicado de la GPU | 86.8 W | 55.0 W | −37 % |
+| Consumo de la GPU | 83.3 W | 54.6 W | −34 % |
+| Reloj de la GPU | 2 325 MHz | 1 660 MHz | −29 % |
+| Temperatura de la GPU | 83 °C | 77 °C | −6 °C |
+| Entrenamiento por época | 39.3 s | 43.9 s | +4.6 s (+12 %) |
+
+- La GPU siguió ocupada (87–98 % de uso): fue más lenta, no se quedó esperando.
+- La validación no cambió (unos 3 s por época).
+- En total, las épocas 31–40 tardaron 41 s más.
+- La época 41 tardó 52.7 s de entrenamiento, lo de siempre al quitar el mosaico: 50.4 s en `termico_base` y 54.4 s en
+  la época 91 de `fusion_100ep`.
+- Al reconectarla (épocas 42–50) volvió a 86.3 W y 39.0 s por época.
+- La mediana del límite aplicado de toda la corrida, que va a `resumen.json` y a la bitácora (84.7 W), incluye ese
+  tramo; sin él es 85.6 W.
+
+**El entrenamiento es determinista, así que el corte no debería cambiar los resultados, solo los tiempos:**
+- `args.yaml` tiene `deterministic: true`. Con eso, `init_seeds` de Ultralytics 8.4.194 (`utils/torch_utils.py`) fija
+  las semillas y activa:
+  - `torch.use_deterministic_algorithms(True, warn_only=True)`;
+  - `torch.backends.cudnn.deterministic = True`;
+  - `CUBLAS_WORKSPACE_CONFIG=:4096:8`.
+- **`cudnn.benchmark` queda en `False`**, el valor por omisión de PyTorch (2.15).
+  - En `init_seeds` la línea que lo activaría está comentada.
+  - Ultralytics solo lo pone en `True` al predecir sobre vídeo en vivo (`LoadStreams`).
+  - Los scripts del proyecto no lo tocan.
+  - Así, cuDNN no elige los algoritmos midiendo tiempos, que es lo que podría cambiar con una GPU más lenta.
+- **Con `warn_only`, PyTorch avisa en el log si usa una operación sin versión determinista.** No hay ningún aviso, ni
+  aquí ni en `termico_base`.
+- **Una GPU más lenta hace las mismas operaciones sobre los mismos datos, solo que en más tiempo:**
+  - los procesos de lectura entregan los lotes en orden aunque tarden distinto;
+  - el mosaico se quita por número de época, no por tiempo.
+- **Comprobado en la práctica:**
+  - `termico_base` repitió exactamente las épocas 1 a 40 de `termico_base_cortada` (diferencia 0 en las 14 columnas);
+  - la época 1 de `fusion_base` es idéntica a la de `fusion_100ep` de la fase 5 (mismo dataset, semilla e inicio del
+    cuarto canal), en todas las columnas de `results.csv` salvo el tiempo;
+  - `fusion_promedio_10ep` da otra época 1 porque, con 10 épocas y `close_mosaic: 10`, entrenó sin mosaico desde el
+    principio.
+- **Lo que no se puede comprobar sin volver a entrenar:** que las épocas 31 a 41 den lo mismo con cargador. Haría falta
+  repetir `fusion_base` enchufada (unos 36 min) y comparar `results.csv` fila por fila.
+
+| | Época | mAP@0.5 | mAP@0.5:0.95 | P | R |
+|---|---:|---:|---:|---:|---:|
+| **Última (`last.pt`)** | 50 | **0.307** | 0.136 | 0.502 | 0.300 |
+| **Promedio de las 5 últimas** | 46–50 | **0.317** | 0.138 | 0.494 | 0.322 |
+| `best.pt` (secundaria) | 23 | 0.425 | 0.188 | 0.500 | 0.448 |
+| Validación final de `best.pt` (Ultralytics) | — | 0.424 | 0.188 | 0.501 | 0.448 |
+
+**mAP@0.5 de validación por época:**
+
+| Épocas | Valores |
+|---|---|
+| 1–10 | 0.296, 0.246, 0.245, 0.252, 0.237, 0.147, 0.385, 0.243, 0.271, 0.193 |
+| 11–20 | 0.272, 0.295, 0.257, 0.337, 0.352, 0.209, 0.286, 0.315, 0.283, 0.285 |
+| 21–30 | 0.354, 0.278, **0.425**, 0.352, 0.284, 0.337, 0.409, 0.252, 0.305, 0.355 |
+| 31–40 (sin cargador desde la 31) | 0.361, 0.360, 0.383, 0.337, 0.376, 0.317, 0.336, 0.351, 0.360, 0.298 |
+| 41–50 (sin mosaico; con cargador desde la 41) | 0.378, 0.296, 0.309, 0.318, 0.300, 0.320, 0.341, 0.311, 0.307, 0.307 |
+
+**`fusion_base` frente a `termico_base`** (misma receta, mismos pares y misma validación; solo cambia la entrada):
+
+| Cifra | `termico_base` | `fusion_base` | Diferencia |
+|---|---:|---:|---:|
+| mAP@0.5, promedio de las 5 últimas | 0.222 | **0.317** | +0.095 |
+| mAP@0.5, `best.pt` | 0.391 (época 12) | **0.425** (época 23) | +0.034 |
+| Recall, promedio de las 5 últimas | 0.274 | **0.322** | +0.048 |
+| Recall, `best.pt` | 0.437 | **0.448** | +0.011 |
+
+- **Caída desde `best.pt` hasta el promedio de las 5 últimas:**
+  - en mAP@0.5, 0.108 (de 0.425 a 0.317, un 25 %), contra 0.169 (43 %) en `termico_base` y 0.146 (29 %) en
+    `termico_ampliado`;
+  - en recall, 0.126 (de 0.448 a 0.322), contra 0.163 y 0.178.
+- **La curva sube más tarde que en las térmicas:**
+  - las medianas por tramo de 10 épocas son 0.245, 0.285, 0.345, 0.355 y 0.310;
+  - el máximo es la época 23, y la segunda mejor, la 27 (0.409); las térmicas llegan al suyo antes de la época 13.
+- **Sin mosaico baja:**
+  - mAP@0.5 de 0.348 de media en las épocas 31–40 a 0.319 en las 41–50 (−0.029, contra −0.055 en `termico_base` y
+    −0.018 en `termico_ampliado`);
+  - recall de 0.366 a 0.336, y precisión de 0.518 a 0.469;
+  - la pérdida de validación sube un poco (`box` de 2.89 a 3.01 y `cls` de 2.77 a 2.90).
+- **Contra `fusion_100ep`** (fase 5, el mismo dataset con 100 épocas): el promedio de las 5 últimas pasa de 0.247 a
+  0.317, y el máximo, de 0.395 (época 27) a 0.425.
+- `termico_ampliado` sigue por encima de las dos (0.361 y 0.507).
+- Es una sola semilla y la validación tiene dos vuelos. Entre épocas seguidas el mAP@0.5 salta hasta 0.24 (de 0.147 a
+  0.385, épocas 6 y 7).
+
+### RAM de `fusion_base`
+
+`monitor.csv`: 2 105 lecturas, una cada 1.1 s, de 20:38:04 a 21:15:16.
+
+- **Pico de 100.0 % (15 992 MiB): una sola lectura, a las 20:39:19, en la validación de la época 1** (de 20:39:02 a
+  20:39:23).
+  - Es el mismo momento que en las térmicas: cuando Ultralytics abre los 8 procesos de lectura de la validación.
+  - Subió 2.9 GB sobre el entrenamiento de la época 1.
+  - Hubo 2 lecturas de 99 % o más y 3 de 98 % o más, todas en esos 4 s.
+  - No hubo errores: Windows lo cubre con el archivo de paginación.
+- **En la época 41** (21:07:54 a 21:08:50, al quitar el mosaico), la RAM bajó de 14.2 a 12.0 GB al cerrar los 4
+  procesos de lectura. Con los 4 nuevos subió hasta 15.5 GB (97.2 %), a las 21:08:18.
+- **En toda la corrida:** mediana de 86.6 %, y 95 % o más el 15.6 % del tiempo. Fueron 92.9 % y 26.3 % en
+  `termico_base`, y 83.0 % y 0.2 % en `termico_ampliado`.
+- **Contra la estimación:**
+  - **momento del pico: coincide** (la primera validación);
+  - **nivel: 100.0 %**, una décima por encima del rango estimado (98.7–99.9 %). Es la primera corrida que llega a
+    100.0 % en el monitor;
+  - **época 41: 97.2 %**, dentro de lo estimado (90–99 %);
+  - **lo que ocupa el entrenamiento sobre la RAM de antes de empezar**, en las épocas 2–40: 6 415 MiB de mediana, contra
+    5 791 en `termico_base` y 5 918 en `termico_ampliado`. Son unos 0.5–0.6 GB más, el doble de lo que daba la teoría
+    (0.2–0.3 GB), pero dentro de la variación entre corridas (en `fusion_100ep` fueron 4 176 MiB);
+  - **tiempo:** 37 min, contra 36 estimados. La diferencia es el tramo sin cargador (41 s).
+
 ## Comandos
 
 ```
@@ -935,6 +1100,7 @@ los `resumen.json` de `termico_base` y `termico_ampliado`:
 .venv\Scripts\python.exe scripts\fase7_entrenar.py --config configs\fase7.yaml --rutas configs\rutas.yaml --verificar
 $env:PYTHONIOENCODING = "utf-8"; cmd /c ".venv\Scripts\python.exe -u scripts\fase7_entrenar.py --config configs\fase7.yaml --rutas configs\rutas.yaml --corrida termico_base > runs\fase7\termico_base.log 2>&1"
 $env:PYTHONIOENCODING = "utf-8"; cmd /c ".venv\Scripts\python.exe -u scripts\fase7_entrenar.py --config configs\fase7.yaml --rutas configs\rutas.yaml --corrida termico_ampliado > runs\fase7\termico_ampliado.log 2>&1"
+$env:PYTHONIOENCODING = "utf-8"; cmd /c ".venv\Scripts\python.exe -u scripts\fase7_entrenar.py --config configs\fase7.yaml --rutas configs\rutas.yaml --corrida fusion_base > runs\fase7\fusion_base.log 2>&1"
 .venv\Scripts\python.exe scripts\evaluar.py --config configs\fase6.yaml --rutas configs\rutas.yaml --particion validacion --modelos fusion termico --rgb-cero --solo-verificar
 .venv\Scripts\python.exe scripts\fase7_origen.py --config configs\fase7.yaml --rutas configs\rutas.yaml
 .venv\Scripts\python.exe scripts\fase7_copiar.py --config configs\fase7.yaml --rutas configs\rutas.yaml
