@@ -1018,6 +1018,17 @@ fuente de energía"):
 - **Lo que no se puede comprobar sin volver a entrenar:** que las épocas 31 a 41 den lo mismo con cargador. Haría falta
   repetir `fusion_base` enchufada (unos 36 min) y comparar `results.csv` fila por fila.
 
+**Decisión del usuario (20 de noviembre de 2026): `fusion_base` queda válida y no se repite.** El tramo sin cargador va
+como **limitación que solo afecta los tiempos**:
+- **Qué pasó:** las épocas 31 a 41 corrieron sin cargador, 6 min 41 s entre las 21:00:45 y las 21:08:12. Es la única
+  corrida de la fase 7 que no estuvo enchufada entera.
+- **Qué cambió:**
+  - las épocas 31 a 40 tardaron 41 s más;
+  - la mediana del límite aplicado de la corrida bajó a 84.7 W en `resumen.json` y en la bitácora (85.6 W sin ese
+    tramo).
+- **Qué no cambia:** los resultados, porque el entrenamiento es determinista (arriba). Como no se repite, no hay una
+  comparación fila por fila de las épocas 31 a 41 con cargador.
+
 | | Época | mAP@0.5 | mAP@0.5:0.95 | P | R |
 |---|---:|---:|---:|---:|---:|
 | **Última (`last.pt`)** | 50 | **0.307** | 0.136 | 0.502 | 0.300 |
