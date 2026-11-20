@@ -106,7 +106,7 @@ mismas 3 247 imágenes de entrenamiento.
 
 ## Inicio del cuarto canal
 
-**Regla** (CLAUDE.md, cambiada el 1 de noviembre de 2026 antes de correr la comparación, commit `6b6eb3e`):
+**Regla** (CLAUDE.md, cambiada el 1 de noviembre de 2026 antes de correr la comparación, commit `98a67fc`):
 - Se elige (a) solo si su mAP@0.5 de validación en la época 10 supera al de (b) por 0.02 o más. Si no, se elige (b).
 - La regla anterior pedía el mayor mAP@0.5 y elegía (b) si la diferencia era menor que 0.01. Se cambió porque, en las
   pruebas de 2 épocas, cambiar solo el número de procesos de lectura movió el mAP@0.5 de 0.307 a 0.293 (0.014).

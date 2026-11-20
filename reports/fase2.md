@@ -586,7 +586,7 @@ Con esto se cierran los desfases. Quedan dentro, a sabiendas:
 
 Medidas con la semejanza congelada y los 4 617 pares: 9 628 personas térmicas en 3 618 pares, de las que 9 316 tienen
 caja RGB a 3 alturas o menos; en 51 pares la mediana pasa de 1. `ejemplos_desfase.jpg` se regenera en cada corrida; la
-hoja que se revisó antes de aplicar la regla está en el commit `fe7376a`.
+hoja que se revisó antes de aplicar la regla está en el commit `77493d2`.
 
 ### Sensibilidad al radio de "cerca" (antes de aplicar, con los 4 775 pares)
 
@@ -610,7 +610,7 @@ semejanza congelada.
 
 ### Antes de aplicar: hoja de ejemplos y revisión de 4 tramos nuevos
 
-La hoja (commit `fe7376a`) tenía 10 filas: los 6 tramos de la hoja de la regla de 25 px y 4 tramos nuevos de la regla
+La hoja (commit `77493d2`) tenía 10 filas: los 6 tramos de la hoja de la regla de 25 px y 4 tramos nuevos de la regla
 relativa. De los 4 nuevos, FHL 0401 566–567 (leve) y FHL 0401 743–745 eran desfases. FHL 0401 656–657 (cambio de la
 caja) y FHL 0134 268–272 (oclusión) no lo eran. Como esa era la condición, la regla no se aplicó entonces. Probé dos
 ajustes y ninguno sirve:
