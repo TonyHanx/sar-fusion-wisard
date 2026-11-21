@@ -248,7 +248,7 @@ def predecir(clave, info, cfg, rutas, nombre_part, part, sin_metricas=False, rgb
         modelo = YOLO(str(pesos))
         t = time.time()
         met = modelo.val(validator=Validador, data=str(ruta(info["datos"])), split=part["split"], save_json=True,
-                         project=str(carpeta.parent), name=clave, exist_ok=True, **cfg["prediccion"])
+                         project=str(carpeta.parent), name=carpeta.name, exist_ok=True, **cfg["prediccion"])
         ultra = {"pesos": rel(pesos), "segundos": round(time.time() - t, 1), "sin_metricas": sin_metricas,
                  "rgb_cero": rgb_cero}
         if not sin_metricas:

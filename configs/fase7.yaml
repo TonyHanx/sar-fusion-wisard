@@ -307,3 +307,51 @@ c3:
       # de entrenamiento ya tienen la RGB en 0; así la corrida 4 solo cambia los datos frente a la base. El dropout
       # queda como ablación posterior.
       p_sin_rgb: 0.0
+
+# C4: evaluación en validación con el evaluador propio (scripts/fase7_c4_evaluar.py, que usa las funciones de
+# scripts/evaluar.py sin cambiarlo). Reglas fijadas por el usuario el 21 de noviembre de 2026, antes de evaluar y antes
+# de anotar la oclusión de la validación (reports/fase7.md, C4).
+c4:
+  base: configs/fase6.yaml           # prediccion, evaluacion (IoU 0.5, F2, maxDets), bootstrap, mcnemar, figura y la
+                                     # partición `validacion` (FHL 0134 y MtErie 0007: 442 fotogramas, 500 personas,
+                                     # 10 bloques)
+  carpeta: fase7/c4                  # dentro de runs/: predicciones en runs/fase7/c4/validacion/<modelo>/
+  salidas: reports/fase7/c4          # tablas y figura
+  corridas: [termico_base, termico_ampliado, fusion_base, fusion_ampliado]   # en runs/<c3.carpeta>/, datos de c3.corridas
+  # Pesos que se evalúan. Solo existen last.pt (época 50) y best.pt: las épocas 46-49 no se guardaron. La cifra
+  # principal es last.pt con el evaluador propio, y al lado el promedio de las 5 últimas de results.csv (validación de
+  # Ultralytics, sin IC). best.pt es secundaria.
+  pesos: {last: weights/last.pt, best: weights/best.pt}
+  principal: last
+  # Las fusiones se evalúan también con la RGB en 0 (scripts/modalidad.py, p = 1; la térmica igual).
+  rgb_cero: [fusion_base, fusion_ampliado]
+  # Umbral de confianza para recall, precisión, F2 y McNemar: la regla de la fase 6 (CLAUDE.md, "Métricas"). Por modelo y
+  # peso, el que maximiza el F2 en la validación, en la rejilla de 0.05 a 0.95 con paso 0.05; si hay empate, el más alto.
+  # Se elige con todas las personas de WiSARD de los 442 fotogramas (sin mirar la anotación de oclusión). Las variantes
+  # con la RGB en 0 usan el umbral del mismo peso con la RGB real, para que solo cambie la entrada. Se elige y se mide
+  # en la misma validación: el recall sale algo optimista (igual para todos los modelos).
+  umbral: {desde: 0.05, hasta: 0.95, paso: 0.05}
+  # Diferencias con IC por bootstrap (last.pt y best.pt) y McNemar (solo last.pt), a − b. Bonferroni por el número de
+  # pares (4) dentro de cada subconjunto.
+  pares:
+    - [fusion_base, termico_base]
+    - [fusion_ampliado, termico_ampliado]
+    - [fusion_ampliado_rgb0, fusion_ampliado]
+    - [fusion_base_rgb0, fusion_base]
+  # Nivel de oclusión de la validación: a mano, en modo simple, por el primer anotador, con la pantalla y la regla de la
+  # ronda 2 de la fase 3 (scripts/fase7_c4_oclusion.py). Las 500 personas de los 442 fotogramas. Respuestas: 1 se ve en
+  # la RGB (baja), 2 no se ve en la RGB (severa), 3 no es persona (sin nivel: caja dudosa, como en la prueba).
+  oclusion:
+    herramienta: configs/fase3.yaml  # sección `oclusion` (pantalla y teclas) y `datasets.alineados`
+    ronda: 2                         # regla en pantalla: la aclarada (docs/reglas_anotacion.md)
+    personas: fase7/oclusion_validacion_personas.csv   # dentro de data/: lista fija, en orden de vuelo y fotograma
+    respuestas: fase7/oclusion_validacion_simple.csv   # dentro de data/: respuestas (retoma si se cierra)
+    nivel: fase7/oclusion_validacion_nivel.csv         # dentro de data/: nivel de cada persona para el evaluador
+    comprobar: {fotogramas: 442, personas: 500}
+  # Subconjuntos, todos sobre los 442 fotogramas. En los niveles, las personas de otro nivel y las "no es persona" se
+  # ignoran (iscrowd). "Sin dudosas": las "no es persona" se ignoran también en todos_442. McNemar en los tres, con las
+  # dudosas fuera (mcnemar.dudosas de la base).
+  subconjuntos:
+    - {nombre: todos_442, personas: todas, rotulo: "Todas"}
+    - {nombre: baja, personas: baja, rotulo: "Baja\n(se ve en la RGB)"}
+    - {nombre: severa, personas: severa, rotulo: "Severa\n(no se ve en la RGB)"}

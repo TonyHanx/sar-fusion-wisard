@@ -1260,6 +1260,100 @@ fusión) y los datos de entrenamiento (base o ampliado).
 - **Es una sola semilla por corrida y la validación tiene dos vuelos.** Estas cifras son de la validación de
   Ultralytics. Las de C4 salen del evaluador propio.
 
+## C4. Evaluación en validación
+
+**Lo pedido** (21 de noviembre de 2026):
+- evaluar las cuatro corridas de C3 en validación con el evaluador propio, con la cifra principal fijada (la última
+  época y el promedio de las 5 últimas) y `best.pt` como secundaria;
+- evaluar `fusion_base` y `fusion_ampliado` con la RGB en 0, para ver si la caída de la fusión ampliada viene de
+  entrenar con el 77 % de las imágenes sin RGB;
+- el recall por nivel de oclusión, sobre todo en la severa, con los intervalos por bootstrap y McNemar como en la fase 6.
+
+### Reglas, fijadas por el usuario antes de evaluar (21 de noviembre de 2026)
+
+Cuatro cosas no se podían hacer tal como estaban pedidas. Las decidió el usuario antes de ver ningún resultado y están en
+`c4` de `configs/fase7.yaml`:
+
+1. **Nivel de oclusión de la validación: a mano, en modo simple.**
+   - Los niveles solo existían para la prueba (FHL 0405), que la fase 7 no toca.
+   - La regla automática (sin caja RGB de WiSARD a 3 alturas o menos) se descartó en la fase 4 (kappa 0.427). En la
+     validación daría 82 severas: 67 de FHL 0134, donde las personas miden 11 px de mediana, y 15 de MtErie 0007. Así,
+     oclusión y tamaño quedarían mezclados.
+   - Las 500 personas de los 442 fotogramas las anota el primer anotador, con la pantalla, las teclas y la regla de la
+     ronda 2 del nivel a mano de la prueba:
+     - `1`, se ve en la RGB: **baja**;
+     - `2`, no se ve en la RGB: **severa**;
+     - `3`, no es persona: **sin nivel** (caja dudosa, como en la prueba).
+2. **Cifra principal: `last.pt` (época 50) con el evaluador propio**, con IC y McNemar.
+   - Cada corrida guardó solo `last.pt` y `best.pt`: los pesos de las épocas 46 a 49 no existen. Con el evaluador propio
+     no se puede calcular el promedio de las 5 últimas.
+   - Al lado va el promedio de las 5 últimas de `results.csv` (validación de Ultralytics), sin IC.
+   - `best.pt` va como secundaria, con IC y sin McNemar.
+3. **Umbral de confianza: el de la fase 6.** Se fija por modelo y peso con el mayor F2 en la validación, en la rejilla
+   de 0.05 a 0.95 con paso 0.05; si hay empate, el más alto.
+   - Se elige con todas las personas de WiSARD, sin mirar la anotación de oclusión.
+   - Las variantes con la RGB en 0 usan el umbral del mismo peso con la RGB real, para que solo cambie la entrada.
+   - **Limitación:** el umbral se elige y se mide en la misma validación, así que el recall sale algo optimista. El sesgo
+     es el mismo para todos los modelos.
+4. **McNemar: 4 pares, con Bonferroni ×4 dentro de cada subconjunto**, solo con `last.pt`:
+   - `fusion_base` contra `termico_base`, y `fusion_ampliado` contra `termico_ampliado` (fusión contra térmica);
+   - `fusion_ampliado` con la RGB en 0 contra la misma con la RGB real, y lo mismo con `fusion_base`.
+   - Los mismos 4 pares llevan diferencias con IC por bootstrap, con `last.pt` y con `best.pt`.
+
+**Lo demás sigue la fase 6** (`configs/fase6.yaml`):
+- IoU 0.5 y maxDets 100, con pycocotools;
+- una persona está detectada si una predicción con confianza igual o mayor que el umbral de su modelo la empareja;
+- bootstrap por episodios: 10 bloques en la validación, 10 000 remuestreos, seed 0 e intervalo percentil del 95 %;
+- McNemar exacta, sin las cajas dudosas.
+
+**Subconjuntos**, todos sobre los 442 fotogramas:
+- **todas las personas**, con y sin las cajas dudosas;
+- **baja** y **severa**: al evaluar un nivel, las personas del otro nivel y las "no es persona" se ignoran (iscrowd),
+  como en la fase 6.
+
+### Herramienta de anotación y lista de personas
+
+**`scripts/fase7_c4_oclusion.py`** usa el modo simple de `scripts/anotar_oclusion.py` sin cambiarlo. Tiene dos ajustes,
+porque la herramienta suponía un solo vuelo y la validación tiene dos:
+- **la imagen cargada se reconoce por vuelo y fotograma.** La herramienta la reconocía solo por fotograma, y hay 77
+  números de fotograma que están en los dos vuelos;
+- **las otras cajas de WiSARD (gris) son las del mismo vuelo.** En el fotograma 0 de MtErie 0007 se habrían dibujado 4,
+  dos de ellas de FHL 0134; ahora salen 2.
+
+En pantalla se ve además el vuelo. Se probó dibujando la pantalla de una persona de cada vuelo con el mismo número de
+fotograma, sin abrir la ventana.
+
+**Lista fija** (`data/fase7/oclusion_validacion_personas.csv`): las cajas térmicas de las etiquetas de validación que lee
+el evaluador, comprobadas contra `data/etiquetas/termica`, en orden de vuelo y fotograma.
+
+| Vuelo | Personas | Fotogramas con persona | Fotogramas |
+|---|---:|---:|---:|
+| FHL 0134 | 211 | 136 | 273 |
+| MtErie 0007 | 289 | 169 | 169 |
+| **Total** | **500** | **305** | **442** |
+
+El alto de la caja térmica tiene una mediana de 28.5 px (de 9.0 a 59.1 entre los percentiles 10 y 90).
+
+### Corrección en `scripts/evaluar.py`: la opción `--rgb-cero` (C2)
+
+- **El error:** la carpeta de las predicciones con la RGB en 0 llevaba el sufijo `_rgb0`, pero a Ultralytics se le pasaba
+  el nombre sin el sufijo. Así, sus predicciones se habrían escrito en la carpeta de las de RGB real, y la de `_rgb0`
+  habría quedado vacía.
+- **No afectó a nada.** La opción nunca llegó a predecir: en C2 solo se probó con `--solo-verificar`, y no había ninguna
+  carpeta `_rgb0`.
+- **La corrección:** se pasa el nombre de la carpeta (`name=carpeta.name`). Sin `--rgb-cero` es el mismo nombre de
+  antes.
+
+### Predicciones (`scripts/fase7_c4_evaluar.py --solo-predecir`)
+
+- **12 modelos** en `runs/fase7/c4/validacion/`: las 4 corridas con `last.pt` y con `best.pt`, y las 2 fusiones con la
+  RGB en 0 con los dos pesos.
+- **Cada variante con la RGB en 0 quedó en su carpeta**, con `rgb_cero` y sus pesos en `ultralytics.json`, y sus
+  predicciones son distintas de las de la RGB real.
+- **El mAP@0.5 que calcula Ultralytics** al predecir coincide con el de `results.csv` en `last.pt` (época 50) y en
+  `best.pt`, con diferencias de hasta 0.004.
+- Las métricas propias se calculan cuando esté anotada la oclusión, todas juntas.
+
 ## Comandos
 
 ```
@@ -1279,4 +1373,9 @@ $env:PYTHONIOENCODING = "utf-8"; cmd /c ".venv\Scripts\python.exe -u scripts\fas
 .venv\Scripts\python.exe scripts\evaluar.py --config configs\fase6.yaml --rutas configs\rutas.yaml --particion validacion --modelos fusion termico --rgb-cero --solo-verificar
 .venv\Scripts\python.exe scripts\fase7_origen.py --config configs\fase7.yaml --rutas configs\rutas.yaml
 .venv\Scripts\python.exe scripts\fase7_copiar.py --config configs\fase7.yaml --rutas configs\rutas.yaml
+.venv\Scripts\python.exe scripts\fase7_c4_oclusion.py --config configs\fase7.yaml --rutas configs\rutas.yaml --parte preparar
+$env:PYTHONIOENCODING = "utf-8"; cmd /c ".venv\Scripts\python.exe -u scripts\fase7_c4_evaluar.py --config configs\fase7.yaml --rutas configs\rutas.yaml --solo-predecir > runs\fase7\c4_predecir.log 2>&1"
+.venv\Scripts\python.exe scripts\fase7_c4_oclusion.py --config configs\fase7.yaml --rutas configs\rutas.yaml --parte anotar
+.venv\Scripts\python.exe scripts\fase7_c4_oclusion.py --config configs\fase7.yaml --rutas configs\rutas.yaml --parte nivel
+.venv\Scripts\python.exe scripts\fase7_c4_evaluar.py --config configs\fase7.yaml --rutas configs\rutas.yaml
 ```
