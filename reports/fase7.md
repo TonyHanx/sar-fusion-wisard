@@ -1710,6 +1710,27 @@ incluye el 0 con mucho margen. La razón está en cómo se reparten las personas
   - La respuesta cambia en 10 de 379 pares, y las inconsistencias probables son de 6 a 10, todas en FHL 0134.
   - Las 500 personas no son independientes: forman de 69 a 121 tramos, y las 46 severas, de 15 a 26.
 
+## Después de C4: propuesta para evaluar la prueba (21 de noviembre de 2026)
+
+La propuesta está en **`configs/fase8.yaml`**, aparte de este archivo, para que la configuración de la fase 7 siga sin
+nombrar la prueba. Está **pendiente de confirmar**: la prueba (FHL 0405) no se ha predicho ni medido, y sus imágenes no se
+han leído.
+
+- **Modelos:**
+  - las cuatro corridas de C3, con `last.pt` como principal y `best.pt` como secundaria;
+  - las dos fusiones también con la RGB en 0;
+  - `fusion_100ep`, el único modelo de la fase 5/6 que existe. `rgb_100ep` se descartó y `termico_100ep` nunca se
+    entrenó.
+- **Umbral:** la regla de la fase 6, con la rejilla ampliada hacia abajo hasta 0.001, el piso de las predicciones
+  guardadas.
+  - Se fija en la validación y se sube a GitHub antes de predecir la prueba.
+- **McNemar:** los dos pares de fusión contra térmica, en baja y en severa, con Bonferroni ×2.
+- **Comparación con la fase 6:** solo con la fusión, `fusion_base` y `fusion_ampliado` contra `fusion_100ep`, con el
+  mismo tipo de peso a cada lado. Va con IC por bootstrap, sin McNemar.
+- **Pendiente de decidir:**
+  - si se entrena un modelo de solo RGB (`rgb_base`) antes de la prueba;
+  - si una diferencia se da por demostrada solo cuando McNemar y el IC por episodios coinciden.
+
 ## Comandos
 
 ```
