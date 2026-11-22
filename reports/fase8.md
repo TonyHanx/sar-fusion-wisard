@@ -1,8 +1,11 @@
 # Fase 8: evaluación en la prueba (FHL 0405)
 
-**Estado (21 de noviembre de 2026):** las reglas están confirmadas por el usuario y aún no se ha corrido nada.
+**Estado (21 de noviembre de 2026):** las reglas están confirmadas por el usuario y el paso 1 está hecho: `rgb_base`
+se entrenó de 21:33 a 22:09 (`reports/fase7.md`, "Corrida 5 de C3: `rgb_base`").
 - La prueba no se ha predicho ni medido con ningún modelo.
 - Sus imágenes no se han leído.
+- **`rgb_base` es débil en la validación:** mAP@0.5 de 0.032 con `last.pt` y de 0.160 con `best.pt` (época 1), en la
+  validación de Ultralytics. Las corridas de solo RGB de la fase 5 hicieron lo mismo. Las reglas no cambian.
 
 La configuración está en `configs/fase8.yaml`, aparte de `configs/fase7.yaml`, para que la fase 7 siga sin nombrar la
 prueba.
@@ -23,7 +26,7 @@ Además, pidió agregar a las limitaciones el sitio y el día de los vuelos de e
 | `termico_ampliado` | 7 (C3) | ampliado | `last.pt` | `best.pt` |
 | `fusion_base` | 7 (C3) | base | `last.pt` | `best.pt` |
 | `fusion_ampliado` | 7 (C3) | ampliado | `last.pt` | `best.pt` |
-| `rgb_base` (por entrenar) | 7 (C3, corrida 5) | base | `last.pt` | `best.pt` |
+| `rgb_base` | 7 (C3, corrida 5) | base | `last.pt` | `best.pt` |
 | `fusion_100ep` | 5/6 | base | `best.pt` (el que fijó la fase 6) | `last.pt` |
 
 - **Las dos fusiones de la fase 7 también van con la RGB en 0**, con los dos pesos. Es descriptivo.
@@ -123,6 +126,7 @@ Si solo se cumple una, se reporta como "no concluyente". La fase 6 se basaba sol
 
 Cada paso se detiene y espera al usuario.
 1. **`rgb_base`** (corrida 5 de C3): la lanza el usuario en su PowerShell y se revisa como las otras corridas de C3.
+   **Hecho el 21 de noviembre de 2026.**
 2. **Umbrales en la validación:**
    - con las predicciones que ya existen, y las de `rgb_base`;
    - se escriben en `reports/fase8/umbrales.csv` y se suben a GitHub antes de predecir la prueba.

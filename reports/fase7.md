@@ -1720,7 +1720,7 @@ nombrar la prueba. La prueba (FHL 0405) no se ha predicho ni medido, y sus imág
 - una diferencia solo cuenta como demostrada si McNemar y el IC por episodios coinciden.
 
 `rgb_base` es la corrida 5 de C3 (`c3.corridas.rgb_base`): solo RGB, con la misma receta y los mismos datos base que
-`termico_base` y `fusion_base`. Está pendiente de lanzar.
+`termico_base` y `fusion_base`. Se entrenó el mismo día (abajo, "Corrida 5 de C3: `rgb_base`").
 
 Lo que sigue es la propuesta tal como se presentó.
 
@@ -1738,6 +1738,119 @@ Lo que sigue es la propuesta tal como se presentó.
 - **Pendiente de decidir:**
   - si se entrena un modelo de solo RGB (`rgb_base`) antes de la prueba;
   - si una diferencia se da por demostrada solo cuando McNemar y el IC por episodios coinciden.
+
+### Corrida 5 de C3: `rgb_base` (21 de noviembre de 2026)
+
+- **Dónde y cuándo:** la corrió el usuario en su PowerShell, fuera de Claude Code, de 21:33 a 22:09. Terminó con salida
+  0, y el script escribió su fila en la bitácora.
+- **Datos:** `configs/rgb.yaml`, la RGB alineada de la fase 3a con 3 canales y las etiquetas térmicas. Son las mismas
+  3 247 imágenes de entrenamiento de `termico_base` y `fusion_base`, y la misma validación de 442 fotogramas.
+- **Receta:** la de `termico_base` y `fusion_base`: 50 épocas, AdamW con lr0 0.002, `close_mosaic` 10, lote 16, 4
+  procesos de lectura, seed 0 y `deterministic`. La primera capa es la preentrenada
+  (`color_igual_a_preentrenada: true` en `resumen.json`).
+- **Comprobaciones previas:** enchufada, plan Performance y las tres aplicaciones cerradas. Límite aplicado de 99.8 W
+  (de 97.4 a 100.0) y 7 606 MiB de RAM usados antes de empezar.
+- **Durante el entrenamiento:**
+  - límite aplicado de 86.7 W (mediana) y nunca por debajo de 70.0 W;
+  - pico de memoria de la GPU de 5 287 MiB, igual que en `termico_base`;
+  - 85 °C como máximo (mediana de 81 °C), sin ninguna lectura de 88 °C o más;
+  - 42 s por época (mediana) y 35 min 35 s en total (2 135 s);
+  - la época 1 tardó 71.8 s, con 21.9 s de la primera validación, y la 41, la primera sin mosaico, 49.9 s de
+    entrenamiento, contra 38.7 s de mediana.
+- **`best.pt` es la época 1.** `resumen.json` comprueba que coincide con la de mayor mAP@0.5 de `results.csv`, y la
+  validación final de `best.pt` da lo mismo (0.160).
+- **El log no tiene advertencias ni errores.** Las líneas que no son barras de progreso ni métricas por época son las
+  mismas que en `termico_base`, salvo la potencia previa, el aviso de la versión nueva de Ultralytics (8.4.216), la
+  velocidad de lectura de las imágenes, los tiempos y el resumen final.
+
+**Estuvo enchufada toda la corrida:**
+- **Registro de Windows:** no hay ningún evento de Kernel-Power entre las 20:30 y las 22:30, ni cambios de fuente de
+  energía (evento 105) ni suspensiones. El último cambio es de las 18:23:26, 3 h 10 min antes de empezar, y la deja
+  enchufada (`AcOnline=true`).
+- **`monitor.csv`:** el límite aplicado no baja de 70.0 W en ninguna de las 2 027 lecturas.
+
+| | Época | mAP@0.5 | mAP@0.5:0.95 | P | R |
+|---|---:|---:|---:|---:|---:|
+| **Última (`last.pt`)** | 50 | **0.032** | 0.013 | 0.173 | 0.066 |
+| **Promedio de las 5 últimas** | 46–50 | **0.030** | 0.012 | 0.156 | 0.069 |
+| `best.pt` (secundaria) | 1 | 0.160 | 0.052 | 0.541 | 0.168 |
+| Validación final de `best.pt` (Ultralytics) | — | 0.160 | 0.051 | 0.539 | 0.170 |
+
+**mAP@0.5 de validación por época:**
+
+| Épocas | Valores |
+|---|---|
+| 1–10 | **0.160**, 0.140, 0.147, 0.059, 0.120, 0.035, 0.046, 0.118, 0.070, 0.092 |
+| 11–20 | 0.041, 0.126, 0.085, 0.055, 0.032, 0.095, 0.003, 0.027, 0.076, 0.102 |
+| 21–30 | 0.076, 0.045, 0.021, 0.042, 0.006, 0.068, 0.025, 0.062, 0.021, 0.047 |
+| 31–40 | 0.018, 0.036, 0.022, 0.061, 0.028, 0.065, 0.022, 0.034, 0.029, 0.032 |
+| 41–50 (sin mosaico) | 0.033, 0.008, 0.025, 0.031, 0.040, 0.019, 0.034, 0.034, 0.031, 0.032 |
+
+**El modelo de solo RGB empeora en la validación desde la primera época:**
+- las medianas por tramo de 10 épocas son 0.105, 0.066, 0.043, 0.030 y 0.032;
+- la pérdida de entrenamiento baja (`box` de 2.22 a 1.27), pero la de validación se duplica desde la época 2 (`box` de
+  2.00 a 4.21). En `termico_base` va de 2.16 a 2.32, y en `fusion_base`, de 2.12 a 3.07;
+- `best.pt` es la época 1, poco más que los pesos preentrenados con una época;
+- sin mosaico no cambia: media de 0.035 en las épocas 31–40 y de 0.029 en las 41–50.
+
+**Es lo mismo que en la fase 5.** Las dos corridas cortadas de solo RGB de 100 épocas (`runs/fase5/rgb_100ep_cortada` y
+`rgb_100ep_cortada2`) dieron 0.160 en la época 1, con la misma semilla, 0.163 en la 2 y 0.010 en la 67
+(`reports/diagnostico.md`, A2). No es un fallo de esta corrida.
+
+**No es porque las personas no se vean en la RGB:** con el nivel a mano de C4, 440 de las 486 personas de la validación
+se ven en la RGB (baja). No sé por qué el modelo no generaliza. Una explicación posible, sin comprobar: aprende la RGB
+de los vuelos de entrenamiento y no la de estos dos (bajo el dosel, con la cámara de frente). La pérdida de validación
+que sube desde la época 2 concuerda con eso.
+
+**Contraste con la fusión:** en C4, `fusion_base` con la RGB en 0 conserva solo el 22 % de su recall. La RGB le sirve
+combinada con la térmica, aunque sola dé 0.03.
+
+| Cifra (validación de Ultralytics) | `termico_base` | `fusion_base` | `rgb_base` |
+|---|---:|---:|---:|
+| **mAP@0.5, última época (50)** | 0.223 | **0.307** | 0.032 |
+| **mAP@0.5, promedio de las 5 últimas** | 0.222 | **0.317** | 0.030 |
+| mAP@0.5:0.95, promedio de las 5 últimas | 0.109 | **0.138** | 0.012 |
+| Recall, promedio de las 5 últimas | 0.274 | **0.322** | 0.069 |
+| Precisión, promedio de las 5 últimas | 0.397 | **0.494** | 0.156 |
+| mAP@0.5, `best.pt` (época) | 0.391 (12) | **0.425** (23) | 0.160 (1) |
+| Recall, `best.pt` | 0.437 | **0.448** | 0.168 |
+| Caída de `best.pt` al promedio de las 5 últimas | 0.169 (43 %) | 0.108 (25 %) | 0.130 (81 %) |
+| Segundos por época (mediana) | 42 | 43 | 42 |
+| Tiempo total | 36 min | 37 min | 36 min |
+| Límite aplicado de la GPU (mediana) | 88.5 W | 84.7 W (con el tramo sin cargador) | 86.7 W |
+
+**Para la fase 8:**
+- según las reglas confirmadas, `rgb_base` va con `last.pt` como principal y `best.pt` como secundaria, como los demás;
+- con `last.pt`, el par `fusion_base` − `rgb_base` de McNemar compara con un modelo que da 0.03 en la validación;
+- no cambio nada: la regla se fijó antes de entrenar `rgb_base`. Queda para que el usuario lo vea antes de fijar los
+  umbrales.
+- Es una sola semilla y la validación tiene dos vuelos. Estas cifras son de la validación de Ultralytics; las de la
+  fase 8 saldrán del evaluador propio.
+
+### RAM de `rgb_base`
+
+`monitor.csv`: 2 027 lecturas, una cada 1.1 s, de 21:33:32 a 22:09:12.
+
+- **Pico de 99.7 % (15 940 MiB) a las 21:34:46, en la validación de la época 1**, como en las otras cuatro corridas.
+  - Subió 3.1 GB sobre la mediana del entrenamiento de la época 1 (12 833 MiB).
+  - Hubo 12 lecturas de 98 % o más y 2 de 99 % o más:
+    - 3 en la validación de la época 1;
+    - 8 entre las 21:36:13 y las 21:36:32 (épocas 3 y 4);
+    - 1 a las 22:03:15 (época 42).
+  - No hubo errores.
+- **En la época 41**, al quitar el mosaico, la RAM bajó a 76.8 % (12 279 MiB) al cerrar los 4 procesos de lectura. Con
+  los 4 nuevos subió hasta 97.7 % (15 626 MiB).
+- **En toda la corrida:** mediana de 86.9 %, y 95 % o más el 10.6 % del tiempo.
+
+  | Corrida | RAM antes (MiB) | Pico | Época 41 | Mediana | 95 % o más | Sobre la RAM de antes, épocas 2–40 (MiB) |
+  |---|---:|---:|---:|---:|---:|---:|
+  | `termico_base` | 9 012 | 99.8 % | 98.8 % | 92.9 % | 26.3 % | 5 791 |
+  | `termico_ampliado` | 6 995 | 99.7 % | 89.4 % | 83.0 % | 0.2 % | 5 916 |
+  | `fusion_base` | 7 186 | 100.0 % | 97.2 % | 86.6 % | 15.6 % | 6 413 |
+  | `fusion_ampliado` | 8 519 | 99.9 % | 95.4 % | 87.6 % | 0.6 % | 5 461 |
+  | `rgb_base` | 7 606 | 99.7 % | 97.7 % | 86.9 % | 10.6 % | 6 250 |
+
+- **Lo que se esperaba:** el pico en la primera validación y la subida de la época 41. Las dos se cumplieron.
 
 ## Comandos
 
