@@ -213,8 +213,7 @@ def nivel(cfg, rutas):
             "sin_caja_rgb_cerca", "nivel_auto", "tiempo_s", "guardado"]
     df[cols].to_csv(destino, index=False, encoding="utf-8")
 
-    tabla = df.assign(nivel=df.nivel.fillna("sin nivel (no es persona)")).pivot_table(
-        index="vuelo", columns="nivel", values="id", aggfunc="size", fill_value=0, margins=True, margins_name="total")
+    tabla = pd.crosstab(df.vuelo, df.nivel.fillna("sin nivel (no es persona)"), margins=True, margins_name="total")
     comp = df[df.nivel.notna()]
     k = kappa(comp.nivel, comp.nivel_auto)
     cruce = pd.crosstab(comp.nivel, comp.nivel_auto, rownames=["a mano"], colnames=["automático"])
@@ -237,7 +236,8 @@ def nivel(cfg, rutas):
 
 
 def rel(p):
-    return Path(p).relative_to(RAIZ).as_posix()
+    p = Path(p)
+    return p.relative_to(RAIZ).as_posix() if p.is_relative_to(RAIZ) else str(p)
 
 
 def main():

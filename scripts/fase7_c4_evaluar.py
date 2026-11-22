@@ -166,7 +166,7 @@ def grafico(res, modelos, cfg, base, ruta_png, B):
                  y=0.99, ha="left", va="top", fontsize=10, color=f["texto"])
     fig.text(0.01, 0.01, f"Barras: IC del {int(base['bootstrap']['confianza'] * 100)} % por bootstrap de episodios "
              f"({B:,} remuestreos de 10 bloques).".replace(",", " "), fontsize=7, color=f["texto_secundario"])
-    fig.tight_layout(rect=(0, 0.03, 1, 0.86))
+    fig.tight_layout(rect=(0, 0.03, 1, 0.90))
     ruta_png.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(ruta_png, dpi=f["dpi"], facecolor=f["fondo"])
     plt.close(fig)

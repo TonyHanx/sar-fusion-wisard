@@ -1354,6 +1354,273 @@ El alto de la caja térmica tiene una mediana de 28.5 px (de 9.0 a 59.1 entre lo
   `best.pt`, con diferencias de hasta 0.004.
 - Las métricas propias se calculan cuando esté anotada la oclusión, todas juntas.
 
+### Anotación de la oclusión de la validación (21 de noviembre de 2026)
+
+La hizo el primer anotador con `--parte anotar`, sin ver ninguna métrica de C4 ni las predicciones. `--parte nivel`
+comprobó que estaban las 500 respuestas y escribió `data/fase7/oclusion_validacion_nivel.csv`.
+
+| Vuelo | Baja (se ve en la RGB) | Severa (no se ve) | Sin nivel ("no es persona") | Total |
+|---|---:|---:|---:|---:|
+| FHL 0134 | 157 | 41 | 13 | 211 |
+| MtErie 0007 | 283 | 5 | 1 | 289 |
+| **Total** | **440** | **46** | **14** | **500** |
+
+- **Hay solo 46 severas, y 41 son de FHL 0134.** En la prueba eran 267 de 451.
+- **Tiempo:** mediana de 0.30 s por persona (0.4 s en FHL 0134 y 0.2 s en MtErie 0007), y 62 min en total con las
+  pausas. En la prueba fue de 0.9 s.
+- **Contra la regla automática** (solo referencia, no decide nada): kappa 0.513 en 486 personas.
+  - De las 440 bajas a mano, el automático pone 37 en severa.
+  - De las 46 severas, pone 13 en baja.
+- **Las 14 "no es persona" son cajas dudosas**, y las cifras se calculan con y sin ellas.
+  - La principal es sin ellas, igual que en McNemar.
+  - Con ellas, el recall de todas las personas cambia 0.011 como mucho (`resultados.csv`).
+
+### Salidas
+
+`scripts/fase7_c4_evaluar.py` (2 min) escribe en `reports/fase7/c4/`:
+- `umbrales.csv`: el F2, el recall y la precisión de cada umbral de la rejilla, por modelo;
+- `resultados.csv`: las métricas con IC de los 12 modelos y las diferencias de los pares, por subconjunto, con y sin
+  las dudosas;
+- `mcnemar.csv`;
+- `corridas.csv`: la cifra de `results.csv`;
+- `recall_por_nivel.png`.
+
+**`scripts/fase7_c4_desglose.py`** (nuevo y solo descriptivo, sin pruebas nuevas) escribe `bloques.csv`,
+`remuestreos.csv`, `alto_por_nivel.csv`, `recall_por_vuelo.csv` y `discordantes_por_bloque.csv`.
+- Lo agregué después de ver los resultados, para explicar por qué McNemar y el bootstrap no coinciden (ver "Fusión
+  contra térmica").
+- Usa los mismos umbrales, emparejamientos y remuestreos que la evaluación.
+
+**Bitácora:** 1 fila del nivel, 12 de la evaluación (una por modelo) y 1 del desglose.
+
+### Umbrales (F2 en validación)
+
+| Corrida | `last.pt` | `best.pt` |
+|---|---:|---:|
+| `termico_base` | 0.05 | 0.20 |
+| `termico_ampliado` | 0.05 | 0.15 |
+| `fusion_base` | 0.05 | 0.05 |
+| `fusion_ampliado` | 0.05 | 0.10 |
+
+- **Con `last.pt`, los cuatro quedan en 0.05, el borde inferior de la rejilla.**
+  - El F2 sigue subiendo al bajar el umbral. De 0.10 a 0.05 sube 0.012, 0.016, 0.021 y 0.006, en el orden de la tabla.
+  - El máximo puede estar por debajo de 0.05, fuera de la rejilla de la fase 6.
+- `fusion_base` con `best.pt` también queda en 0.05, con un F2 apenas 0.001 mayor que en 0.10 (0.492 contra 0.491).
+- Con umbrales tan bajos, la precisión de `last.pt` queda entre 0.35 y 0.58.
+
+### Resultados con `last.pt` (cifra principal)
+
+- Todas las personas, sin las cajas dudosas (486).
+- Entre paréntesis va el IC del 95 % por bootstrap de episodios.
+- La última columna es el promedio de las 5 últimas épocas de `results.csv`: viene del validador de Ultralytics, sin
+  IC y con todas las cajas.
+
+| Modelo | Umbral | Recall | Precisión | F2 | mAP@0.5 | mAP@0.5, 5 últimas |
+|---|---:|---:|---:|---:|---:|---:|
+| `termico_base` | 0.05 | 0.290 (0.212 a 0.518) | 0.358 | 0.302 | 0.223 (0.119 a 0.427) | 0.222 |
+| `termico_ampliado` | 0.05 | 0.362 (0.273 a 0.576) | **0.579** | **0.391** | **0.366** (0.300 a 0.526) | **0.361** |
+| `fusion_base` | 0.05 | **0.401** (0.054 a 0.543) | 0.348 | 0.389 | 0.322 (0.016 a 0.485) | 0.317 |
+| `fusion_base`, RGB en 0 | 0.05 | 0.088 (0.010 a 0.124) | 0.059 | 0.081 | 0.046 (0.001 a 0.070) | |
+| `fusion_ampliado` | 0.05 | 0.383 (0.156 a 0.444) | 0.422 | 0.390 | 0.336 (0.090 a 0.465) | 0.343 |
+| `fusion_ampliado`, RGB en 0 | 0.05 | 0.352 (0.298 a 0.469) | 0.461 | 0.369 | 0.314 (0.186 a 0.410) | |
+
+- **El mAP@0.5 propio coincide con el de Ultralytics.**
+  - Con todas las cajas da 0.227, 0.368, 0.314 y 0.338, contra 0.223, 0.365, 0.310 y 0.335 de su validador con
+    `last.pt`.
+  - La pequeña diferencia viene de cómo interpola la curva cada uno.
+- **En mAP@0.5 el orden es el de C3:** `termico_ampliado`, `fusion_ampliado`, `fusion_base` y `termico_base`.
+- **En recall, con el umbral de 0.05, las dos fusiones quedan arriba:** 0.401 y 0.383, contra 0.362 y 0.290 de las
+  térmicas.
+- **Los IC son muy anchos:** miden de 0.23 a 0.49 en los cuatro modelos. La razón está en "Fusión contra térmica".
+
+**Recall por nivel**, sin las dudosas:
+
+| Modelo | Baja (440) | Severa (46) | Severas detectadas |
+|---|---:|---:|---:|
+| `termico_base` | 0.286 (0.202 a 0.629) | 0.326 (0.071 a 0.538) | 15 |
+| `termico_ampliado` | 0.375 (0.278 a 0.685) | 0.239 (0.000 a 0.480) | 11 |
+| `fusion_base` | 0.420 (0.036 a 0.576) | 0.217 (0.000 a 0.333) | 10 |
+| `fusion_base`, RGB en 0 | 0.084 (0.011 a 0.114) | 0.130 (0.000 a 0.212) | 6 |
+| `fusion_ampliado` | 0.391 (0.110 a 0.460) | 0.326 (0.094 a 0.559) | 15 |
+| `fusion_ampliado`, RGB en 0 | 0.359 (0.304 a 0.560) | 0.304 (0.071 a 0.525) | 14 |
+
+Figura: `reports/fase7/c4/recall_por_nivel.png`.
+
+### `best.pt` (secundaria)
+
+| Modelo | Umbral | Recall | Precisión | F2 | mAP@0.5 | Recall en severa (46) |
+|---|---:|---:|---:|---:|---:|---:|
+| `termico_base` | 0.20 | 0.535 (0.457 a 0.722) | 0.363 | 0.489 | 0.396 (0.200 a 0.456) | 0.326 |
+| `termico_ampliado` | 0.15 | **0.638** (0.521 a 0.902) | **0.416** | **0.576** | **0.513** (0.446 a 0.689) | **0.435** |
+| `fusion_base` | 0.05 | 0.584 (0.182 a 0.741) | 0.308 | 0.495 | 0.435 (0.109 a 0.567) | 0.370 |
+| `fusion_base`, RGB en 0 | 0.05 | 0.142 (0.037 a 0.248) | 0.377 | 0.162 | 0.123 (0.013 a 0.220) | 0.130 |
+| `fusion_ampliado` | 0.10 | 0.556 (0.339 a 0.617) | 0.399 | 0.515 | 0.478 (0.196 a 0.595) | 0.326 |
+| `fusion_ampliado`, RGB en 0 | 0.10 | 0.621 (0.563 a 0.817) | 0.232 | 0.465 | 0.447 (0.236 a 0.576) | 0.435 |
+
+- `termico_ampliado` queda primero en las cinco cifras de los cuatro modelos con la RGB real.
+- `best.pt` es la época con el mayor mAP@0.5:0.95 en esta misma validación (de la 3 a la 23, según la corrida).
+  - Así, la cifra sale optimista dos veces: por la época y por el umbral.
+
+### Fusión contra térmica: ¿diferencia real o ruido?
+
+Diferencias de recall con `last.pt` (fusión − térmica), sin las dudosas. Llevan su IC y McNemar con Bonferroni ×4:
+
+| Subconjunto | Par | Diferencia de recall (IC) | Solo la fusión / solo la térmica | p con Bonferroni |
+|---|---|---:|---:|---:|
+| Todas (486) | `fusion_base` − `termico_base` | +0.111 (−0.318 a 0.289) | 105 / 51 | **0.00007** |
+| | `fusion_ampliado` − `termico_ampliado` | +0.021 (−0.300 a 0.155) | 84 / 74 | 1 |
+| Baja (440) | `fusion_base` − `termico_base` | +0.134 (−0.353 a 0.313) | 104 / 45 | **0.000006** |
+| | `fusion_ampliado` − `termico_ampliado` | +0.016 (−0.400 a 0.160) | 80 / 73 | 1 |
+| Severa (46) | `fusion_base` − `termico_base` | −0.109 (−0.243 a −0.023) | 1 / 6 | 0.50 |
+| | `fusion_ampliado` − `termico_ampliado` | +0.087 (0.000 a 0.222) | 5 / 1 | 0.88 |
+
+Con `best.pt` (sin McNemar), en el mismo orden:
+- todas: +0.049 (−0.518 a 0.273) y −0.082 (−0.509 a 0.066);
+- severa: +0.043 (−0.190 a 0.127) y −0.109 (−0.167 a 0.000).
+
+**En `fusion_base` contra `termico_base`, McNemar y el bootstrap no coinciden.** McNemar da una diferencia clara, y el IC
+incluye el 0 con mucho margen. La razón está en cómo se reparten las personas.
+- **MtErie 0007 es un solo episodio.**
+  - Sus 169 fotogramas tienen persona, así que el vuelo entero es un bloque del bootstrap. Ese bloque tiene 288 de las
+    486 personas (59 %).
+  - FHL 0134 se reparte en los otros 9 bloques.
+  - Cada bloque falta en el 35 % de los remuestreos (`remuestreos.csv`). Así, en un tercio de ellos no hay ninguna
+    persona de MtErie 0007.
+- **Los dos vuelos van en direcciones opuestas.** Viene de `recall_por_vuelo.csv` y `discordantes_por_bloque.csv`, y
+  es descriptivo, sin prueba:
+
+| Recall con `last.pt` | FHL 0134 (198) | MtErie 0007 (288) |
+|---|---:|---:|
+| `termico_base` | 0.379 | 0.229 |
+| `termico_ampliado` | **0.515** | 0.257 |
+| `fusion_base` | 0.152 | **0.573** |
+| `fusion_base`, RGB en 0 | 0.051 | 0.115 |
+| `fusion_ampliado` | 0.288 | 0.448 |
+| `fusion_ampliado`, RGB en 0 | 0.389 | 0.326 |
+| Alto de la caja térmica (mediana) | 11 px | 45 px |
+
+  - De las 105 personas que solo detecta `fusion_base`, 102 son de MtErie 0007. De las 51 que solo detecta
+    `termico_base`, 48 son de FHL 0134.
+  - Con `fusion_ampliado` contra `termico_ampliado` pasa lo mismo:
+    - en MtErie 0007, 61 contra 6 a favor de la fusión;
+    - en FHL 0134, 68 contra 23 a favor de la térmica.
+- **McNemar trata a las 486 personas como independientes.** Aquí 288 salen de un mismo episodio seguido.
+  - Si la diferencia viene de un solo vuelo, McNemar no lo ve y su p sale muy pequeño.
+  - El bootstrap por episodios sí lo tiene en cuenta, y por eso su IC es tan ancho.
+- **Conclusión: en la validación, la diferencia entre fusión y térmica depende del vuelo y cae dentro del ruido del
+  bootstrap.**
+  - La fusión gana en MtErie 0007, donde las personas miden 45 px y casi todas se ven en la RGB.
+  - La térmica gana en FHL 0134, donde miden 11 px.
+  - Con dos vuelos no se puede decir cuál es mejor en general.
+  - La significancia de McNemar en `fusion_base` refleja sobre todo un episodio de MtErie 0007.
+
+### La prueba con la RGB en 0
+
+| Recall con `last.pt` | RGB real | RGB en 0 | Diferencia (IC) | Solo con la RGB real / solo con la RGB en 0 | p con Bonferroni |
+|---|---:|---:|---:|---:|---:|
+| `fusion_base` | 0.401 | 0.088 | −0.313 (−0.432 a −0.036) | 157 / 5 | **1.2 × 10⁻³⁹** |
+| `fusion_ampliado` | 0.383 | 0.352 | −0.031 (−0.100 a 0.166) | 56 / 41 | 0.62 |
+
+- **Diferencias de mAP@0.5:**
+  - `fusion_base`: −0.276 (−0.419 a −0.013);
+  - `fusion_ampliado`: −0.022 (−0.119 a 0.163).
+- **Con `best.pt`:**
+  - `fusion_base` pierde 0.442 de recall (−0.565 a −0.113).
+  - `fusion_ampliado` gana 0.066 (−0.023 a 0.459), pero con menos precisión (0.232 contra 0.399). Su mAP@0.5 baja 0.030.
+- **`fusion_base` depende de la RGB.**
+  - Sin ella pierde casi todo, en los dos vuelos: en FHL 0134 pasa de 0.152 a 0.051, y en MtErie 0007 de 0.573 a 0.115.
+  - Siempre entrenó con la RGB real.
+- **`fusion_ampliado` casi no depende de la RGB.**
+  - Con la RGB en 0 conserva el 92 % de su recall y el 93 % de su mAP@0.5.
+  - Es lo esperable si entrenó con el 77 % de las imágenes sin RGB: aprendió a detectar con la térmica sola.
+- **La explicación de C3 no se confirma en el total.**
+  - C3 decía que, si `fusion_ampliado` mejoraba con la RGB en 0, era la RGB real la que la empeoraba en la validación.
+  - En el total no mejora: baja 0.031 en recall y 0.022 en mAP@0.5, dentro del ruido.
+- **Por vuelo cambia, en direcciones opuestas** (descriptivo):
+  - en FHL 0134, con la RGB en 0 detecta más: pasa de 0.288 a 0.389, con 34 personas que solo detecta así, contra 14;
+  - en MtErie 0007 detecta menos: pasa de 0.448 a 0.326, con 7 contra 42.
+  - En FHL 0134 la RGB real sí la empeora. Pero aun sin ella queda debajo de `termico_ampliado` (0.389 contra 0.515), así
+    que la RGB no explica toda la diferencia con la térmica en ese vuelo.
+- **La "caída" de C3 tampoco aparece clara con el evaluador propio.** `fusion_ampliado` contra `termico_ampliado` da
+  +0.021 en recall y −0.031 en mAP@0.5, las dos dentro del ruido.
+
+### Oclusión severa
+
+- **Son 46 personas, 41 de FHL 0134**, repartidas en 7 bloques. El bloque 8 tiene 21.
+- **Recall:**
+  - con `last.pt`, de 0.217 a 0.326 (de 10 a 15 personas detectadas);
+  - con `best.pt`, de 0.326 a 0.435.
+- **Ningún par es significativo con McNemar.** Como mucho, 7 personas las detecta un solo modelo.
+- **Un IC excluye el 0, pero no es robusto:** `fusion_base` − `termico_base`, −0.109 (−0.243 a −0.023).
+  - Sale de 7 personas (1 contra 6), todas de FHL 0134, en los bloques 3, 6 y 8.
+  - Los remuestreos que no incluyen ninguno de esos tres bloques dan 0. Son 248 de 10 000 (2.48 %), justo debajo del
+    2.5 % que marca el límite del IC.
+  - McNemar da p = 0.50 con Bonferroni.
+  - Con su mAP@0.5 pasa lo mismo: −0.096 (−0.247 a −0.001).
+- **Conclusión:** en la validación no hay evidencia de que la fusión detecte más o menos personas en oclusión severa que
+  la térmica. Con 46 personas, casi todas de un vuelo, la validación no puede responder la pregunta central.
+
+### Limitaciones de C4
+
+1. **El umbral se elige y se mide en la misma validación.**
+   - Recall, precisión y F2 salen optimistas. El mAP@0.5 no usa umbral, así que no se ve afectado.
+   - En las reglas escribí que el sesgo es el mismo para todos los modelos. Es más exacto decir que va en la misma
+     dirección para todos, pero su tamaño puede variar.
+   - **Con `last.pt`**, los cuatro umbrales quedaron en 0.05, el borde de la rejilla, y el F2 seguía subiendo.
+     - El umbral funciona casi como uno fijo, de 0.05 para todos.
+     - Un umbral más bajo daría más recall, así que el recall queda limitado por la rejilla y no por el modelo.
+   - **Con `best.pt`**, los umbrales van de 0.05 a 0.20. Además, `best.pt` ya se eligió con esta misma validación.
+   - En la fase 6 el umbral se elegía en la validación y se aplicaba sin cambios a la prueba. Aquí no hay prueba, porque
+     la fase 7 no usa FHL 0405/0406. Así, ninguna cifra de C4 es fuera de la muestra.
+2. **Oclusión y tamaño quedan mezclados en FHL 0134.**
+   - 41 de las 46 severas son de FHL 0134. Ahí las personas miden de 8 a 13 px de alto entre los percentiles 10 y 90,
+     con mediana de 10 px en baja y 12 px en severa.
+   - En MtErie 0007 la mediana es de 46 px en baja y 27 px en severa.
+   - Comparar severa con baja en el total es casi comparar FHL 0134 con MtErie 0007: personas diminutas contra personas
+     grandes, en otra escena y con otro ángulo de cámara. La diferencia entre niveles no se puede atribuir a la
+     oclusión.
+   - Dentro de FHL 0134 los dos niveles tienen casi el mismo alto. El recall de severa contra baja ahí (41 y 157
+     personas, descriptivo) no muestra un patrón común:
+
+     | Modelo | Severa | Baja |
+     |---|---:|---:|
+     | `termico_base` | 0.341 | 0.389 |
+     | `termico_ampliado` | 0.268 | 0.580 |
+     | `fusion_base` | 0.220 | 0.134 |
+     | `fusion_ampliado` | 0.317 | 0.280 |
+
+   - Lo mismo vale para fusión contra térmica. La fusión gana en el vuelo de personas grandes y la térmica en el de
+     diminutas, pero tamaño, escena y vuelo van juntos y no se pueden separar con dos vuelos.
+   - Decidir si una persona de 10 px "se ve en la RGB" es difícil, y la anotación de FHL 0134 carga con esa
+     incertidumbre.
+3. **La anotación:**
+   - la hizo un solo anotador, sin un segundo que la revise;
+   - la mediana fue de 0.30 s por persona, contra 0.9 s en la prueba;
+   - se hizo sin ver ninguna métrica de C4, pero después de conocer las cifras de C3.
+4. **Los 10 bloques del bootstrap son muy desiguales**, de 1 a 288 personas.
+   - Los IC reflejan sobre todo qué vuelo entra en cada remuestreo.
+   - Con tan pocos bloques, los percentiles son poco finos (ver la severa).
+5. **McNemar supone personas independientes**, y aquí 288 de las 486 salen de un mismo episodio. Su p sale demasiado
+   pequeño cuando la diferencia viene de un solo vuelo.
+6. **Hay una semilla por corrida y dos vuelos de validación**, como ya se dijo en C3.
+
+### Resumen de C4
+
+- **Cifra principal (`last.pt`):** en mAP@0.5, `termico_ampliado` 0.366, `fusion_ampliado` 0.336, `fusion_base` 0.322 y
+  `termico_base` 0.223.
+  - Es el mismo orden que el promedio de las 5 últimas de `results.csv` (0.361, 0.343, 0.317 y 0.222).
+  - En recall, con el umbral de 0.05, las fusiones quedan arriba (0.401 y 0.383, contra 0.362 y 0.290).
+- **`best.pt`:** `termico_ampliado` queda primero en todo (mAP@0.5 0.513, recall 0.638).
+- **Fusión contra térmica: dentro del ruido.**
+  - McNemar da significativa la ventaja de `fusion_base` sobre `termico_base` (en todas y en baja), pero viene de un
+    solo episodio de MtErie 0007. En FHL 0134 gana la térmica.
+  - El IC por episodios incluye el 0 en todas y en baja, con los dos pares y con los dos pesos.
+- **RGB en 0:**
+  - `fusion_ampliado` aprendió a detectar casi solo con la térmica: sin RGB conserva el 92 % de su recall.
+  - `fusion_base` depende de la RGB: conserva el 22 %.
+  - La RGB real no empeora a `fusion_ampliado` en el total, pero sí en FHL 0134.
+- **Severa:** son 46 personas, casi todas de FHL 0134, y no hay ninguna diferencia demostrable.
+
 ## Comandos
 
 ```
@@ -1378,4 +1645,5 @@ $env:PYTHONIOENCODING = "utf-8"; cmd /c ".venv\Scripts\python.exe -u scripts\fas
 .venv\Scripts\python.exe scripts\fase7_c4_oclusion.py --config configs\fase7.yaml --rutas configs\rutas.yaml --parte anotar
 .venv\Scripts\python.exe scripts\fase7_c4_oclusion.py --config configs\fase7.yaml --rutas configs\rutas.yaml --parte nivel
 .venv\Scripts\python.exe scripts\fase7_c4_evaluar.py --config configs\fase7.yaml --rutas configs\rutas.yaml
+.venv\Scripts\python.exe scripts\fase7_c4_desglose.py --config configs\fase7.yaml --rutas configs\rutas.yaml
 ```

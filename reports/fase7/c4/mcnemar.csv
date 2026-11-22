@@ -1,0 +1,13 @@
+particion,subconjunto,dudosas,modelo_a,modelo_b,umbral_a,umbral_b,n_personas,ambos,solo_a,solo_b,ninguno,recall_a,recall_b,estadistico,p,comparaciones,p_bonferroni,alfa,significativo
+validacion,todos_442,sin,fusion_base_last,termico_base_last,0.05,0.05,486,90,105,51,240,0.4012345679012346,0.29012345679012347,51.0,1.8384904253007476e-05,4,7.35396170120299e-05,0.05,True
+validacion,todos_442,sin,fusion_ampliado_last,termico_ampliado_last,0.05,0.05,486,102,84,74,226,0.38271604938271603,0.36213991769547327,74.0,0.4741061767856326,4,1.0,0.05,False
+validacion,todos_442,sin,fusion_ampliado_last_rgb0,fusion_ampliado_last,0.05,0.05,486,130,41,56,259,0.35185185185185186,0.38271604938271603,41.0,0.15481578503442855,4,0.6192631401377142,0.05,False
+validacion,todos_442,sin,fusion_base_last_rgb0,fusion_base_last,0.05,0.05,486,38,5,157,286,0.08847736625514403,0.4012345679012346,5.0,3.0858614624862575e-40,4,1.234344584994503e-39,0.05,True
+validacion,baja,sin,fusion_base_last,termico_base_last,0.05,0.05,440,81,104,45,210,0.42045454545454547,0.2863636363636364,45.0,1.4920913863662092e-06,4,5.968365545464837e-06,0.05,True
+validacion,baja,sin,fusion_ampliado_last,termico_ampliado_last,0.05,0.05,440,92,80,73,195,0.39090909090909093,0.375,73.0,0.6277709072003689,4,1.0,0.05,False
+validacion,baja,sin,fusion_ampliado_last_rgb0,fusion_ampliado_last,0.05,0.05,440,117,41,55,227,0.35909090909090907,0.39090909090909093,41.0,0.1842858728803648,4,0.7371434915214592,0.05,False
+validacion,baja,sin,fusion_base_last_rgb0,fusion_base_last,0.05,0.05,440,33,4,152,251,0.08409090909090909,0.42045454545454547,4.0,5.336228192150993e-40,4,2.134491276860397e-39,0.05,True
+validacion,severa,sin,fusion_base_last,termico_base_last,0.05,0.05,46,9,1,6,30,0.21739130434782608,0.32608695652173914,1.0,0.125,4,0.5,0.05,False
+validacion,severa,sin,fusion_ampliado_last,termico_ampliado_last,0.05,0.05,46,10,5,1,30,0.32608695652173914,0.2391304347826087,1.0,0.21875,4,0.875,0.05,False
+validacion,severa,sin,fusion_ampliado_last_rgb0,fusion_ampliado_last,0.05,0.05,46,14,0,1,31,0.30434782608695654,0.32608695652173914,0.0,1.0,4,1.0,0.05,False
+validacion,severa,sin,fusion_base_last_rgb0,fusion_base_last,0.05,0.05,46,5,1,5,35,0.13043478260869565,0.21739130434782608,1.0,0.21875,4,0.875,0.05,False
