@@ -427,6 +427,12 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
         90 % de las personas se ven en la RGB. La causa probable, sin comprobar, es que la RGB no se transfiere entre
         vuelos. Va como limitación.
       - `last.pt` sigue siendo el principal de todos, también de `rgb_base`, y `best.pt` el secundario.
+    - **Resultado en la prueba** (21 de noviembre de 2026, una sola vez; `reports/fase8.md`, `scripts/fase8_evaluar.py`):
+      - Recall en la severa (267 personas, `last.pt`, sin dudosas): `termico_base` 0.337, `termico_ampliado` 0.442,
+        `fusion_base` 0.154, `fusion_ampliado` 0.124, `rgb_base` 0.004 y `fusion_100ep` (`best.pt`) 0.030.
+      - Las 6 diferencias de McNemar quedan demostradas, con McNemar y el IC de acuerdo: la **térmica supera a la
+        fusión** (base y ampliado, en baja y severa) y la fusión supera a la RGB.
+      - Con la RGB en 0, `fusion_ampliado` sube en la severa de 0.124 a 0.401.
     - **Cambia la regla de la fase 6 por lo que se vio en C4:** una diferencia solo cuenta como demostrada si McNemar
       con Bonferroni da p < 0.05 **y** el IC del 95 % por bootstrap de episodios de la diferencia de recall excluye el 0.
       Si solo se cumple una, es "no concluyente".

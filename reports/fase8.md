@@ -1,10 +1,10 @@
 # Fase 8: evaluación en la prueba (FHL 0405)
 
-**Estado (21 de noviembre de 2026):** las reglas están confirmadas por el usuario y los pasos 1 y 2 están hechos:
-- `rgb_base` se entrenó de 21:33 a 22:09 (`reports/fase7.md`, "Corrida 5 de C3: `rgb_base`");
-- los umbrales están fijados en la validación y subidos a GitHub (abajo, "Paso 2").
-- La prueba no se ha predicho ni medido con ningún modelo.
-- Sus imágenes no se han leído.
+**Estado (21 de noviembre de 2026): fase 8 terminada.** El usuario pidió hacer los pasos 2, 3 y 4 seguidos.
+- `rgb_base` se entrenó de 21:33 a 22:09 (`reports/fase7.md`, "Corrida 5 de C3: `rgb_base`").
+- Los umbrales se fijaron en la validación y se subieron a GitHub antes de tocar la prueba (commit `ae9d867`).
+- La prueba se comprobó sin predecir, y después se predijo y se midió **una sola vez** (abajo, "Resultados en la
+  prueba").
 - **`rgb_base` es débil en la validación:** mAP@0.5 de 0.032 con `last.pt` y de 0.160 con `best.pt` (época 1), en la
   validación de Ultralytics. Las corridas de solo RGB de la fase 5 hicieron lo mismo. Las reglas no cambian.
 
@@ -145,6 +145,8 @@ Cada paso se detiene y espera al usuario.
 3. **Verificación de la prueba sin predecir:** fotogramas, personas, niveles, dudosas y bloques.
 4. **Predicción y medida:** se predice la prueba con todos los modelos de una vez y se mide una sola vez.
 
+Los pasos 2 a 4 se hicieron seguidos el 21 de noviembre de 2026, a pedido del usuario, sin detenerse entre ellos.
+
 ## Paso 2: umbrales en la validación (21 de noviembre de 2026)
 
 Fijados con `scripts/fase8_evaluar.py --parte umbrales` y subidos a GitHub antes de predecir la prueba.
@@ -174,9 +176,128 @@ Fijados con `scripts/fase8_evaluar.py --parte umbrales` y subidos a GitHub antes
 - Estas cifras son de la validación con el umbral elegido en ella misma, así que son optimistas. Solo sirven para fijar
   el umbral.
 
+## Paso 3: comprobación de la prueba sin predecir
+
+`--parte verificar` salió bien:
+- `umbrales.csv` es igual al de GitHub (`origin/main`);
+- los 12 pesos son los mismos con que se fijaron los umbrales (sha256);
+- cada modelo recibe los canales con que entrenó: 3 en la térmica y en la RGB, y 4 en la fusión;
+- las etiquetas de prueba de los tres datasets son las mismas;
+- todo coincide con lo esperado: 928 fotogramas, 310 anotados, 1 501 personas, baja 184, severa 267, sin nivel 47,
+  131 dudosas y 13 bloques;
+- no había ninguna predicción ni ninguna salida de la prueba.
+
+## Resultados en la prueba (paso 4, 21 de noviembre de 2026)
+
+`--parte prueba`:
+- predijo los 16 modelos en 325 s: 6 modelos con 2 pesos, más las 2 fusiones con la RGB en 0 con los 2 pesos;
+- midió una sola vez, en 599 s en total;
+- salidas en `reports/fase8/`: `resultados.csv`, `mcnemar.csv`, `sensibilidad.csv`, `prediccion.csv` y
+  `recall_por_nivel.png`;
+- predicciones en `runs/fase8/prueba/`;
+- **control:** con las dudosas, el mAP@0.5 propio coincide con el de Ultralytics (por ejemplo, 0.468 en `termico_base`
+  con `last.pt`, y 0.4682 en Ultralytics).
+
+### Cifra principal: peso principal, sin las cajas dudosas
+
+`last.pt` en la fase 7 y `best.pt` en `fusion_100ep`. Recall con el umbral de cada modelo, e IC del 95 % por bootstrap
+de episodios (13 bloques, 10 000 remuestreos).
+
+| Modelo | Todos los 928 (1 370 personas) | Baja (184) | **Severa (267)** | mAP@0.5, todos |
+|---|---:|---:|---:|---:|
+| `termico_base` | 0.536 [0.367, 0.718] | 0.826 [0.576, 0.908] | **0.337** [0.213, 0.441] | 0.511 |
+| `termico_ampliado` | **0.628** [0.453, 0.811] | **0.913** [0.729, 0.968] | **0.442** [0.293, 0.578] | **0.614** |
+| `fusion_base` | 0.380 [0.168, 0.621] | 0.734 [0.372, 0.863] | **0.154** [0.077, 0.250] | 0.384 |
+| `fusion_ampliado` | 0.374 [0.124, 0.660] | 0.761 [0.260, 0.919] | **0.124** [0.062, 0.278] | 0.371 |
+| `rgb_base` | 0.104 [0.000, 0.232] | 0.283 [0.000, 0.408] | **0.004** [0.000, 0.017] | 0.062 |
+| `fusion_100ep` (fase 6, `best.pt`) | 0.264 [0.043, 0.536] | 0.636 [0.173, 0.805] | **0.030** [0.007, 0.113] | 0.258 |
+| `fusion_base` con la RGB en 0 | 0.292 | 0.647 | 0.056 | 0.288 |
+| `fusion_ampliado` con la RGB en 0 | 0.586 | 0.880 | 0.401 | 0.618 |
+
+- **Los 310 anotados** (451 personas) dan casi lo mismo que los 928: 0.537, 0.634, 0.390, 0.384, 0.118 y 0.277.
+- **Con las dudosas** (1 501 personas en los 928), el recall baja en todos: 0.491, 0.578, 0.349, 0.342, 0.095 y
+  0.242.
+- **Precisión en todos los 928:** 0.585, 0.553, 0.676, 0.573, 0.155 y 0.530.
+
+### McNemar y criterio (familia confirmada, `last.pt`, sin las dudosas, Bonferroni ×3)
+
+| Nivel | Par | Solo A | Solo B | Diferencia de recall [IC 95 %] | p con Bonferroni | Resultado |
+|---|---|---:|---:|---|---:|---|
+| Baja | `fusion_base` − `rgb_base` | 86 | 3 | +0.451 [+0.258, +0.568] | 1 × 10⁻²¹ | **demostrada** (gana la fusión) |
+| Baja | `fusion_base` − `termico_base` | 7 | 24 | −0.092 [−0.256, −0.022] | 0.010 | **demostrada** (gana la térmica) |
+| Baja | `fusion_ampliado` − `termico_ampliado` | 1 | 29 | −0.152 [−0.492, −0.042] | 2 × 10⁻⁷ | **demostrada** (gana la térmica) |
+| Severa | `fusion_base` − `rgb_base` | 40 | 0 | +0.150 [+0.071, +0.244] | 5 × 10⁻¹² | **demostrada** (gana la fusión) |
+| Severa | `fusion_base` − `termico_base` | 6 | 55 | −0.184 [−0.222, −0.108] | 2 × 10⁻¹⁰ | **demostrada** (gana la térmica) |
+| Severa | `fusion_ampliado` − `termico_ampliado` | 1 | 86 | −0.318 [−0.376, −0.190] | 3 × 10⁻²⁴ | **demostrada** (gana la térmica) |
+
+**Las seis diferencias quedan demostradas: McNemar y el IC por episodios coinciden en todas.**
+- **Comparación principal, fusión contra térmica: la térmica sola detecta más personas que la fusión**, con los dos
+  datasets y en los dos niveles.
+  - En la oclusión severa, la fusión encuentra 0.18 menos de recall con los datos base y 0.32 menos con los ampliados.
+  - Así, la respuesta a la pregunta de la tesis es **no**: con la vegetación tapando más del 70 % del cuerpo, la fusión
+    temprana de este trabajo encuentra menos personas que la térmica sola.
+- **Complementaria, fusión contra RGB:** la fusión detecta más que la RGB sola, en los dos niveles. Con `rgb_base`
+  hundido (limitación declarada), esta comparación dice poco.
+- **Va en contra de la validación (C4):** allí McNemar daba a `fusion_base` por encima de `termico_base`, por un solo
+  episodio, y el IC incluía el 0. En la prueba, la térmica gana con IC que excluye el 0.
+
+### Descriptivo (solo con IC, sin McNemar)
+
+En todos los 928 y en la severa, sin las dudosas, con `last.pt`:
+
+| Diferencia de recall | Todos los 928 | Severa |
+|---|---|---|
+| `termico_base` − `rgb_base` | +0.431 [+0.341, +0.532] | +0.333 [+0.204, +0.437] |
+| `termico_ampliado` − `termico_base` (ampliar, térmica) | +0.093 [+0.049, +0.150] | +0.105 [+0.022, +0.188] |
+| `fusion_ampliado` − `fusion_base` (ampliar, fusión) | −0.006 [−0.060, +0.050] | −0.030 [−0.066, +0.037] |
+| `fusion_base` con la RGB en 0 − `fusion_base` | −0.088 [−0.180, −0.020] | −0.097 [−0.183, −0.025] |
+| `fusion_ampliado` con la RGB en 0 − `fusion_ampliado` | **+0.212** [+0.117, +0.301] | **+0.277** [+0.188, +0.322] |
+| `fusion_base` − `fusion_100ep` (`last.pt` con `last.pt`) | +0.066 [+0.025, +0.146] | +0.041 [+0.009, +0.108] |
+| `fusion_ampliado` − `fusion_100ep` (`last.pt` con `last.pt`) | +0.060 [−0.013, +0.160] | +0.011 [−0.045, +0.143] |
+
+- **La RGB real empeora a `fusion_ampliado` en la prueba.** Con la RGB en 0 su recall en la severa pasa de 0.124 a
+  0.401, cerca de `termico_ampliado` (0.442). `fusion_ampliado` aprendió a detectar con la térmica (C4), y en FHL 0405
+  la RGB la confunde.
+- **`fusion_base` sí depende de la RGB:** con la RGB en 0 baja en los dos niveles.
+- **Ampliar los datos ayuda a la térmica** (+0.09 a +0.11, con IC que excluye el 0) y **no a la fusión**.
+  - Recordatorio de las limitaciones: los vuelos ampliados son del mismo sitio y día que la prueba.
+- **Contra la fase 6:** `fusion_base` supera a `fusion_100ep` con `last.pt` y con `best.pt` (+0.181 [+0.108, +0.248]
+  en los 928). La cifra de la fase 6 (`fusion_100ep`, `best.pt`) da 0.264 en los 928 y 0.030 en la severa.
+- **Con `best.pt`** (secundaria), las conclusiones son las mismas:
+  - la térmica supera a la fusión, con IC que excluye el 0 en los dos datasets y en los dos niveles;
+  - las cifras son más altas: `termico_ampliado` da 0.713 en los 928 y 0.584 en la severa.
+- **`rgb_base` con `best.pt` es aún peor que con `last.pt`:** 0.035 en los 928 y 0 en la severa, con 241 423
+  predicciones.
+
+### Sensibilidad del umbral (`sensibilidad.csv`, sin IC)
+
+Recall en la severa con la rejilla anterior (0.05 en todos los `last.pt`) y con 0.5:
+
+| Modelo | Umbral de F2 | Rejilla anterior | 0.5 |
+|---|---:|---:|---:|
+| `termico_base` | 0.337 | 0.311 | 0.157 |
+| `termico_ampliado` | 0.442 | 0.371 | 0.225 |
+| `fusion_base` | 0.154 | 0.139 | 0.037 |
+| `fusion_ampliado` | 0.124 | 0.124 | 0.056 |
+
+El orden no cambia con ningún umbral: la térmica queda por encima de la fusión en los tres.
+
+### Limitaciones (declaradas antes de ver la prueba, y lo que se ve ahora)
+
+- Hay una semilla por corrida, y los umbrales se eligieron en dos vuelos de validación que se comportan distinto.
+- La prueba tiene 13 bloques. Los IC de los 928 son anchos (más de 0.5 en las fusiones), aunque los de las
+  diferencias emparejadas son más estrechos.
+- Los vuelos ampliados son del mismo sitio y día que la prueba. Eso favorece a los ampliados frente a los base, pero no
+  a la fusión frente a la térmica dentro del mismo dataset.
+- `rgb_base` se hunde en la validación y también en la prueba. Fusión contra RGB es complementaria.
+- **Que la RGB empeore a la fusión es una observación, sin comprobar por qué.** Una posibilidad es la escena oscura bajo
+  el dosel de FHL 0405, como en la escena en sombra de la fase 4.
+
 ## Comandos
 
 ```
 $env:PYTHONIOENCODING = "utf-8"; cmd /c ".venv\Scripts\python.exe -u scripts\fase7_entrenar.py --config configs\fase7.yaml --rutas configs\rutas.yaml --corrida rgb_base > runs\fase7\rgb_base.log 2>&1"
 .venv\Scripts\python.exe scripts\fase8_evaluar.py --config configs\fase8.yaml --rutas configs\rutas.yaml --parte umbrales
+.venv\Scripts\python.exe scripts\fase8_evaluar.py --config configs\fase8.yaml --rutas configs\rutas.yaml --parte verificar
+.venv\Scripts\python.exe scripts\fase8_evaluar.py --config configs\fase8.yaml --rutas configs\rutas.yaml --parte prueba
 ```

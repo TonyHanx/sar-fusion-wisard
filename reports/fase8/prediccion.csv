@@ -1,0 +1,17 @@
+modelo,pesos,rgb_cero,datos,n_predicciones,segundos,ultralytics_map50,ultralytics_map50_95,ultralytics_precision,ultralytics_recall
+termico_base_last,runs\fase7\termico_base\weights\last.pt,False,configs/termico.yaml,2729,24.4,0.4681592782639765,0.19964288098090316,0.7307038630365831,0.45192956367806714
+termico_base_best,runs\fase7\termico_base\weights\best.pt,False,configs/termico.yaml,11026,19.5,0.613377037578541,0.3262779880425128,0.8144517224772011,0.5731705972048294
+termico_ampliado_last,runs\fase7\termico_ampliado\weights\last.pt,False,configs/termico.yaml,2382,19.5,0.5676130289380619,0.3223193680157902,0.879302654824872,0.49700199866755496
+termico_ampliado_best,runs\fase7\termico_ampliado\weights\best.pt,False,configs/termico.yaml,14597,19.5,0.6866102582814828,0.3883247461950662,0.8958745124596569,0.608927381745503
+fusion_base_last,runs\fase7\fusion_base\weights\last.pt,False,configs/fusion.yaml,2426,19.6,0.3511327363496653,0.14595003057051908,0.7176921945789604,0.33196398391300336
+fusion_base_last_rgb0,runs\fase7\fusion_base\weights\last.pt,True,configs/fusion.yaml,2098,20.0,0.2622595718766218,0.10593865970437129,0.6620040894881511,0.25449700199866754
+fusion_base_best,runs\fase7\fusion_base\weights\best.pt,False,configs/fusion.yaml,3057,19.4,0.4596019689907805,0.19844832165675286,0.8575833211151067,0.3944037308461026
+fusion_base_best_rgb0,runs\fase7\fusion_base\weights\best.pt,True,configs/fusion.yaml,1698,19.4,0.3827565030979848,0.1752898312935432,0.8814873228184381,0.3072291998134426
+fusion_ampliado_last,runs\fase7\fusion_ampliado\weights\last.pt,False,configs/fusion.yaml,2760,19.6,0.33775672619744534,0.1397089648066468,0.7796812465582799,0.32311792138574286
+fusion_ampliado_last_rgb0,runs\fase7\fusion_ampliado\weights\last.pt,True,configs/fusion.yaml,2169,19.3,0.5707566039634189,0.32319169131425396,0.8704369213964543,0.5143237841439041
+fusion_ampliado_best,runs\fase7\fusion_ampliado\weights\best.pt,False,configs/fusion.yaml,12830,19.7,0.5167497190233422,0.24443697280092752,0.8281253373467969,0.45581853502487396
+fusion_ampliado_best_rgb0,runs\fase7\fusion_ampliado\weights\best.pt,True,configs/fusion.yaml,39631,20.2,0.6327523658898341,0.32856065446501076,0.8065369378288323,0.5569620253164557
+rgb_base_last,runs\fase7\rgb_base\weights\last.pt,False,configs/rgb.yaml,16314,20.2,0.05403052375666165,0.010284472919206531,0.3734824328402789,0.07794803464357095
+rgb_base_best,runs\fase7\rgb_base\weights\best.pt,False,configs/rgb.yaml,241423,22.8,0.00672769073266275,0.001983643583112179,0.08512178478047143,0.030646235842771485
+fusion_100ep_last,runs\fase5\fusion_100ep\weights\last.pt,False,configs/fusion.yaml,1265,19.2,0.27227279953283795,0.1005322085339184,0.6905549586517229,0.2618254497001999
+fusion_100ep_best,runs\fase5\fusion_100ep\weights\best.pt,False,configs/fusion.yaml,3898,19.8,0.23335759421452051,0.12073620907551708,0.6000647421870293,0.22651565622918055
