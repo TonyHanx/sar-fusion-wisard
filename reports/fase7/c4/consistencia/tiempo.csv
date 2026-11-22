@@ -1,0 +1,7 @@
+vuelo,tipo,count,mean,std,min,25%,50%,75%,max
+FHL 0134,primera de su tramo,64.0,4.78,15.89,0.1,0.2,0.8,1.42,88.8
+FHL 0134,sigue a la del fotograma anterior,147.0,3.17,23.19,0.1,0.2,0.3,0.7,235.1
+MtErie 0007,primera de su tramo,57.0,34.15,191.48,0.1,0.2,0.6,1.2,1432.7
+MtErie 0007,sigue a la del fotograma anterior,232.0,4.37,45.31,0.0,0.2,0.2,0.3,661.4
+total,primera de su tramo,121.0,18.61,132.13,0.1,0.2,0.7,1.4,1432.7
+total,sigue a la del fotograma anterior,379.0,3.91,38.25,0.0,0.2,0.2,0.4,661.4

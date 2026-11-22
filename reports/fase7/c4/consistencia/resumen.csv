@@ -1,0 +1,10 @@
+iou_min,vuelo,personas,pares_emparejados,cambios,cambios_baja_severa,cambios_con_no_es_persona,tramos,tramos_de_1,largo_mediano,largo_maximo,severas,tramos_con_severa,bajas,tramos_con_baja,tramos_con_cambio
+0.1,FHL 0134,211,179,13,7,6,32,13,3.0,24,41,10,157,26,8
+0.1,MtErie 0007,289,252,3,2,1,37,16,3.0,60,5,5,283,33,2
+0.1,total,500,431,16,9,7,69,29,3.0,60,46,15,440,59,10
+0.3,FHL 0134,211,147,8,6,2,64,41,1.0,24,41,21,157,38,6
+0.3,MtErie 0007,289,232,2,1,1,57,26,2.0,29,5,5,283,53,2
+0.3,total,500,379,10,7,3,121,67,1.0,29,46,26,440,91,8
+0.5,FHL 0134,211,94,2,1,1,117,99,1.0,17,41,38,157,69,2
+0.5,MtErie 0007,289,188,0,0,0,101,65,1.0,23,5,5,283,95,0
+0.5,total,500,282,2,1,1,218,164,1.0,23,46,43,440,164,2

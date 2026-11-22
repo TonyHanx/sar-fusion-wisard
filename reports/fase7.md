@@ -1368,12 +1368,94 @@ comprobó que estaban las 500 respuestas y escribió `data/fase7/oclusion_valida
 - **Hay solo 46 severas, y 41 son de FHL 0134.** En la prueba eran 267 de 451.
 - **Tiempo:** mediana de 0.30 s por persona (0.4 s en FHL 0134 y 0.2 s en MtErie 0007), y 62 min en total con las
   pausas. En la prueba fue de 0.9 s.
+  - **Por qué fue rápida** (explicación del anotador): los fotogramas seguidos son casi iguales, con alrededor de 1 s de
+    movimiento entre uno y otro. Después de decidir por una persona, en los fotogramas siguientes es la misma.
+  - En la prueba se anotó 1 de cada 3 fotogramas, así que la misma persona no se repetía tan seguido.
+  - Los tiempos lo muestran (ver "Consistencia entre fotogramas seguidos"): la primera persona de cada tramo tomó una
+    mediana de 0.7 s, y las que siguen a la del fotograma anterior, 0.2 s.
 - **Contra la regla automática** (solo referencia, no decide nada): kappa 0.513 en 486 personas.
   - De las 440 bajas a mano, el automático pone 37 en severa.
   - De las 46 severas, pone 13 en baja.
 - **Las 14 "no es persona" son cajas dudosas**, y las cifras se calculan con y sin ellas.
   - La principal es sin ellas, igual que en McNemar.
   - Con ellas, el recall de todas las personas cambia 0.011 como mucho (`resultados.csv`).
+
+### Consistencia entre fotogramas seguidos (sin reanotar)
+
+Pedida por el usuario después de anotar (21 de noviembre de 2026). Se hace con `--parte consistencia`, y los parámetros
+están en `c4.oclusion.consistencia` de `configs/fase7.yaml`.
+
+**Método:**
+- La misma persona en los fotogramas p y p+1 del mismo vuelo se empareja por la IoU de la caja térmica. Se usa la
+  asignación húngara, que maximiza la IoU total del par de fotogramas.
+- **Un emparejamiento cuenta si su IoU llega a 0.3.** Los resultados con 0.1 y 0.5 solo se reportan.
+  - El umbral lo elegí yo; no estaba fijado.
+  - Con cajas de 11 px, un corrimiento de 2 o 3 px ya deja la IoU por debajo de 0.5.
+  - La mediana de la IoU de los emparejamientos es de 0.50 en FHL 0134 y de 0.68 en MtErie 0007.
+- Los emparejamientos forman **tramos**: cadenas de la misma persona en fotogramas seguidos.
+- No se salta el hueco de pares excluidos de MtErie 0007 (fotogramas 53 a 55).
+- Salidas en `reports/fase7/c4/consistencia/`: `pares.csv`, `resumen.csv`, `cambios.csv`, `tramos.csv`, `tiempo.csv` y
+  las figuras `casos_1.png` y `casos_2.png`.
+
+**Resultado:**
+
+| IoU mínima | Pares emparejados | Cambios de respuesta | Entre baja y severa | Con "no es persona" | Tramos (500 personas) |
+|---|---:|---:|---:|---:|---:|
+| 0.1 | 431 | 16 | 9 | 7 | 69 |
+| **0.3** | **379** | **10** | **7** | **3** | **121** |
+| 0.5 | 282 | 2 | 1 | 1 | 218 |
+
+- **Con IoU ≥ 0.3, la respuesta cambia en 10 de los 379 pares (2.6 %).** Entre baja y severa, en 7 (1.8 %).
+- **13 de los 16 cambios con IoU ≥ 0.1 son de FHL 0134.**
+- **Hay 3 idas y vueltas** (A → B → A en tres fotogramas seguidos): los casos 2 y 3, 13 y 14, y 15 y 16.
+
+**Los 16 casos** (`cambios.csv`).
+- Las figuras muestran en cada fila la RGB alineada y la térmica de los dos fotogramas, recortadas alrededor de la caja
+  de WiSARD (en amarillo).
+- La última columna es mi lectura de los recortes. El anotador vio la imagen entera, con zoom.
+
+| Caso | Vuelo | Fotogramas | IoU | Respuesta | En los recortes |
+|---:|---|---|---:|---|---|
+| 1 | MtErie 0007 | 20 → 21 | 0.42 | se ve → no es persona | la RGB del 21 está movida, y su caja es más baja (19 × 15 px contra 14 × 25) y queda al lado de la persona |
+| 2 | MtErie 0007 | 104 → 105 | 0.26 | se ve → no se ve | en el 105, el tronco tapa a la persona en la RGB |
+| 3 | MtErie 0007 | 105 → 106 | 0.50 | no se ve → se ve | en el 106 vuelve a verse |
+| 4 | FHL 0134 | 146 → 147 | 0.23 | no es persona → no se ve | casi iguales |
+| 5 | FHL 0134 | 150 → 151 | 0.30 | no se ve → se ve | casi iguales, con un punto claro en las dos RGB |
+| 6 | FHL 0134 | 154 → 155 | 0.29 | se ve → no es persona | en el 155 la caja queda sobre follaje claro, y el punto caliente se ve menos |
+| 7 | FHL 0134 | 159 → 160 | 0.21 | no se ve → se ve | casi iguales |
+| 8 | FHL 0134 | 187 → 188 | 0.50 | se ve → no se ve | casi iguales |
+| 9 | FHL 0134 | 200 → 201 | 0.36 | no se ve → se ve | casi iguales |
+| 10 | FHL 0134 | 216 → 217 | 0.32 | se ve → no se ve | casi iguales |
+| 11 | FHL 0134 | 225 → 226 | 0.19 | no es persona → no se ve | casi iguales |
+| 12 | FHL 0134 | 252 → 253 | 0.32 | no es persona → no se ve | la caja del 252 está cortada por el borde de abajo de la imagen (9 × 5 px) |
+| 13 | FHL 0134 | 255 → 256 | 0.24 | no es persona → no se ve | casi iguales, junto al borde de abajo |
+| 14 | FHL 0134 | 256 → 257 | 0.50 | no se ve → no es persona | la caja del 257 es ancha y baja (11 × 7 px contra 7 × 10) |
+| 15 | FHL 0134 | 263 → 264 | 0.35 | se ve → no se ve | casi iguales |
+| 16 | FHL 0134 | 264 → 265 | 0.36 | no se ve → se ve | casi iguales |
+
+- **En 6 casos (1, 2, 3, 6, 12 y 14), la caja de WiSARD o la imagen cambian entre los dos fotogramas.**
+  - El cambio de respuesta puede ser real: el tronco de los casos 2 y 3.
+  - También puede venir de la caja: los casos 1, 12 y 14.
+- **En los otros 10, los dos fotogramas se ven casi iguales y la respuesta cambia.** Son las inconsistencias probables.
+  - Son 10 de 431 pares (2.3 %) con IoU ≥ 0.1, y 6 de 379 (1.6 %) con IoU ≥ 0.3 (los casos 5, 8, 9, 10, 15 y 16).
+  - 7 de las 10 son entre baja y severa.
+  - Todas son de FHL 0134, donde las personas miden 11 px: decidir ahí está en el límite de lo que se ve.
+- **No se cambió nada:** el nivel queda como se anotó.
+
+**Por esto, las 500 personas no son independientes.**
+- Una misma persona aparece en varios fotogramas seguidos, y el anotador decidió una vez y repitió la respuesta.
+  - Con IoU ≥ 0.3, las 500 personas forman 121 tramos: 67 son de un solo fotograma, y el más largo tiene 29.
+  - Con IoU ≥ 0.1, forman 69 tramos, y el más largo tiene 60.
+  - Con 0.3 se cortan tramos que con 0.1 siguen juntos. Ninguno de los dos umbrales da el número exacto de personas
+    distintas, pero está mucho más cerca de los tramos que de 500.
+- **Las 46 severas están en 26 tramos con IoU ≥ 0.3, y en 15 con IoU ≥ 0.1** (10 de ellos en FHL 0134). Las 440
+  bajas están en 91 y en 59.
+- **Consecuencias:**
+  - McNemar y el kappa cuentan las personas como independientes, así que sus p salen demasiado pequeños y sus IC demasiado estrechos.
+    Esto se suma a lo que ya se vio en "Fusión contra térmica".
+  - El bootstrap por episodios no tiene este problema. Un tramo ocupa fotogramas seguidos con persona, así que por
+    construcción queda entero dentro de un episodio, y cada episodio se remuestrea completo.
+  - "46 severas" exagera cuánta información hay: son de 15 a 26 tramos.
 
 ### Salidas
 
@@ -1595,13 +1677,17 @@ incluye el 0 con mucho margen. La razón está en cómo se reparten las personas
      incertidumbre.
 3. **La anotación:**
    - la hizo un solo anotador, sin un segundo que la revise;
-   - la mediana fue de 0.30 s por persona, contra 0.9 s en la prueba;
+   - la mediana fue de 0.30 s por persona, contra 0.9 s en la prueba, porque los fotogramas seguidos son casi iguales
+     y la misma persona se repite;
+   - entre fotogramas seguidos, la respuesta cambia en 10 de 379 pares (IoU ≥ 0.3). Las inconsistencias probables son
+     de 6 a 10, todas en FHL 0134;
+   - **las 500 personas no son independientes:** forman de 69 a 121 tramos, y las 46 severas, de 15 a 26;
    - se hizo sin ver ninguna métrica de C4, pero después de conocer las cifras de C3.
 4. **Los 10 bloques del bootstrap son muy desiguales**, de 1 a 288 personas.
    - Los IC reflejan sobre todo qué vuelo entra en cada remuestreo.
    - Con tan pocos bloques, los percentiles son poco finos (ver la severa).
-5. **McNemar supone personas independientes**, y aquí 288 de las 486 salen de un mismo episodio. Su p sale demasiado
-   pequeño cuando la diferencia viene de un solo vuelo.
+5. **McNemar supone personas independientes**, y aquí 288 de las 486 salen de un mismo episodio. Además, la misma
+   persona se repite en fotogramas seguidos. Su p sale demasiado pequeño cuando la diferencia viene de un solo vuelo.
 6. **Hay una semilla por corrida y dos vuelos de validación**, como ya se dijo en C3.
 
 ### Resumen de C4
@@ -1620,6 +1706,9 @@ incluye el 0 con mucho margen. La razón está en cómo se reparten las personas
   - `fusion_base` depende de la RGB: conserva el 22 %.
   - La RGB real no empeora a `fusion_ampliado` en el total, pero sí en FHL 0134.
 - **Severa:** son 46 personas, casi todas de FHL 0134, y no hay ninguna diferencia demostrable.
+- **Anotación:** es consistente entre fotogramas seguidos.
+  - La respuesta cambia en 10 de 379 pares, y las inconsistencias probables son de 6 a 10, todas en FHL 0134.
+  - Las 500 personas no son independientes: forman de 69 a 121 tramos, y las 46 severas, de 15 a 26.
 
 ## Comandos
 
@@ -1644,6 +1733,7 @@ $env:PYTHONIOENCODING = "utf-8"; cmd /c ".venv\Scripts\python.exe -u scripts\fas
 $env:PYTHONIOENCODING = "utf-8"; cmd /c ".venv\Scripts\python.exe -u scripts\fase7_c4_evaluar.py --config configs\fase7.yaml --rutas configs\rutas.yaml --solo-predecir > runs\fase7\c4_predecir.log 2>&1"
 .venv\Scripts\python.exe scripts\fase7_c4_oclusion.py --config configs\fase7.yaml --rutas configs\rutas.yaml --parte anotar
 .venv\Scripts\python.exe scripts\fase7_c4_oclusion.py --config configs\fase7.yaml --rutas configs\rutas.yaml --parte nivel
+.venv\Scripts\python.exe scripts\fase7_c4_oclusion.py --config configs\fase7.yaml --rutas configs\rutas.yaml --parte consistencia
 .venv\Scripts\python.exe scripts\fase7_c4_evaluar.py --config configs\fase7.yaml --rutas configs\rutas.yaml
 .venv\Scripts\python.exe scripts\fase7_c4_desglose.py --config configs\fase7.yaml --rutas configs\rutas.yaml
 ```

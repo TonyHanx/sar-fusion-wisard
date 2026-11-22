@@ -17,11 +17,15 @@ Partes:
   --parte nivel     con las 500 respondidas, escribe data/<c4.oclusion.nivel> para el evaluador: baja (se ve), severa
                     (no se ve) o vacío (no es persona: caja dudosa, sin nivel). Agrega, solo como referencia, la regla
                     automática (sin caja RGB de WiSARD a 3 alturas o menos) y su kappa contra el nivel a mano.
+  --parte consistencia  sin reanotar: la misma persona en los fotogramas p y p+1 del mismo vuelo, emparejada por
+                    la IoU de la caja térmica (asignación húngara; umbral en c4.oclusion.consistencia), y cuántas
+                    veces cambia su respuesta. Tablas y figuras de los cambios en <c4.salidas>/<carpeta>.
 
 Uso:
   .venv\Scripts\python.exe scripts\fase7_c4_oclusion.py --config configs\fase7.yaml --rutas configs\rutas.yaml --parte preparar
   .venv\Scripts\python.exe scripts\fase7_c4_oclusion.py --config configs\fase7.yaml --rutas configs\rutas.yaml --parte anotar
   .venv\Scripts\python.exe scripts\fase7_c4_oclusion.py --config configs\fase7.yaml --rutas configs\rutas.yaml --parte nivel
+  .venv\Scripts\python.exe scripts\fase7_c4_oclusion.py --config configs\fase7.yaml --rutas configs\rutas.yaml --parte consistencia
 """
 import argparse
 import shutil
@@ -240,11 +244,172 @@ def rel(p):
     return p.relative_to(RAIZ).as_posix() if p.is_relative_to(RAIZ) else str(p)
 
 
+def iou_matriz(a, b):
+    """IoU entre las cajas (x0, y0, x1, y1) de a (filas) y de b (columnas)."""
+    x0, y0 = np.maximum(a[:, None, 0], b[None, :, 0]), np.maximum(a[:, None, 1], b[None, :, 1])
+    x1, y1 = np.minimum(a[:, None, 2], b[None, :, 2]), np.minimum(a[:, None, 3], b[None, :, 3])
+    inter = np.clip(x1 - x0, 0, None) * np.clip(y1 - y0, 0, None)
+    area_a = (a[:, 2] - a[:, 0]) * (a[:, 3] - a[:, 1])
+    area_b = (b[:, 2] - b[:, 0]) * (b[:, 3] - b[:, 1])
+    return inter / (area_a[:, None] + area_b[None, :] - inter)
+
+
+RESPUESTA = {"se_ve_rgb": "se ve en la RGB", "no_se_ve_rgb": "no se ve en la RGB", "no_es_persona": "no es persona"}
+
+
+def figuras_casos(casos, df, dir_alineados, cons, destino):
+    """Cada caso en una fila: RGB alineada y térmica de los dos fotogramas, recortadas alrededor de la caja."""
+    import cv2
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    from matplotlib.patches import Rectangle
+
+    por_id = df.set_index("id")
+    archivos = []
+    n = cons["casos_por_figura"]
+    for k in range(0, len(casos), n):
+        parte = casos.iloc[k:k + n]
+        fig, ejes = plt.subplots(len(parte), 4, figsize=(10, 2.75 * len(parte)), squeeze=False)
+        for fila, c in zip(ejes, parte.itertuples()):
+            a, b = por_id.loc[c.id_a], por_id.loc[c.id_b]
+            alto = max(a.ter_y1 - a.ter_y0, b.ter_y1 - b.ter_y0)
+            lado = max(cons["ventana_min"], int(np.ceil(cons["ventana_alturas"] * alto)))
+            paneles = [(a, "imagen_rgb", "RGB"), (b, "imagen_rgb", "RGB"), (a, "imagen_termica", "térmica"),
+                       (b, "imagen_termica", "térmica")]
+            for eje, (p, col, nombre) in zip(fila, paneles):
+                img = cv2.imread(str(dir_alineados / getattr(p, col)), cv2.IMREAD_COLOR)
+                img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                cx, cy = (p.ter_x0 + p.ter_x1) / 2, (p.ter_y0 + p.ter_y1) / 2
+                x0 = int(np.clip(round(cx - lado / 2), 0, img.shape[1] - lado))
+                y0 = int(np.clip(round(cy - lado / 2), 0, img.shape[0] - lado))
+                eje.imshow(img[y0:y0 + lado, x0:x0 + lado], interpolation="nearest",
+                           extent=(x0, x0 + lado, y0 + lado, y0))
+                eje.add_patch(Rectangle((p.ter_x0, p.ter_y0), p.ter_x1 - p.ter_x0, p.ter_y1 - p.ter_y0, fill=False,
+                                        edgecolor="#ffd400", linewidth=1.2))
+                eje.set_xticks([])
+                eje.set_yticks([])
+                eje.set_title(f"{nombre}, fotograma {p.posicion}\n{RESPUESTA[p.respuesta]}", fontsize=8.5)
+            fila[0].set_ylabel(f"caso {c.caso}: {corto(c.vuelo)}\nIoU {c.iou:.2f}", fontsize=9)
+        fig.tight_layout()
+        archivo = destino / f"casos_{k // n + 1}.png"
+        fig.savefig(archivo, dpi=110)
+        plt.close(fig)
+        archivos.append(archivo)
+    return archivos
+
+
+def consistencia(cfg, rutas):
+    """Cambios de respuesta de la misma persona entre fotogramas seguidos (descriptivo, sin reanotar)."""
+    from scipy.optimize import linear_sum_assignment
+
+    c4, base, part, herr = contexto(cfg)
+    oc = c4["oclusion"]
+    cons = oc["consistencia"]
+    ruta_nivel = rutas["data"] / oc["nivel"]
+    if not ruta_nivel.exists():
+        raise SystemExit(f"No existe {ruta_nivel}: corre antes --parte nivel")
+    df = pd.read_csv(ruta_nivel, dtype={"id": str}).sort_values("orden")
+    personas = pd.read_csv(rutas["data"] / oc["personas"], dtype={"id": str})
+    df = df.merge(personas[["id", "imagen_rgb", "imagen_termica"]], on="id", validate="1:1")
+    caja = [f"ter_{c}" for c in CAJA]
+    umbrales = sorted(set(cons["sensibilidad"]) | {cons["iou_min"]})
+
+    # emparejamiento de cada par de fotogramas seguidos (p, p+1), con todas sus cajas
+    filas = []
+    for v, g in df.groupby("vuelo", sort=False):
+        fot = {p: x for p, x in g.groupby("posicion")}
+        for p in sorted(fot):
+            if p + 1 not in fot:
+                continue
+            A, B = fot[p], fot[p + 1]
+            M = iou_matriz(A[caja].to_numpy(float), B[caja].to_numpy(float))
+            for i, j in zip(*linear_sum_assignment(-M)):
+                if M[i, j] > 0:
+                    a, b = A.iloc[i], B.iloc[j]
+                    filas.append({"vuelo": v, "posicion_a": p, "id_a": a.id, "id_b": b.id, "iou": M[i, j],
+                                  "respuesta_a": a.respuesta, "respuesta_b": b.respuesta,
+                                  "nivel_a": a.nivel, "nivel_b": b.nivel})
+    pares = pd.DataFrame(filas)
+    pares["cambia"] = pares.respuesta_a != pares.respuesta_b
+    pares["baja_severa"] = pares.cambia & pares.nivel_a.notna() & pares.nivel_b.notna()
+
+    # resumen por umbral; tramos (cadenas de la misma persona) con cada umbral
+    resumen, tramo_de = [], {}
+    for t in umbrales:
+        pt = pares[pares.iou >= t]
+        tramo = {}
+        for r in pt.sort_values(["vuelo", "posicion_a"]).itertuples():
+            tramo[r.id_b] = tramo.get(r.id_a, r.id_a)
+        tr = df.id.map(lambda i: tramo.get(i, i))
+        if t == cons["iou_min"]:
+            tramo_de = tr
+        for v in [*df.vuelo.unique(), None]:
+            sel = pt if v is None else pt[pt.vuelo == v]
+            dv = df if v is None else df[df.vuelo == v]
+            largo = tr[dv.index].value_counts()
+            resumen.append({"iou_min": t, "vuelo": "total" if v is None else corto(v), "personas": len(dv),
+                            "pares_emparejados": len(sel), "cambios": int(sel.cambia.sum()),
+                            "cambios_baja_severa": int(sel.baja_severa.sum()),
+                            "cambios_con_no_es_persona": int((sel.cambia & ~sel.baja_severa).sum()),
+                            "tramos": len(largo), "tramos_de_1": int((largo == 1).sum()),
+                            "largo_mediano": float(largo.median()), "largo_maximo": int(largo.max()),
+                            "severas": int((dv.nivel == "severa").sum()),
+                            "tramos_con_severa": int(tr[dv.index][dv.nivel == "severa"].nunique()),
+                            "bajas": int((dv.nivel == "baja").sum()),
+                            "tramos_con_baja": int(tr[dv.index][dv.nivel == "baja"].nunique()),
+                            "tramos_con_cambio": int(sel[sel.cambia].id_a.map(lambda i: tramo.get(i, i)).nunique())})
+    resumen = pd.DataFrame(resumen)
+
+    # tiempo: la primera persona de su tramo contra la que sigue a la del fotograma anterior (umbral principal)
+    sigue = df.id.isin(pares[pares.iou >= cons["iou_min"]].id_b)
+    tiempo = pd.DataFrame({"tipo": np.where(sigue, "sigue a la del fotograma anterior", "primera de su tramo"),
+                           "vuelo": df.vuelo.map(corto), "tiempo_s": df.tiempo_s})
+    t_res = tiempo.groupby(["vuelo", "tipo"]).tiempo_s.describe(percentiles=[.25, .5, .75])
+    t_res = pd.concat([t_res, tiempo.groupby("tipo").tiempo_s.describe(percentiles=[.25, .5, .75])
+                       .assign(vuelo="total").set_index("vuelo", append=True).swaplevel()])
+
+    casos = pares[pares.cambia & (pares.iou >= min(umbrales))].sort_values(["vuelo", "posicion_a"]).reset_index(drop=True)
+    casos.insert(0, "caso", range(1, len(casos) + 1))
+    for t in umbrales:
+        casos[f"cuenta_con_iou_{t}"] = casos.iou >= t
+
+    destino = ruta(c4["salidas"]) / cons["carpeta"]
+    destino.mkdir(parents=True, exist_ok=True)
+    pares.to_csv(destino / "pares.csv", index=False, encoding="utf-8")
+    resumen.to_csv(destino / "resumen.csv", index=False, encoding="utf-8")
+    casos.to_csv(destino / "cambios.csv", index=False, encoding="utf-8")
+    df.assign(tramo=tramo_de)[["id", "vuelo", "posicion", "indice_caja", "respuesta", "tramo"]].to_csv(
+        destino / "tramos.csv", index=False, encoding="utf-8")
+    t_res.round(2).to_csv(destino / "tiempo.csv", encoding="utf-8")
+    for f in destino.glob("casos_*.png"):
+        f.unlink()
+    figs = figuras_casos(casos, df, rutas["data"] / herr["datasets"]["alineados"], cons, destino)
+
+    with pd.option_context("display.width", 250, "display.max_columns", 30):
+        print(resumen.to_string(index=False))
+        print(t_res.round(2).to_string())
+        print(casos[["caso", "vuelo", "posicion_a", "id_a", "id_b", "iou", "respuesta_a", "respuesta_b"]]
+              .round(3).to_string(index=False))
+    print(f"Salidas en {rel(destino)} ({len(figs)} figuras)")
+    tot = resumen[(resumen.vuelo == "total") & (resumen.iou_min == cons["iou_min"])].iloc[0]
+    otros = "; ".join(f"IoU >= {r.iou_min}: {r.cambios} de {r.pares_emparejados}"
+                      for r in resumen[(resumen.vuelo == "total") & (resumen.iou_min != cons["iou_min"])].itertuples())
+    agregar_a_bitacora(rutas["bitacora"], cfg["fase_bitacora"], "nivel de oclusión de la validación (C4)",
+                       f"consistencia entre fotogramas seguidos, sin reanotar: misma persona en p y p+1 por IoU de la "
+                       f"caja térmica (asignación húngara), IoU >= {cons['iou_min']} (sensibilidad {cons['sensibilidad']}); "
+                       f"{rel(ruta_nivel)} -> {rel(destino)}",
+                       f"IoU >= {cons['iou_min']}: {tot.cambios} cambios de respuesta en {tot.pares_emparejados} pares "
+                       f"({tot.cambios_baja_severa} entre baja y severa, {tot.cambios_con_no_es_persona} con 'no es "
+                       f"persona'); {tot.tramos} tramos para {tot.personas} personas ({tot.tramos_de_1} de un solo "
+                       f"fotograma, largo máximo {tot.largo_maximo}); {otros}")
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--config", required=True)
     ap.add_argument("--rutas", required=True)
-    ap.add_argument("--parte", required=True, choices=["preparar", "anotar", "nivel"])
+    ap.add_argument("--parte", required=True, choices=["preparar", "anotar", "nivel", "consistencia"])
     ap.add_argument("--persona", type=int, help="con --parte anotar, abre en la persona N (desde 1)")
     args = ap.parse_args()
     cfg = leer_yaml(args.config)
@@ -253,8 +418,10 @@ def main():
         preparar(cfg, rutas)
     elif args.parte == "anotar":
         anotar(cfg, rutas, args.persona)
-    else:
+    elif args.parte == "nivel":
         nivel(cfg, rutas)
+    else:
+        consistencia(cfg, rutas)
 
 
 if __name__ == "__main__":

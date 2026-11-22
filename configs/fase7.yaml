@@ -348,6 +348,18 @@ c4:
     respuestas: fase7/oclusion_validacion_simple.csv   # dentro de data/: respuestas (retoma si se cierra)
     nivel: fase7/oclusion_validacion_nivel.csv         # dentro de data/: nivel de cada persona para el evaluador
     comprobar: {fotogramas: 442, personas: 500}
+    # Consistencia entre fotogramas seguidos, sin reanotar (pedida por el usuario el 21 de noviembre de 2026, después de
+    # anotar): la misma persona en las posiciones p y p+1 del mismo vuelo, emparejada por la IoU de la caja térmica
+    # (asignación húngara que maximiza la IoU total del par de fotogramas). Un emparejamiento cuenta si su IoU llega al
+    # umbral. Decide `iou_min`; los de `sensibilidad` solo se reportan. Los pares excluidos no se saltan (MtErie 0007,
+    # 53 a 55). Salidas en <salidas>/<carpeta>.
+    consistencia:
+      iou_min: 0.3
+      sensibilidad: [0.1, 0.5]
+      carpeta: consistencia
+      ventana_alturas: 6             # recorte de cada caso en las figuras: 6 altos de la caja, al menos `ventana_min` px
+      ventana_min: 64
+      casos_por_figura: 8
   # Subconjuntos, todos sobre los 442 fotogramas. En los niveles, las personas de otro nivel y las "no es persona" se
   # ignoran (iscrowd). "Sin dudosas": las "no es persona" se ignoran también en todos_442. McNemar en los tres, con las
   # dudosas fuera (mcnemar.dudosas de la base).
