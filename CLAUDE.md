@@ -421,6 +421,12 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
   - **Fase 8 (confirmado por el usuario el 21 de noviembre de 2026, `configs/fase8.yaml`):**
     - **Pares de McNemar**, con `last.pt` en baja y severa y Bonferroni ×3: `fusion_base`–`rgb_base`,
       `fusion_base`–`termico_base` y `fusion_ampliado`–`termico_ampliado`. RGB–térmica queda solo con IC.
+    - **Comparación principal de la tesis: fusión contra térmica.** Fusión contra RGB es complementaria.
+      - Decidido el 21 de noviembre de 2026, después de entrenar `rgb_base`.
+      - `rgb_base` se hunde en la validación desde la época 1, como en la fase 5 (mAP@0.5 de 0.160 a 0.032), aunque el
+        90 % de las personas se ven en la RGB. La causa probable, sin comprobar, es que la RGB no se transfiere entre
+        vuelos. Va como limitación.
+      - `last.pt` sigue siendo el principal de todos, también de `rgb_base`, y `best.pt` el secundario.
     - **Cambia la regla de la fase 6 por lo que se vio en C4:** una diferencia solo cuenta como demostrada si McNemar
       con Bonferroni da p < 0.05 **y** el IC del 95 % por bootstrap de episodios de la diferencia de recall excluye el 0.
       Si solo se cumple una, es "no concluyente".

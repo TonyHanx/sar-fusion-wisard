@@ -1822,8 +1822,10 @@ combinada con la térmica, aunque sola dé 0.03.
 **Para la fase 8:**
 - según las reglas confirmadas, `rgb_base` va con `last.pt` como principal y `best.pt` como secundaria, como los demás;
 - con `last.pt`, el par `fusion_base` − `rgb_base` de McNemar compara con un modelo que da 0.03 en la validación;
-- no cambio nada: la regla se fijó antes de entrenar `rgb_base`. Queda para que el usuario lo vea antes de fijar los
-  umbrales.
+- **Decisión del usuario (21 de noviembre de 2026):**
+  - se mantiene `last.pt` para todos, también para `rgb_base`, y `best.pt` va como secundaria;
+  - la comparación principal de la tesis es fusión contra térmica, y la de fusión contra RGB es complementaria;
+  - que `rgb_base` se hunda en la validación va como limitación (`reports/fase8.md`).
 - Es una sola semilla y la validación tiene dos vuelos. Estas cifras son de la validación de Ultralytics; las de la
   fase 8 saldrán del evaluador propio.
 

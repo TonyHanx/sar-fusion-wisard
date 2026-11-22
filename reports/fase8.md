@@ -1,7 +1,8 @@
 # Fase 8: evaluación en la prueba (FHL 0405)
 
-**Estado (21 de noviembre de 2026):** las reglas están confirmadas por el usuario y el paso 1 está hecho: `rgb_base`
-se entrenó de 21:33 a 22:09 (`reports/fase7.md`, "Corrida 5 de C3: `rgb_base`").
+**Estado (21 de noviembre de 2026):** las reglas están confirmadas por el usuario y los pasos 1 y 2 están hechos:
+- `rgb_base` se entrenó de 21:33 a 22:09 (`reports/fase7.md`, "Corrida 5 de C3: `rgb_base`");
+- los umbrales están fijados en la validación y subidos a GitHub (abajo, "Paso 2").
 - La prueba no se ha predicho ni medido con ningún modelo.
 - Sus imágenes no se han leído.
 - **`rgb_base` es débil en la validación:** mAP@0.5 de 0.032 con `last.pt` y de 0.160 con `best.pt` (época 1), en la
@@ -30,6 +31,9 @@ Además, pidió agregar a las limitaciones el sitio y el día de los vuelos de e
 | `fusion_100ep` | 5/6 | base | `best.pt` (el que fijó la fase 6) | `last.pt` |
 
 - **Las dos fusiones de la fase 7 también van con la RGB en 0**, con los dos pesos. Es descriptivo.
+- **`last.pt` es el principal de todos los modelos de la fase 7, también de `rgb_base`, y `best.pt` va como
+  secundario.** Lo confirmó el usuario el 21 de noviembre de 2026, después de ver que `rgb_base` se hunde en la
+  validación.
 - **De la fase 6 solo existe la fusión.**
   - `rgb_100ep` se cortó dos veces y se descartó.
   - `termico_100ep` nunca se entrenó: la noche del 3 al 4 de noviembre se cortó la corriente, y después vino el
@@ -67,6 +71,9 @@ nivel.
 | `fusion_ampliado` − `termico_ampliado` | lo mismo con los datos ampliados |
 
 - En la fase 6 el tercer par era RGB contra térmica. Ahora queda solo con IC.
+- **La comparación principal de la tesis es fusión contra térmica** (los dos últimos pares). **Fusión contra RGB es
+  complementaria.** Lo decidió el usuario el 21 de noviembre de 2026, después de ver `rgb_base`. Los tres pares siguen
+  en la familia de McNemar con Bonferroni ×3.
 
 **Criterio, que cambia la regla de la fase 6 por lo que se vio en C4.** Una diferencia solo cuenta como demostrada si se
 cumplen las dos condiciones:
@@ -120,6 +127,11 @@ Si solo se cumple una, se reporta como "no concluyente". La fase 6 se basaba sol
 - La prueba tiene 13 bloques para el bootstrap, y sus personas se repiten entre fotogramas anotados.
 - El umbral se elige en dos vuelos de validación que se comportan distinto (C4).
 - `rgb_base` se entrena después de ver C4 en la validación, aunque antes de tocar la prueba.
+- **El modelo de solo RGB se hunde en la validación desde la época 1**, igual que en la fase 5:
+  - mAP@0.5 de 0.160 en la época 1 y de 0.032 en la 50 (validación de Ultralytics);
+  - y eso aunque el 90 % de las personas de la validación se ven en la RGB (440 de 486, con el nivel a mano de C4);
+  - la causa probable, sin comprobar, es que la RGB no se transfiere entre vuelos;
+  - por eso, fusión contra RGB es una comparación complementaria, y la principal es fusión contra térmica.
 - De la fase 6 solo se compara la fusión.
 
 ## Pasos
@@ -133,8 +145,38 @@ Cada paso se detiene y espera al usuario.
 3. **Verificación de la prueba sin predecir:** fotogramas, personas, niveles, dudosas y bloques.
 4. **Predicción y medida:** se predice la prueba con todos los modelos de una vez y se mide una sola vez.
 
+## Paso 2: umbrales en la validación (21 de noviembre de 2026)
+
+Fijados con `scripts/fase8_evaluar.py --parte umbrales` y subidos a GitHub antes de predecir la prueba.
+- Salen de las 500 personas de WiSARD en los 442 fotogramas de la validación, con la rejilla ampliada (26 umbrales).
+- Están en `reports/fase8/umbrales.csv`, con el sha256 de los pesos y de las predicciones. El F2 de cada umbral está
+  en `umbrales_rejilla.csv`.
+- Las predicciones de `rgb_base` se hicieron en este paso (`runs/fase8/validacion/`). Las demás se reutilizaron: las de
+  C4 y las de la fase 6, hechas con la misma versión de Ultralytics (8.4.194).
+- **Ningún umbral quedó en el piso (0.001).** Con `last.pt`, los seis bajan del 0.05 de la rejilla anterior.
+
+| Modelo | Peso | Umbral | F2 | Recall | P | Rejilla anterior: umbral (recall) |
+|---|---|---:|---:|---:|---:|---|
+| `termico_base` | `last.pt` | 0.02 | 0.314 | 0.316 | 0.306 | 0.05 (0.290) |
+| `termico_ampliado` | `last.pt` | 0.005 | 0.434 | 0.440 | 0.410 | 0.05 (0.362) |
+| `fusion_base` | `last.pt` | 0.04 | 0.386 | 0.402 | 0.331 | 0.05 (0.390) |
+| `fusion_ampliado` | `last.pt` | 0.03 | 0.403 | 0.406 | 0.390 | 0.05 (0.382) |
+| `rgb_base` | `last.pt` | 0.04 | 0.093 | 0.104 | 0.065 | 0.05 (0.092) |
+| `fusion_100ep` | `last.pt` | 0.01 | 0.330 | 0.340 | 0.294 | 0.05 (0.296) |
+| `termico_base` | `best.pt` | 0.20 | 0.485 | 0.528 | 0.367 | igual |
+| `termico_ampliado` | `best.pt` | 0.15 | 0.573 | 0.630 | 0.420 | igual |
+| `fusion_base` | `best.pt` | 0.05 | 0.492 | 0.576 | 0.311 | igual |
+| `fusion_ampliado` | `best.pt` | 0.10 | 0.514 | 0.552 | 0.404 | igual |
+| `rgb_base` | `best.pt` | 0.10 | 0.209 | 0.208 | 0.212 | igual |
+| `fusion_100ep` | `best.pt` | 0.03 | 0.436 | 0.470 | 0.337 | 0.05 (0.442) |
+
+- Las variantes con la RGB en 0 usan el umbral de su modelo con la RGB real.
+- Estas cifras son de la validación con el umbral elegido en ella misma, así que son optimistas. Solo sirven para fijar
+  el umbral.
+
 ## Comandos
 
 ```
 $env:PYTHONIOENCODING = "utf-8"; cmd /c ".venv\Scripts\python.exe -u scripts\fase7_entrenar.py --config configs\fase7.yaml --rutas configs\rutas.yaml --corrida rgb_base > runs\fase7\rgb_base.log 2>&1"
+.venv\Scripts\python.exe scripts\fase8_evaluar.py --config configs\fase8.yaml --rutas configs\rutas.yaml --parte umbrales
 ```

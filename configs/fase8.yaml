@@ -2,7 +2,11 @@
 # día con dos cambios:
 #   (1) se entrena rgb_base y fusion_base contra rgb_base entra en McNemar (Bonferroni x3);
 #   (2) una diferencia solo cuenta como demostrada si McNemar y el bootstrap por episodios coinciden.
-# Nada de esto se ha corrido. La prueba no se ha predicho ni medido con ningún modelo, y sus imágenes no se han leído.
+# Paso 1 hecho (rgb_base, 21 de noviembre de 2026). La prueba no se ha predicho ni medido con ningún modelo, y sus
+# imágenes no se han leído.
+# Decisión del usuario del 21 de noviembre de 2026, después de ver rgb_base: last.pt para todos (también rgb_base),
+# best.pt como secundaria; la comparación principal de la tesis es fusión contra térmica, y fusión contra RGB es
+# complementaria.
 # - Va aparte de configs/fase7.yaml, cuya regla es que la prueba no aparece en su configuración.
 # - Reglas que no cambian, las de la fase 6 (configs/fase6.yaml, que es la base): IoU 0.5, maxDets 100, F2, bootstrap
 #   por episodios (13 bloques en FHL 0405, 10 000 remuestreos, seed 0), McNemar exacta, subconjuntos, con y sin las 131
@@ -51,6 +55,8 @@ modelos:
   # - Solo base, porque el ampliado no tiene RGB en el 77 % de sus imágenes.
   # - En la fase 5, las corridas RGB llegaron a su máximo en la época 2 y después bajaron. Con last.pt puede salir muy
   #   baja; se reporta igual.
+  # - Así fue: mAP@0.5 de validación de 0.160 en la época 1 (best.pt) y de 0.032 en la 50 (last.pt). El usuario
+  #   mantuvo last.pt como principal (21 de noviembre de 2026).
   rgb_base:
     {corridas: fase7, corrida: rgb_base,         modalidad: rgb,     datos_prueba: configs/rgb.yaml,     fase: "7"}
   # Fase 5/6: de los tres modelos de configs/fase6.yaml, solo existe la fusión.
@@ -96,6 +102,18 @@ umbral:
   empate: mas_alto
   personas_validacion: todas
   umbrales: reports/fase8/umbrales.csv   # se escribe y se sube a GitHub antes de predecir la prueba
+  rejilla_completa: reports/fase8/umbrales_rejilla.csv   # F2, recall y precisión de cada umbral de la rejilla
+  # Predicciones de validación de cada modelo: runs/<carpeta>/validacion/<nombre>/predictions.json, con
+  # nombre = <modelo>_<peso> salvo que `nombres` diga otro. Las que existen se reutilizan; las que faltan (rgb_base) se
+  # hacen. `datos` es el dataset con que se validó cada corrida (c3.corridas de configs/fase7.yaml y modelos de
+  # configs/fase6.yaml). Las de la fase 6 se hicieron con la misma versión de Ultralytics (8.4.194).
+  validacion:
+    termico_base:     {carpeta: fase7/c4, datos: configs/termico.yaml}
+    termico_ampliado: {carpeta: fase7/c4, datos: data/fase7/datasets/termico_ampliado/termico_ampliado.yaml}
+    fusion_base:      {carpeta: fase7/c4, datos: configs/fusion.yaml}
+    fusion_ampliado:  {carpeta: fase7/c4, datos: data/fase7/datasets/fusion_ampliado/fusion_ampliado.yaml}
+    rgb_base:         {carpeta: fase8,    datos: configs/rgb.yaml}
+    fusion_100ep:     {carpeta: fase6,    datos: configs/fusion.yaml, nombres: {best: fusion, last: fusion_last}}
   # Sensibilidad, solo descriptiva y sin McNemar: las métricas de la prueba con el umbral de la rejilla anterior
   # (0.05 a 0.95), para ver cuánto cambia la cifra por ampliar la rejilla. El mAP@0.5 no usa umbral y no cambia.
   sensibilidad_rejilla_anterior: true
@@ -109,6 +127,9 @@ comparaciones:
   # - Bonferroni x3 dentro de cada nivel: cada p se multiplica por 3.
   # - En la fase 6 los 3 pares eran fusión–RGB, fusión–térmica y RGB–térmica. Ahora RGB–térmica sale de la familia
   #   (queda descriptiva), y entra fusión contra térmica con los datos ampliados.
+  # - La comparación principal de la tesis es fusión contra térmica (los dos últimos pares). Fusión contra RGB es
+  #   complementaria (decisión del usuario del 21 de noviembre de 2026, después de ver rgb_base). Los tres pares siguen
+  #   en la familia, con Bonferroni x3.
   mcnemar:
     pares:
       - [fusion_base, rgb_base]
@@ -173,4 +194,7 @@ una_sola_vez: true                   # si existe alguna salida de la prueba, no 
 # - la prueba tiene 13 bloques para el bootstrap, y personas que se repiten entre fotogramas anotados;
 # - el umbral se elige en dos vuelos de validación que se comportan distinto (C4);
 # - rgb_base se entrena después de ver C4 en la validación, aunque antes de tocar la prueba;
+# - el modelo de solo RGB se hunde en la validación desde la época 1, igual que en la fase 5, aunque el 90 % de las
+#   personas se ven en la RGB (440 de 486, nivel a mano de C4). Causa probable, sin comprobar: la RGB no se transfiere
+#   entre vuelos. Por eso fusión contra RGB es complementaria;
 # - la fase 6 no tiene modelos térmico ni RGB, así que la comparación con ella es solo de la fusión.
