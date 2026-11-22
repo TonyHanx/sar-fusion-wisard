@@ -1713,8 +1713,16 @@ incluye el 0 con mucho margen. La razón está en cómo se reparten las personas
 ## Después de C4: propuesta para evaluar la prueba (21 de noviembre de 2026)
 
 La propuesta está en **`configs/fase8.yaml`**, aparte de este archivo, para que la configuración de la fase 7 siga sin
-nombrar la prueba. Está **pendiente de confirmar**: la prueba (FHL 0405) no se ha predicho ni medido, y sus imágenes no se
-han leído.
+nombrar la prueba. La prueba (FHL 0405) no se ha predicho ni medido, y sus imágenes no se han leído.
+
+**El usuario la confirmó el mismo día con dos cambios** (detalle en `reports/fase8.md`):
+- se entrena `rgb_base` y entra en McNemar (Bonferroni ×3);
+- una diferencia solo cuenta como demostrada si McNemar y el IC por episodios coinciden.
+
+`rgb_base` es la corrida 5 de C3 (`c3.corridas.rgb_base`): solo RGB, con la misma receta y los mismos datos base que
+`termico_base` y `fusion_base`. Está pendiente de lanzar.
+
+Lo que sigue es la propuesta tal como se presentó.
 
 - **Modelos:**
   - las cuatro corridas de C3, con `last.pt` como principal y `best.pt` como secundaria;
@@ -1747,6 +1755,7 @@ $env:PYTHONIOENCODING = "utf-8"; cmd /c ".venv\Scripts\python.exe -u scripts\fas
 $env:PYTHONIOENCODING = "utf-8"; cmd /c ".venv\Scripts\python.exe -u scripts\fase7_entrenar.py --config configs\fase7.yaml --rutas configs\rutas.yaml --corrida termico_ampliado > runs\fase7\termico_ampliado.log 2>&1"
 $env:PYTHONIOENCODING = "utf-8"; cmd /c ".venv\Scripts\python.exe -u scripts\fase7_entrenar.py --config configs\fase7.yaml --rutas configs\rutas.yaml --corrida fusion_base > runs\fase7\fusion_base.log 2>&1"
 $env:PYTHONIOENCODING = "utf-8"; cmd /c ".venv\Scripts\python.exe -u scripts\fase7_entrenar.py --config configs\fase7.yaml --rutas configs\rutas.yaml --corrida fusion_ampliado > runs\fase7\fusion_ampliado.log 2>&1"
+$env:PYTHONIOENCODING = "utf-8"; cmd /c ".venv\Scripts\python.exe -u scripts\fase7_entrenar.py --config configs\fase7.yaml --rutas configs\rutas.yaml --corrida rgb_base > runs\fase7\rgb_base.log 2>&1"
 .venv\Scripts\python.exe scripts\evaluar.py --config configs\fase6.yaml --rutas configs\rutas.yaml --particion validacion --modelos fusion termico --rgb-cero --solo-verificar
 .venv\Scripts\python.exe scripts\fase7_origen.py --config configs\fase7.yaml --rutas configs\rutas.yaml
 .venv\Scripts\python.exe scripts\fase7_copiar.py --config configs\fase7.yaml --rutas configs\rutas.yaml

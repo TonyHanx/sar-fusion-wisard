@@ -395,6 +395,11 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
     - Bonferroni sigue con 3 comparaciones por nivel.
     - **Por qué:** en validación, con 0.5, la fusión (`best.pt`) tiene recall 0.172. En FHL 0134 detecta 3 de 211
       personas.
+    - **Fase 8 (confirmado el 21 de noviembre de 2026, `configs/fase8.yaml`): la rejilla se amplía hacia abajo**, con
+      0.001, 0.002, 0.005, 0.01, 0.02, 0.03 y 0.04 antes de 0.05 a 0.95.
+      - En C4 de la fase 7, con `last.pt`, los cuatro umbrales quedaron en 0.05, el borde de la rejilla.
+      - 0.001 es el piso, porque las predicciones se guardan desde esa confianza.
+      - Los umbrales se suben a GitHub antes de predecir la prueba.
   - **Noche del 3 al 4 de noviembre:** solo se guardan las predicciones crudas (confianza ≥ 0.001) de validación y de
     prueba de los tres modelos (`evaluar.py --solo-predecir`), sin calcular ninguna métrica.
     - Al día siguiente se calculan los umbrales en validación y luego se aplican a la prueba.
@@ -413,6 +418,15 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
       validación; ver "Métricas", cambiado el 3 de noviembre de 2026) la empareja a IoU ≥ 0.5. Se usa el mismo
       emparejamiento de pycocotools que da el recall de ese nivel. Con 0.5 no hay McNemar.
     - McNemar exacta (binomial, la de statsmodels por omisión).
+  - **Fase 8 (confirmado por el usuario el 21 de noviembre de 2026, `configs/fase8.yaml`):**
+    - **Pares de McNemar**, con `last.pt` en baja y severa y Bonferroni ×3: `fusion_base`–`rgb_base`,
+      `fusion_base`–`termico_base` y `fusion_ampliado`–`termico_ampliado`. RGB–térmica queda solo con IC.
+    - **Cambia la regla de la fase 6 por lo que se vio en C4:** una diferencia solo cuenta como demostrada si McNemar
+      con Bonferroni da p < 0.05 **y** el IC del 95 % por bootstrap de episodios de la diferencia de recall excluye el 0.
+      Si solo se cumple una, es "no concluyente".
+      - En C4, McNemar dio significativa una diferencia que venía de un solo episodio (MtErie 0007), y el IC por
+        episodios incluía el 0.
+      - Además, la misma persona se repite en fotogramas seguidos, así que las personas no son independientes.
 - **Bootstrap por episodio (fase 6):** los intervalos de confianza se calculan remuestreando episodios completos, no
   fotogramas, porque los fotogramas seguidos de un episodio no son independientes. Usa seed=0.
   - Los episodios son tramos seguidos con persona.

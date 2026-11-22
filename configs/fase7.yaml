@@ -176,6 +176,11 @@ copiar:
     - fusion_*/epocas.csv
     - fusion_*/resumen.json
     - fusion_*/args.yaml
+    - rgb_*/results.csv
+    - rgb_*/results.png
+    - rgb_*/epocas.csv
+    - rgb_*/resumen.json
+    - rgb_*/args.yaml
   excluir: ["*.pt"]
   jpeg_calidad: 85
 
@@ -307,6 +312,11 @@ c3:
       # de entrenamiento ya tienen la RGB en 0; así la corrida 4 solo cambia los datos frente a la base. El dropout
       # queda como ablación posterior.
       p_sin_rgb: 0.0
+    # Corrida 5, después de C4 (decisión del usuario del 21 de noviembre de 2026, para la fase 8, configs/fase8.yaml):
+    # solo RGB con la misma receta y los mismos datos base que termico_base y fusion_base, porque no había ningún modelo
+    # de solo RGB (rgb_100ep de la fase 5 se descartó). Solo base: el ampliado no tiene RGB en el 77 % de sus imágenes.
+    rgb_base:
+      datos: configs/rgb.yaml
 
 # C4: evaluación en validación con el evaluador propio (scripts/fase7_c4_evaluar.py, que usa las funciones de
 # scripts/evaluar.py sin cambiarlo). Reglas fijadas por el usuario el 21 de noviembre de 2026, antes de evaluar y antes
