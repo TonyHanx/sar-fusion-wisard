@@ -31,7 +31,7 @@ import pandas as pd
 import yaml
 
 from src.comun import RAIZ, agregar_a_bitacora, leer_cajas_yolo, leer_rutas, leer_yaml
-from src.alineacion.semejanza_por_vuelo import cajas_llevadas, centros
+from src.cajas import cajas_llevadas, centros
 
 NIVELES = ["baja", "moderada", "severa"]
 CAJA = ["x0", "y0", "x1", "y1"]
@@ -42,7 +42,7 @@ def nivel(lam, limites):
     return np.where(lam <= limites["baja"], "baja", np.where(lam <= limites["moderada"], "moderada", "severa"))
 
 
-def cajas_px(ruta, tam):
+def cajas_px_en_orden(ruta, tam):
     """Cajas (x0, y0, x1, y1) en px, en el orden del archivo (el índice identifica a la persona)."""
     w, h = tam
     return np.array([[(cx - bw / 2) * w, (cy - bh / 2) * h, (cx + bw / 2) * w, (cy + bh / 2) * h]
@@ -69,8 +69,8 @@ def calcular(cfg, rutas):
     filas = []
     for f in sel.itertuples():
         nombre = f"{v}_{f.posicion:04d}.txt"
-        ct = cajas_px(etq / "termica" / v / nombre, tam_ter)
-        cr = cajas_px(etq / "rgb" / v / nombre, tam_rgb)
+        ct = cajas_px_en_orden(etq / "termica" / v / nombre, tam_ter)
+        cr = cajas_px_en_orden(etq / "rgb" / v / nombre, tam_rgb)
         crl = cajas_llevadas(H, cr) if len(cr) else cr
         for k, b in enumerate(ct):
             area_t = (b[2] - b[0]) * (b[3] - b[1])
@@ -188,7 +188,7 @@ def revisar(cfg, rutas, personas=None, nombre=None, base=None, criterio="pedida 
         copia = Path(tmp) / "oclusion.csv"
         shutil.copy(data / o["anotaciones"], copia)
         an = crear_anotador(cfg, rutas, segundo=False, salida=copia, muestra=True)
-        hc = hashlib_md5(copia)
+        hc = md5_de_archivo(copia)
         losetas = []
         for i, f in sel.iterrows():
             an.i = an.ids.index(i)
@@ -219,10 +219,10 @@ def revisar(cfg, rutas, personas=None, nombre=None, base=None, criterio="pedida 
                                   for l in ("rgb", "ter", "realce")), [])[:-1])
             fila = np.hstack([fila, np.zeros((fila.shape[0], lienzo.shape[1] - fila.shape[1], 3), np.uint8)])
             lineas = [f"{f.n_muestra} de {len(muestra)} | {i} | fotograma {f.posicion}, caja {f.indice_caja + 1}",
-                      _ascii(f.criterio) + f" | completa RGB corrida dx {f.completa_rgb_dx:+.1f}, dy "
+                      texto_ascii(f.criterio) + f" | completa RGB corrida dx {f.completa_rgb_dx:+.1f}, dy "
                       f"{f.completa_rgb_dy:+.1f} ({f.corrimiento_px:.1f} px)",
-                      f"lambda RGB manual {f.lambda_rgb:.3f} ({_ascii(f.nivel_manual)}) | lambda RGB automatico "
-                      f"{f.lambda_rgb_auto:.3f} ({_ascii(f.nivel_auto)}) | lambda termica manual {f.lambda_termica:.3f} "
+                      f"lambda RGB manual {f.lambda_rgb:.3f} ({texto_ascii(f.nivel_manual)}) | lambda RGB automatico "
+                      f"{f.lambda_rgb_auto:.3f} ({texto_ascii(f.nivel_auto)}) | lambda termica manual {f.lambda_termica:.3f} "
                       f"| visible RGB: {f.rgb_estado} | visible termica: {f.termica_estado}"
                       + (" | NO ES PERSONA" if f.no_es_persona else "") + (" | FUERA DE CUADRO" if f.fuera_de_cuadro else ""),
                       "celeste: completa de la imagen (oscuro: la de la otra imagen) | verde: visible | gris: otras "
@@ -239,12 +239,12 @@ def revisar(cfg, rutas, personas=None, nombre=None, base=None, criterio="pedida 
             par = cv2.resize(par, (round(par.shape[1] * h / par.shape[0]), h), interpolation=cv2.INTER_AREA)
             rot = np.zeros((28, par.shape[1], 3), np.uint8)
             cv2.putText(rot, f"{f.n_muestra} de {len(muestra)} | fot. {f.posicion} caja {f.indice_caja + 1} | "
-                             f"{_ascii(f.criterio) if personas else _motivo(f, corrida[i], dibujada[i])}"
+                             f"{texto_ascii(f.criterio) if personas else _motivo(f, corrida[i], dibujada[i])}"
                              f" | manual {f.lambda_rgb:.2f} / auto {f.lambda_rgb_auto:.2f}",
                         (6, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (255, 255, 255), 1, cv2.LINE_AA)
             losetas.append(np.vstack([rot, par]))
             print(f"  {f.n_muestra:2d} de {len(muestra)}  {i}  {f.criterio}  -> {nombre}")
-        if hashlib_md5(copia) != hc:
+        if md5_de_archivo(copia) != hc:
             raise SystemExit("La revisión cambió la copia de las anotaciones: revisar el código")
     if losetas:
         c = rv["columnas_mosaico"]
@@ -320,7 +320,7 @@ def superposicion(cfg, rutas, sel, per, carpeta):
             rec = cv2.resize(rec, None, fx=k, fy=k, interpolation=cv2.INTER_CUBIC)
             etq = data / cfg["datasets"]["etiquetas"] / "termica" / v / f"{v}_{q.posicion:04d}.txt"
             dentro = 0
-            for b in cajas_px(etq, tuple(cfg["tam_termica"])):
+            for b in cajas_px_en_orden(etq, tuple(cfg["tam_termica"])):
                 if b[2] < x0 or b[0] > x0 + lado or b[3] < y0 or b[1] > y0 + lado:
                     continue
                 dentro += 1
@@ -348,12 +348,12 @@ def superposicion(cfg, rutas, sel, per, carpeta):
         print(t.T.to_string(header=False))
 
 
-def hashlib_md5(ruta):
+def md5_de_archivo(ruta):
     import hashlib
     return hashlib.md5(Path(ruta).read_bytes()).hexdigest()
 
 
-def _ascii(t):
+def texto_ascii(t):
     """cv2.putText solo dibuja ASCII."""
     import unicodedata
     return unicodedata.normalize("NFKD", str(t)).encode("ascii", "ignore").decode()

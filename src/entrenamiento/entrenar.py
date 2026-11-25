@@ -53,11 +53,11 @@ class Entrenador(DetectionTrainer):
     def get_model(self, cfg=None, weights=None, verbose=True):
         model = super().get_model(cfg=cfg, weights=weights, verbose=verbose)
         if self.inicio_cuarto_canal == "promedio":
-            w = model.state_dict()[PRIMERA_CAPA]  # comparte memoria con la capa
-            if w.shape[1] != 4:
-                raise SystemExit(f"inicio_cuarto_canal: promedio pide 4 canales y la primera capa tiene {w.shape[1]}")
+            pesos_capa = model.state_dict()[PRIMERA_CAPA]  # comparte memoria con la capa
+            if pesos_capa.shape[1] != 4:
+                raise SystemExit(f"inicio_cuarto_canal: promedio pide 4 canales y la primera capa tiene {pesos_capa.shape[1]}")
             with torch.no_grad():
-                w[:, 3] = w[:, :3].mean(1)
+                pesos_capa[:, 3] = pesos_capa[:, :3].mean(1)
         elif self.inicio_cuarto_canal != "azar":
             raise SystemExit(f"inicio_cuarto_canal desconocido: {self.inicio_cuarto_canal}")
         return model
@@ -127,24 +127,24 @@ class Registro:
 
     def preparado(self, tr):
         """on_pretrain_routine_end: el modelo, la EMA y el optimizador ya existen."""
-        opt = tr.optimizer
-        grupos = [{"lr_inicial": g.get("initial_lr", g["lr"]), "momentum": g.get("momentum"),
-                   "betas": list(g["betas"]) if "betas" in g else None, "weight_decay": g.get("weight_decay"),
-                   "parametros": len(g["params"])} for g in opt.param_groups]
+        optimizador = tr.optimizer
+        grupos = [{"lr_inicial": grupo.get("initial_lr", grupo["lr"]), "momentum": grupo.get("momentum"),
+                   "betas": list(grupo["betas"]) if "betas" in grupo else None, "weight_decay": grupo.get("weight_decay"),
+                   "parametros": len(grupo["params"])} for grupo in optimizador.param_groups]
         n_img = len(tr.train_loader.dataset)
         iteraciones = math.ceil(n_img / max(tr.batch_size, tr.args.nbs)) * tr.epochs
         it_100 = math.ceil(n_img / max(tr.batch_size, tr.args.nbs)) * 100
-        w = tr.model.state_dict()[PRIMERA_CAPA].detach().float().cpu()
-        w_ema = tr.ema.ema.state_dict()[PRIMERA_CAPA].detach().float().cpu() if tr.ema else None
-        capa = {"forma": list(w.shape), "forma_preentrenada": list(self.pre.shape),
-                "color_igual_a_preentrenada": bool(torch.equal(w[:, :3], self.pre[:, :3])),
-                "ema_igual_al_modelo": bool(w_ema is not None and torch.equal(w, w_ema)),
-                "desv_color": float(w[:, :3].std())}
-        if w.shape[1] == 4:
-            capa |= {"desv_cuarto": float(w[:, 3].std()),
-                     "max_dif_cuarto_vs_promedio_color": float((w[:, 3] - w[:, :3].mean(1)).abs().max())}
+        pesos_capa = tr.model.state_dict()[PRIMERA_CAPA].detach().float().cpu()
+        pesos_capa_ema = tr.ema.ema.state_dict()[PRIMERA_CAPA].detach().float().cpu() if tr.ema else None
+        capa = {"forma": list(pesos_capa.shape), "forma_preentrenada": list(self.pre.shape),
+                "color_igual_a_preentrenada": bool(torch.equal(pesos_capa[:, :3], self.pre[:, :3])),
+                "ema_igual_al_modelo": bool(pesos_capa_ema is not None and torch.equal(pesos_capa, pesos_capa_ema)),
+                "desv_color": float(pesos_capa[:, :3].std())}
+        if pesos_capa.shape[1] == 4:
+            capa |= {"desv_cuarto": float(pesos_capa[:, 3].std()),
+                     "max_dif_cuarto_vs_promedio_color": float((pesos_capa[:, 3] - pesos_capa[:, :3].mean(1)).abs().max())}
         self.info = {
-            "optimizador": type(opt).__name__, "lr0": tr.args.lr0, "momentum_args": tr.args.momentum,
+            "optimizador": type(optimizador).__name__, "lr0": tr.args.lr0, "momentum_args": tr.args.momentum,
             "optimizer_args": tr.args.optimizer, "grupos": grupos, "acumula_lotes": tr.accumulate, "nbs": tr.args.nbs,
             "imagenes_entrenamiento": n_img, "imagenes_validacion": len(tr.test_loader.dataset),
             "lotes_por_epoca": len(tr.train_loader), "iteraciones_para_auto": iteraciones,
@@ -167,20 +167,20 @@ class Registro:
     def fin_epoca(self, tr):
         if tr.epoch >= tr.epochs:  # final_eval de Ultralytics con best.pt: no es una época
             return
-        t = self._ahora()
-        cm = tr.args.close_mosaic
+        ahora = self._ahora()
+        epocas_sin_mosaico = tr.args.close_mosaic
         self.epocas.append({
             "epoca": tr.epoch + 1, "lote": tr.batch_size,
-            "mosaico": not (cm and tr.epoch >= tr.epochs - cm),
+            "mosaico": not (epocas_sin_mosaico and tr.epoch >= tr.epochs - epocas_sin_mosaico),
             "s_entrenamiento": round(self.t_fin_entreno - self.t_epoca, 2),
-            "s_validacion_y_guardado": round(t - self.t_fin_entreno, 2),
-            "s_total": round(t - self.t_epoca, 2),
+            "s_validacion_y_guardado": round(ahora - self.t_fin_entreno, 2),
+            "s_total": round(ahora - self.t_epoca, 2),
             "torch_max_asignada_entreno_mib": round(self.mem_entreno[0]),
             "torch_max_reservada_entreno_mib": round(self.mem_entreno[1]),
             "torch_max_asignada_mib": round(torch.cuda.max_memory_allocated() / MIB),
             "torch_max_reservada_mib": round(torch.cuda.max_memory_reserved() / MIB),
         })
-        self.t_fin_ultima = t
+        self.t_fin_ultima = ahora
 
     def fin(self, tr):
         self.info["s_final_eval_y_graficos"] = round(time.perf_counter() - self.t_fin_ultima, 2) \
@@ -194,7 +194,7 @@ def comprobar_potencia(cfg):
     plan = plan_de_energia()
     limite, consumo = potencia_bajo_carga(cfg["segundos_carga"])
     torch.cuda.empty_cache()
-    r = {"enchufada": enchufada, "plan": plan, "armoury_crate_declarado": cfg["armoury_crate"],
+    medida = {"enchufada": enchufada, "plan": plan, "armoury_crate_declarado": cfg["armoury_crate"],
          "limite_mediana_w": round(statistics.median(limite), 1), "limite_min_w": round(min(limite), 1),
          "limite_max_w": round(max(limite), 1), "consumo_mediana_w": round(statistics.median(consumo), 1),
          "segundos_carga": cfg["segundos_carga"]}
@@ -203,19 +203,19 @@ def comprobar_potencia(cfg):
         problemas.append("la laptop no está enchufada")
     if plan != cfg["plan"]:
         problemas.append(f"el plan de energía es {plan}, no {cfg['plan']}")
-    if r["limite_mediana_w"] < cfg["minimo_w"]:
-        problemas.append(f"el límite aplicado bajo carga es {r['limite_mediana_w']} W, menos de {cfg['minimo_w']} W")
-    return r, problemas
+    if medida["limite_mediana_w"] < cfg["minimo_w"]:
+        problemas.append(f"el límite aplicado bajo carga es {medida['limite_mediana_w']} W, menos de {cfg['minimo_w']} W")
+    return medida, problemas
 
 
 def procesos_abiertos(nombres):
     """Los de `nombres` (sin .exe, sin distinguir mayúsculas) que están corriendo."""
-    buscados = {n.lower() for n in nombres}
+    buscados = {nombre.lower() for nombre in nombres}
     abiertos = set()
-    for p in psutil.process_iter(["name"]):
-        n = (p.info["name"] or "").lower().removesuffix(".exe")
-        if n in buscados:
-            abiertos.add(n)
+    for proceso in psutil.process_iter(["name"]):
+        nombre = (proceso.info["name"] or "").lower().removesuffix(".exe")
+        if nombre in buscados:
+            abiertos.add(nombre)
     return sorted(abiertos)
 
 
@@ -237,13 +237,13 @@ def main():
 
     if args.corrida not in cfg["corridas"]:
         salir(f"No existe la corrida {args.corrida}. Hay: {', '.join(cfg['corridas'])}", codigos["otro"])
-    c = mezclar(cfg["base"], cfg["corridas"][args.corrida])
-    ultra = c["ultralytics"]
-    datos = RAIZ / c["datos"]
+    corrida_cfg = mezclar(cfg["base"], cfg["corridas"][args.corrida])
+    ultra = corrida_cfg["ultralytics"]
+    datos = RAIZ / corrida_cfg["datos"]
     canales = leer_yaml(datos).get("channels", 3)
-    if c["inicio_cuarto_canal"] == "promedio" and canales != 4:
+    if corrida_cfg["inicio_cuarto_canal"] == "promedio" and canales != 4:
         salir("inicio_cuarto_canal: promedio solo tiene sentido con 4 canales", codigos["otro"])
-    carpeta_corrida = rutas["runs"] / c["carpeta"] / args.corrida
+    carpeta_corrida = rutas["runs"] / corrida_cfg["carpeta"] / args.corrida
     if carpeta_corrida.exists() and not args.solo_comprobar:
         salir(f"No se entrena: ya existe {carpeta_corrida} (Ultralytics la renombraría). Muévela antes.",
               codigos["carpeta_existe"])
@@ -268,72 +268,72 @@ def main():
     potencia["ram_antes_mib"] = round(psutil.virtual_memory().used / 2 ** 20)
     potencia["cerradas"] = cfg.get("cerrar_antes", [])
 
-    modelo = YOLO(str(RAIZ / c["pesos"]))
-    pre = modelo.model.state_dict()[PRIMERA_CAPA].detach().float().cpu().clone()
-    reg = Registro(pre)
-    for evento, fn in [("on_pretrain_routine_start", reg.inicio), ("on_pretrain_routine_end", reg.preparado),
-                       ("on_train_epoch_start", reg.inicio_epoca), ("on_train_epoch_end", reg.fin_entreno_epoca),
-                       ("on_fit_epoch_end", reg.fin_epoca), ("on_train_end", reg.fin)]:
-        modelo.add_callback(evento, fn)
-    Entrenador.inicio_cuarto_canal = c["inicio_cuarto_canal"]
+    modelo = YOLO(str(RAIZ / corrida_cfg["pesos"]))
+    primera_capa_pre = modelo.model.state_dict()[PRIMERA_CAPA].detach().float().cpu().clone()
+    registro = Registro(primera_capa_pre)
+    for evento, funcion in [("on_pretrain_routine_start", registro.inicio), ("on_pretrain_routine_end", registro.preparado),
+                       ("on_train_epoch_start", registro.inicio_epoca), ("on_train_epoch_end", registro.fin_entreno_epoca),
+                       ("on_fit_epoch_end", registro.fin_epoca), ("on_train_end", registro.fin)]:
+        modelo.add_callback(evento, funcion)
+    Entrenador.inicio_cuarto_canal = corrida_cfg["inicio_cuarto_canal"]
 
     monitor = Monitor(cfg["monitor"]["intervalo_s"])
     monitor.start()
     error = None
     try:
-        modelo.train(trainer=Entrenador, data=str(datos), project=str(rutas["runs"] / c["carpeta"]), name=args.corrida,
+        modelo.train(trainer=Entrenador, data=str(datos), project=str(rutas["runs"] / corrida_cfg["carpeta"]), name=args.corrida,
                      exist_ok=False, **ultra)
     except Exception as e:  # se registra en la bitácora y se vuelve a lanzar
         error = e
         traceback.print_exc()
-    tr = modelo.trainer
-    carpeta = Path(tr.save_dir) if tr is not None else rutas["runs"] / c["carpeta"] / args.corrida
+    entrenador = modelo.trainer
+    carpeta = Path(entrenador.save_dir) if entrenador is not None else rutas["runs"] / corrida_cfg["carpeta"] / args.corrida
     carpeta.mkdir(parents=True, exist_ok=True)
-    mon = monitor.detener(carpeta / "monitor.csv")
-    pd.DataFrame(reg.epocas).to_csv(carpeta / "epocas.csv", index=False)
+    lecturas = monitor.detener(carpeta / "monitor.csv")
+    pd.DataFrame(registro.epocas).to_csv(carpeta / "epocas.csv", index=False)
 
-    total_mib = mon["memory_total"].dropna().max()
-    pico_mib = mon["memory_used"].dropna().max()
+    total_mib = lecturas["memory_total"].dropna().max()
+    pico_mib = lecturas["memory_used"].dropna().max()
     lote_pedido = ultra["batch"]
-    lote_final = tr.batch_size if tr is not None else None
+    lote_final = entrenador.batch_size if entrenador is not None else None
     entra = (error is None and lote_final == lote_pedido
              and pico_mib <= cfg["memoria"]["fraccion_maxima"] * total_mib)
-    bajo_carga = mon[mon["utilization_gpu"] >= 50]
+    bajo_carga = lecturas[lecturas["utilization_gpu"] >= 50]
     resumen = {
-        "corrida": args.corrida, "configuracion": c, "canales": canales, "carpeta": str(carpeta),
-        "potencia_antes": potencia, **reg.info, "lote_pedido": lote_pedido, "lote_final": lote_final,
+        "corrida": args.corrida, "configuracion": corrida_cfg, "canales": canales, "carpeta": str(carpeta),
+        "potencia_antes": potencia, **registro.info, "lote_pedido": lote_pedido, "lote_final": lote_final,
         "entra": bool(entra), "error": repr(error) if error else None,
         "gpu_pico_memoria_mib": pico_mib, "gpu_memoria_total_mib": total_mib,
         "gpu_limite_aplicado_mediana_w": float(bajo_carga["enforced_power_limit"].median()) if len(bajo_carga) else None,
         "gpu_consumo_mediana_w": float(bajo_carga["power_draw"].median()) if len(bajo_carga) else None,
-        "gpu_temperatura_max": mon["temperature_gpu"].max(),
-        "ram_pico_mib": int(mon["ram_usada_mib"].max()), "ram_pico_pct": float(mon["ram_pct"].max()),
-        "epocas": reg.epocas,
+        "gpu_temperatura_max": lecturas["temperature_gpu"].max(),
+        "ram_pico_mib": int(lecturas["ram_usada_mib"].max()), "ram_pico_pct": float(lecturas["ram_pct"].max()),
+        "epocas": registro.epocas,
     }
     if error is None:
-        res = pd.read_csv(carpeta / "results.csv")
-        res.columns = [k.strip() for k in res.columns]
-        ultima = res.iloc[-1]
-        mejor = res.loc[res["metrics/mAP50(B)"].idxmax()]
+        resultados = pd.read_csv(carpeta / "results.csv")
+        resultados.columns = [k.strip() for k in resultados.columns]
+        ultima = resultados.iloc[-1]
+        mejor = resultados.loc[resultados["metrics/mAP50(B)"].idxmax()]
         claves = ["metrics/precision(B)", "metrics/recall(B)", "metrics/mAP50(B)", "metrics/mAP50-95(B)"]
         resumen["val_ultima_epoca"] = {k: float(ultima[k]) for k in claves} | {"epoca": int(ultima["epoch"])}
         resumen["val_mejor_epoca_map50"] = {k: float(mejor[k]) for k in claves} | {"epoca": int(mejor["epoch"])}
-        resumen["val_best_pt"] = {k: float(v) for k, v in tr.metrics.items() if k in claves}
+        resumen["val_best_pt"] = {k: float(v) for k, v in entrenador.metrics.items() if k in claves}
         args_yaml = leer_yaml(carpeta / "args.yaml")
         resumen["args_yaml"] = {k: args_yaml.get(k) for k in ["optimizer", "lr0", "momentum", "lrf", "weight_decay",
                                                               "warmup_epochs", "close_mosaic", "batch", "seed"]}
-        ckpt = torch.load(carpeta / "weights" / "last.pt", map_location="cpu", weights_only=False)
-        ta = ckpt.get("train_args", {})
-        resumen["train_args_last_pt"] = {k: ta.get(k) for k in ["optimizer", "lr0", "momentum", "batch"]}
+        checkpoint = torch.load(carpeta / "weights" / "last.pt", map_location="cpu", weights_only=False)
+        train_args = checkpoint.get("train_args", {})
+        resumen["train_args_last_pt"] = {k: train_args.get(k) for k in ["optimizer", "lr0", "momentum", "batch"]}
     with open(carpeta / "resumen.json", "w", encoding="utf-8") as f:
         json.dump(resumen, f, ensure_ascii=False, indent=2, default=str)
 
     # Bitácora
-    tiempos = [e["s_total"] for e in reg.epocas]
-    config_txt = (f"corrida {args.corrida}; {c['datos']} ({canales} canales); pesos {c['pesos']}; "
+    tiempos = [e["s_total"] for e in registro.epocas]
+    config_txt = (f"corrida {args.corrida}; {corrida_cfg['datos']} ({canales} canales); pesos {corrida_cfg['pesos']}; "
                   + ", ".join(f"{k}={v}" for k, v in ultra.items())
-                  + (f"; cuarto canal: {c['inicio_cuarto_canal']}" if canales == 4 else "")
-                  + (f"; optimizador {reg.info['optimizador']} lr0={reg.info['lr0']} (auto)" if reg.info else "")
+                  + (f"; cuarto canal: {corrida_cfg['inicio_cuarto_canal']}" if canales == 4 else "")
+                  + (f"; optimizador {registro.info['optimizador']} lr0={registro.info['lr0']} (auto)" if registro.info else "")
                   + f"; potencia bajo carga {potencia['limite_mediana_w']} W; {carpeta.relative_to(RAIZ).as_posix()}")
     if error is None:
         v = resumen["val_ultima_epoca"]
@@ -343,9 +343,10 @@ def main():
                    f"P {v['metrics/precision(B)']:.3f}, R {v['metrics/recall(B)']:.3f}")
     else:
         res_txt = f"error: {repr(error)[:300]}; pico de memoria GPU {pico_mib:.0f} de {total_mib:.0f} MiB"
-    lim = resumen["gpu_limite_aplicado_mediana_w"]
-    res_txt += (f"; límite aplicado de la GPU al entrenar (mediana) {lim:.1f} W" if lim else "")         + f"; pico de RAM {resumen['ram_pico_pct']:.1f} %"
-    agregar_a_bitacora(rutas["bitacora"], c["fase"], f"YOLO26s {Path(c['datos']).stem}", config_txt, res_txt)
+    limite_w = resumen["gpu_limite_aplicado_mediana_w"]
+    res_txt += (f"; límite aplicado de la GPU al entrenar (mediana) {limite_w:.1f} W" if limite_w else "") \
+        + f"; pico de RAM {resumen['ram_pico_pct']:.1f} %"
+    agregar_a_bitacora(rutas["bitacora"], corrida_cfg["fase"], f"YOLO26s {Path(corrida_cfg['datos']).stem}", config_txt, res_txt)
     print(json.dumps({k: resumen[k] for k in ["entra", "lote_final", "gpu_pico_memoria_mib", "optimizador", "lr0"]
                       if k in resumen}, ensure_ascii=False))
     print(f"Resumen en {carpeta / 'resumen.json'}")

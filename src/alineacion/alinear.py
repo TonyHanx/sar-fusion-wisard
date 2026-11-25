@@ -78,8 +78,8 @@ def superposiciones(indice, salida, dataset, Hs, cfg, c, carpeta):
     from PIL import Image, ImageDraw, ImageFont
     from ultralytics.utils.patches import imread as imread_ultralytics
 
-    from src.comun import ROJO, lado_a_lado
-    from src.alineacion.semejanza_por_vuelo import VERDE, apilar, cajas_llevadas, cajas_px
+    from src.cajas import cajas_llevadas, cajas_px_sin_repetidas
+    from src.comun import ROJO, VERDE, apilar, lado_a_lado
 
     tam_ter = tuple(cfg["tam_termica"])
     fuente = ImageFont.truetype(cfg["fuente"], 14)
@@ -98,8 +98,8 @@ def superposiciones(indice, salida, dataset, Hs, cfg, c, carpeta):
             rgb = Image.fromarray(np.ascontiguousarray(im[..., :3]))
             ter = Image.fromarray(np.ascontiguousarray(im[..., 3])).convert("RGB")
             mezcla = Image.blend(rgb, ter, 0.5)
-            ct = cajas_px(dataset / Path(e.ruta_termica).with_suffix(".txt"), tam_ter)
-            cr = cajas_px(dataset / Path(e.ruta_rgb).with_suffix(".txt"), tam_rgb)
+            ct = cajas_px_sin_repetidas(dataset / Path(e.ruta_termica).with_suffix(".txt"), tam_ter)
+            cr = cajas_px_sin_repetidas(dataset / Path(e.ruta_rgb).with_suffix(".txt"), tam_rgb)
             crl = cajas_llevadas(H, cr) if len(cr) else cr
             paneles = []
             for img in (rgb, ter, mezcla):

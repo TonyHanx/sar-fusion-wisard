@@ -102,7 +102,7 @@ import pandas as pd
 import yaml
 
 from src.comun import RAIZ, agregar_a_bitacora, leer_cajas_yolo, leer_rutas, leer_yaml
-from src.alineacion.semejanza_por_vuelo import cajas_llevadas, centros
+from src.cajas import cajas_llevadas, centros
 
 VENTANA = "anotar oclusion"
 COMPLETA, COMPLETA_OTRA, VISIBLE = (255, 200, 0), (150, 110, 0), (0, 255, 0)

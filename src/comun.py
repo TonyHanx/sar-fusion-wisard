@@ -14,6 +14,7 @@ from PIL import Image, ImageDraw
 RAIZ = Path(__file__).resolve().parents[1]
 COLUMNAS_BITACORA = ["fecha", "fase", "modelo", "configuracion", "resultado"]
 ROJO, AMARILLO = (255, 0, 0), (255, 220, 0)
+VERDE = (0, 230, 0)
 
 
 def leer_yaml(ruta):
@@ -134,4 +135,14 @@ def lado_a_lado(paneles, rotulos, fuente, banda=30, separacion=10):
         lienzo.paste(p, (x, banda))
         d.text((x + 6, 5), r, fill=(0, 0, 0), font=fuente)
         x += p.width + separacion
+    return lienzo
+
+
+def apilar(filas, sep=8):
+    lienzo = Image.new("RGB", (max(f.width for f in filas), sum(f.height for f in filas) + sep * (len(filas) - 1)),
+                       (255, 255, 255))
+    y = 0
+    for f in filas:
+        lienzo.paste(f, (0, y))
+        y += f.height + sep
     return lienzo

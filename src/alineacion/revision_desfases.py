@@ -37,8 +37,8 @@ import pandas as pd
 import yaml
 from PIL import Image, ImageDraw, ImageFont
 
-from src.comun import AMARILLO, RAIZ, ROJO, agregar_a_bitacora, leer_rutas, leer_yaml, pares_anotados
-from src.alineacion.semejanza_por_vuelo import apilar, cajas_llevadas, cajas_px, centros, dentro, llevar
+from src.cajas import cajas_llevadas, cajas_px_sin_repetidas, centros, dentro, llevar
+from src.comun import AMARILLO, RAIZ, ROJO, agregar_a_bitacora, apilar, leer_rutas, leer_yaml, pares_anotados
 
 VERDE = (0, 230, 0)
 
@@ -83,8 +83,8 @@ def clasificar(des, personas, c, cr):
 
 def personas_de(par, D, H, tam_rgb, tam_ter, c):
     """Cajas del par y, por persona térmica que no toca el borde, la caja RGB más cercana."""
-    cr = cajas_px((D / par.ruta_rgb).with_suffix(".txt"), tam_rgb)
-    ct = cajas_px((D / par.ruta_termica).with_suffix(".txt"), tam_ter)
+    cr = cajas_px_sin_repetidas((D / par.ruta_rgb).with_suffix(".txt"), tam_rgb)
+    ct = cajas_px_sin_repetidas((D / par.ruta_termica).with_suffix(".txt"), tam_ter)
     ctv = ct[dentro(ct, tam_ter, c["margen_borde_px"])] if len(ct) else ct
     filas = []
     if len(ctv) and len(cr):

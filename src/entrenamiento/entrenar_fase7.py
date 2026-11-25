@@ -38,7 +38,7 @@ import torch
 from ultralytics import YOLO
 from ultralytics.data.dataset import YOLODataset
 
-import src.entrenamiento.entrenar as en
+import src.entrenamiento.entrenar as entrenar_fase5
 from src.comun import RAIZ, agregar_a_bitacora, leer_rutas, leer_yaml, ruta_del_dataset
 from src.entrenamiento.dropout_modalidad import DatasetSinRGB, quitar_rgb
 
@@ -50,7 +50,7 @@ def ruta(p):
     return p if p.is_absolute() else RAIZ / p
 
 
-class EntrenadorFase7(en.Entrenador):
+class EntrenadorFase7(entrenar_fase5.Entrenador):
     """El Entrenador de la fase 5 (cuarto canal) con la mejor época por `clave_fitness` y el dropout de modalidad."""
     clave_fitness = "metrics/mAP50(B)"
     p_sin_rgb = 0.0
@@ -73,7 +73,7 @@ class EntrenadorFase7(en.Entrenador):
         return quitar_rgb(ds, self.p_sin_rgb) if mode == "train" else ds
 
 
-COLUMNAS_MONITOR = ["s", *[c.replace(".", "_") for c in en.CAMPOS_GPU], "ram_usada_mib", "ram_pct"]  # las de en.Monitor
+COLUMNAS_MONITOR = ["s", *[c.replace(".", "_") for c in entrenar_fase5.CAMPOS_GPU], "ram_usada_mib", "ram_pct"]  # las de en.Monitor
 
 
 def escribir_csv(df, ruta):
@@ -83,14 +83,14 @@ def escribir_csv(df, ruta):
     os.replace(tmp, ruta)
 
 
-class MonitorFase7(en.Monitor):
+class MonitorFase7(entrenar_fase5.Monitor):
     """El monitor de la fase 5, que además puede guardar lo leído hasta ahora sin pararse."""
 
     def guardar(self, ruta):
         escribir_csv(pd.DataFrame(list(self.filas), columns=COLUMNAS_MONITOR), ruta)
 
 
-class RegistroFase7(en.Registro):
+class RegistroFase7(entrenar_fase5.Registro):
     """El registro de la fase 5, sin la fila de más de la validación final de best.pt cuando la corrida para antes,
     y que al final de cada época guarda epocas.csv y monitor.csv (si tiene `monitor`) en la carpeta de la corrida. Así,
     si el proceso se corta, quedan hasta la última época terminada. Solo escribe archivos: no cambia el entrenamiento,
@@ -118,43 +118,43 @@ def prohibidos(cfg):
 
 
 def comprobar_datos(datos_yaml, cfg):
-    d = leer_yaml(datos_yaml)
-    pro = prohibidos(cfg)
+    datos = leer_yaml(datos_yaml)
+    prefijos_prohibidos = prohibidos(cfg)
     malos = []
     for split in ("train", "val"):
-        for f in (ruta_del_dataset(d) / d[split]).iterdir():
-            if any(x in f.stem for x in pro):
-                malos.append(f"{split}/{f.name}")
+        for imagen in (ruta_del_dataset(datos) / datos[split]).iterdir():
+            if any(x in imagen.stem for x in prefijos_prohibidos):
+                malos.append(f"{split}/{imagen.name}")
     if malos:
         raise SystemExit(f"{datos_yaml}: {len(malos)} imágenes de la prueba, por ejemplo {malos[:3]}. No se entrena.")
-    return d
+    return datos
 
 
 # ------------------------------------------------------------------------------------------------------- verificación
 
 def verificar(cfg, rutas):
-    v = cfg["c2"]["verificacion"]
+    cfg_verif = cfg["c2"]["verificacion"]
     c3 = cfg["c3"]
-    out = rutas["runs"] / cfg["carpeta"] / v["carpeta"]
-    out.mkdir(parents=True, exist_ok=True)
-    datos = ruta(v["datos"])
+    carpeta_salida = rutas["runs"] / cfg["carpeta"] / cfg_verif["carpeta"]
+    carpeta_salida.mkdir(parents=True, exist_ok=True)
+    datos = ruta(cfg_verif["datos"])
     comprobar_datos(datos, cfg)
     EntrenadorFase7.clave_fitness = cfg["c2"]["fitness"]
     ultra = dict(c3["base"]["ultralytics"])
-    tr = EntrenadorFase7(overrides={**ultra, "model": str(ruta(c3["pesos"])), "data": str(datos),
-                                    "project": str(out), "name": "entrenador", "exist_ok": True})
-    tr.model = SimpleNamespace(stride=torch.tensor([8.0, 16.0, 32.0]))  # build_dataset solo usa el paso del modelo
+    entrenador = EntrenadorFase7(overrides={**ultra, "model": str(ruta(c3["pesos"])), "data": str(datos),
+                                    "project": str(carpeta_salida), "name": "entrenador", "exist_ok": True})
+    entrenador.model = SimpleNamespace(stride=torch.tensor([8.0, 16.0, 32.0]))  # build_dataset solo usa el paso del modelo
 
     # 1. criterio: un validador simulado con dos épocas en que el mAP@0.5 y el mAP@0.5:0.95 eligen distinto
-    sim = [{"metrics/mAP50(B)": 0.30, "metrics/mAP50-95(B)": 0.10, "fitness": 0.10},
+    simuladas = [{"metrics/mAP50(B)": 0.30, "metrics/mAP50-95(B)": 0.10, "fitness": 0.10},
            {"metrics/mAP50(B)": 0.25, "metrics/mAP50-95(B)": 0.12, "fitness": 0.12}]
-    tr.best_fitness = None
+    entrenador.best_fitness = None
     filas_f = []
-    for k, m in enumerate(sim, 1):
-        tr.validator = lambda trainer, m=m: dict(m)
-        metrics, fit = tr.validate()
+    for k, m in enumerate(simuladas, 1):
+        entrenador.validator = lambda trainer, m=m: dict(m)
+        metrics, fit = entrenador.validate()
         filas_f.append({"epoca": k, "map50": m["metrics/mAP50(B)"], "map50_95": m["metrics/mAP50-95(B)"],
-                        "fitness_ultralytics": m["fitness"], "fitness_fase7": fit, "best_fitness": tr.best_fitness,
+                        "fitness_ultralytics": m["fitness"], "fitness_fase7": fit, "best_fitness": entrenador.best_fitness,
                         "fitness_en_metricas": "fitness" in metrics})
     from ultralytics.utils.torch_utils import EarlyStopping
 
@@ -169,20 +169,20 @@ def verificar(cfg, rutas):
     fit["patience"] = ultra["patience"]
     fit["epocas_probadas"] = len(serie)
     fit["parada_temprana_en_epoca"] = para
-    fit.to_csv(out / "verificacion_fitness.csv", index=False)
+    fit.to_csv(carpeta_salida / "verificacion_fitness.csv", index=False)
     if not (fit.fitness_fase7.tolist() == [0.30, 0.25] and fit.best_fitness.tolist() == [0.30, 0.30]
             and not fit.fitness_en_metricas.any() and para == esperada):
         raise SystemExit(f"El criterio no hace lo esperado:\n{fit}")
 
     # 2. dropout: los datasets como los arma el entrenador, con las mismas imágenes y la misma semilla
     def armar(split, modo, p):
-        tr.p_sin_rgb = p
-        return tr.build_dataset(tr.data[split], mode=modo, batch=ultra["batch"])
+        entrenador.p_sin_rgb = p
+        return entrenador.build_dataset(entrenador.data[split], mode=modo, batch=ultra["batch"])
 
-    p = v["p"]
+    p = cfg_verif["p"]
     base_tr = armar("train", "train", 0.0)
-    rng = np.random.default_rng(v["seed"])
-    idx = sorted(int(i) for i in rng.choice(len(base_tr), v["imagenes"], replace=False))
+    rng = np.random.default_rng(cfg_verif["seed"])
+    idx = sorted(int(i) for i in rng.choice(len(base_tr), cfg_verif["imagenes"], replace=False))
     filas = []
 
     def fila(prueba, ds, i, img, ref_tiff, esperado_sin_rgb):
@@ -209,24 +209,24 @@ def verificar(cfg, rutas):
     # 2a. entrenamiento con p: imagen leída (donde actúa el dropout), contra la del dataset sin dropout
     # (la lectura solo gasta el número al azar del dropout: se sabe de antemano qué imágenes pierden la RGB)
     ds = armar("train", "train", p)
-    random.seed(v["seed"])
+    random.seed(cfg_verif["seed"])
     esperado = [random.random() < p for _ in idx]
-    random.seed(v["seed"])
+    random.seed(cfg_verif["seed"])
     for i, e in zip(idx, esperado):
         fila(f"entrenamiento, p = {p}, imagen leída", ds, i, ds.load_image(i)[0], tiff[i], e)
     # 2b. entrenamiento con p = 1 y todas las transformaciones (mosaico incluido), contra el mismo dataset sin dropout
     # con las mismas semillas (p = 1 no gasta números al azar, así que los aumentos son los mismos). Ultralytics
     # rellena con gris (`relleno`) en los 4 canales lo que queda fuera de las imágenes, así que la RGB que llega al
     # modelo tiene que ser gris (R = G = B) y no más clara que el relleno, y la térmica, la misma.
-    gris = v["relleno"]
+    gris = cfg_verif["relleno"]
     ds1, ds0 = armar("train", "train", 1.0), armar("train", "train", 0.0)
     for i in idx:
         t = {}
-        for k, d_ in ((1, ds1), (0, ds0)):
-            random.seed(v["seed"] + i)
-            np.random.seed(v["seed"] + i)
-            torch.manual_seed(v["seed"] + i)
-            t[k] = d_[i]["img"].numpy()
+        for k, dataset_k in ((1, ds1), (0, ds0)):
+            random.seed(cfg_verif["seed"] + i)
+            np.random.seed(cfg_verif["seed"] + i)
+            torch.manual_seed(cfg_verif["seed"] + i)
+            t[k] = dataset_k[i]["img"].numpy()
         rgb = t[1][:3]
         es_gris = bool((rgb[0] == rgb[1]).all() and (rgb[1] == rgb[2]).all())
         filas.append({"prueba": "entrenamiento, p = 1, tensor con mosaico", "clase": type(ds1).__name__, "p": 1.0,
@@ -244,43 +244,43 @@ def verificar(cfg, rutas):
                   "rgb_como_se_espera": type(ds) is YOLODataset})
     # 2d. el tensor tal como entra al modelo, sin aumentos (la lectura de la validación), con p
     ds = quitar_rgb(armar("train", "val", 0.0), p)
-    random.seed(v["seed"])
+    random.seed(cfg_verif["seed"])
     for i in idx:
         fila(f"tensor del modelo sin aumentos, p = {p}", ds, i, ds[i]["img"].numpy(), tiff[i], None)
     # 2e. validación armada por el entrenador con p: nunca hay dropout
     ds = armar("val", "val", p)
-    rng_v = np.random.default_rng(v["seed"])
-    for i in sorted(int(j) for j in rng_v.choice(len(ds), v["imagenes"], replace=False)):
+    rng_v = np.random.default_rng(cfg_verif["seed"])
+    for i in sorted(int(j) for j in rng_v.choice(len(ds), cfg_verif["imagenes"], replace=False)):
         t = ds[i]["img"].numpy()
         fila(f"validación del entrenamiento, p = {p}", ds, i, t, tifffile.imread(ds.im_files[i]), False)
     # 2f. la evaluación con la RGB en 0 (evaluar.py --rgb-cero): p = 1 en la lectura de la validación
     ds = quitar_rgb(armar("val", "val", 0.0), 1.0)
-    for i in sorted(int(j) for j in np.random.default_rng(v["seed"]).choice(len(ds), v["imagenes"], replace=False)):
+    for i in sorted(int(j) for j in np.random.default_rng(cfg_verif["seed"]).choice(len(ds), cfg_verif["imagenes"], replace=False)):
         t = ds[i]["img"].numpy()
         fila("evaluación con la RGB en 0 (p = 1)", ds, i, t, tifffile.imread(ds.im_files[i]), True)
 
-    ver = pd.DataFrame(filas)
-    ver.to_csv(out / "verificacion_dropout.csv", index=False)
+    tabla_verificacion = pd.DataFrame(filas)
+    tabla_verificacion.to_csv(carpeta_salida / "verificacion_dropout.csv", index=False)
     with pd.option_context("display.width", 250, "display.max_columns", 20, "display.max_colwidth", 60):
         print(fit.to_string(index=False))
-        print(ver.to_string(index=False))
-    res = ver.groupby("prueba", sort=False).agg(imagenes=("indice", "count"), rgb_en_0=("rgb_en_0", "sum"),
+        print(tabla_verificacion.to_string(index=False))
+    res = tabla_verificacion.groupby("prueba", sort=False).agg(imagenes=("indice", "count"), rgb_en_0=("rgb_en_0", "sum"),
                                                 bien=("rgb_como_se_espera", "all"))
     print(res.to_string())
-    malas = ver[(ver.rgb_como_se_espera == False) | (ver.termica_igual == False)]  # noqa: E712
-    entreno = ver[ver.prueba.str.startswith("entrenamiento, p = 0.")]
-    if len(malas) or not (ver.clase[ver.prueba.str.startswith("validación")] == "YOLODataset").all():
+    malas = tabla_verificacion[(tabla_verificacion.rgb_como_se_espera == False) | (tabla_verificacion.termica_igual == False)]  # noqa: E712
+    entreno = tabla_verificacion[tabla_verificacion.prueba.str.startswith("entrenamiento, p = 0.")]
+    if len(malas) or not (tabla_verificacion.clase[tabla_verificacion.prueba.str.startswith("validación")] == "YOLODataset").all():
         raise SystemExit(f"El dropout no hace lo esperado:\n{malas}")
     print(f"Bien: criterio por mAP@0.5 y dropout. Con p = {p}, {int(entreno.rgb_en_0.sum())} de {len(entreno)} "
-          f"imágenes de entrenamiento quedaron sin RGB. Salidas en {out}")
+          f"imágenes de entrenamiento quedaron sin RGB. Salidas en {carpeta_salida}")
 
 
 # ------------------------------------------------------------------------------------------------------- entrenamiento
 
 def entrenar(cfg, rutas, nombre):
     c3 = cfg["c3"]
-    comp = leer_yaml(ruta(c3["comprobaciones"]))
-    codigos = comp["codigos_salida"]
+    comprobaciones = leer_yaml(ruta(c3["comprobaciones"]))
+    codigos = comprobaciones["codigos_salida"]
 
     def salir(mensaje, codigo):
         print(mensaje, file=sys.stderr, flush=True)
@@ -288,43 +288,43 @@ def entrenar(cfg, rutas, nombre):
 
     if nombre not in c3["corridas"]:
         salir(f"No existe la corrida {nombre}. Hay: {', '.join(c3['corridas'])}", codigos["otro"])
-    c = en.mezclar(c3["base"], c3["corridas"][nombre])
-    ultra = c["ultralytics"]
-    datos = ruta(c["datos"])
-    d = comprobar_datos(datos, cfg)
-    canales = d.get("channels", 3)
-    if c["inicio_cuarto_canal"] == "promedio" and canales != 4:
+    corrida_cfg = entrenar_fase5.mezclar(c3["base"], c3["corridas"][nombre])
+    ultra = corrida_cfg["ultralytics"]
+    datos = ruta(corrida_cfg["datos"])
+    datos_cfg = comprobar_datos(datos, cfg)
+    canales = datos_cfg.get("channels", 3)
+    if corrida_cfg["inicio_cuarto_canal"] == "promedio" and canales != 4:
         salir("inicio_cuarto_canal: promedio solo tiene sentido con 4 canales", codigos["otro"])
-    if c["p_sin_rgb"] and canales != 4:
+    if corrida_cfg["p_sin_rgb"] and canales != 4:
         salir("El dropout de modalidad (p_sin_rgb) pide 4 canales", codigos["otro"])
     carpeta_corrida = rutas["runs"] / c3["carpeta"] / nombre
     if carpeta_corrida.exists():
         salir(f"No se entrena: ya existe {carpeta_corrida} (Ultralytics la renombraría). Muévela antes.",
               codigos["carpeta_existe"])
-    abiertos = en.procesos_abiertos(comp.get("cerrar_antes", []))
+    abiertos = entrenar_fase5.procesos_abiertos(comprobaciones.get("cerrar_antes", []))
     if abiertos:
         salir(f"No se entrena: cierra antes {', '.join(abiertos)} (cerrar_antes en {c3['comprobaciones']}).",
               codigos["aplicaciones"])
-    potencia, problemas = en.comprobar_potencia(comp["potencia"])
+    potencia, problemas = entrenar_fase5.comprobar_potencia(comprobaciones["potencia"])
     print(f"Potencia: {potencia}", flush=True)
     if problemas:
         salir("No se entrena: " + "; ".join(problemas) + ". Revisa la laptop y vuelve a correr.", codigos["potencia"])
     potencia["ram_antes_mib"] = round(psutil.virtual_memory().used / 2 ** 20)
-    potencia["cerradas"] = comp.get("cerrar_antes", [])
+    potencia["cerradas"] = comprobaciones.get("cerrar_antes", [])
 
     modelo = YOLO(str(ruta(c3["pesos"])))
-    pre = modelo.model.state_dict()[en.PRIMERA_CAPA].detach().float().cpu().clone()
-    reg = RegistroFase7(pre)
-    for evento, fn in [("on_pretrain_routine_start", reg.inicio), ("on_pretrain_routine_end", reg.preparado),
-                       ("on_train_epoch_start", reg.inicio_epoca), ("on_train_epoch_end", reg.fin_entreno_epoca),
-                       ("on_fit_epoch_end", reg.fin_epoca), ("on_train_end", reg.fin)]:
-        modelo.add_callback(evento, fn)
-    EntrenadorFase7.inicio_cuarto_canal = c["inicio_cuarto_canal"]
+    primera_capa_pre = modelo.model.state_dict()[entrenar_fase5.PRIMERA_CAPA].detach().float().cpu().clone()
+    registro = RegistroFase7(primera_capa_pre)
+    for evento, funcion in [("on_pretrain_routine_start", registro.inicio), ("on_pretrain_routine_end", registro.preparado),
+                       ("on_train_epoch_start", registro.inicio_epoca), ("on_train_epoch_end", registro.fin_entreno_epoca),
+                       ("on_fit_epoch_end", registro.fin_epoca), ("on_train_end", registro.fin)]:
+        modelo.add_callback(evento, funcion)
+    EntrenadorFase7.inicio_cuarto_canal = corrida_cfg["inicio_cuarto_canal"]
     EntrenadorFase7.clave_fitness = cfg["c2"]["fitness"]
-    EntrenadorFase7.p_sin_rgb = float(c["p_sin_rgb"])
+    EntrenadorFase7.p_sin_rgb = float(corrida_cfg["p_sin_rgb"])
 
-    monitor = MonitorFase7(comp["monitor"]["intervalo_s"])
-    reg.monitor = monitor  # epocas.csv y monitor.csv se guardan al final de cada época
+    monitor = MonitorFase7(comprobaciones["monitor"]["intervalo_s"])
+    registro.monitor = monitor  # epocas.csv y monitor.csv se guardan al final de cada época
     monitor.start()
     error = None
     try:
@@ -333,48 +333,48 @@ def entrenar(cfg, rutas, nombre):
     except Exception as e:  # se registra en la bitácora y se vuelve a lanzar
         error = e
         traceback.print_exc()
-    tr = modelo.trainer
-    carpeta = Path(tr.save_dir) if tr is not None else carpeta_corrida
+    entrenador = modelo.trainer
+    carpeta = Path(entrenador.save_dir) if entrenador is not None else carpeta_corrida
     carpeta.mkdir(parents=True, exist_ok=True)
-    mon = monitor.detener(carpeta / "monitor.csv")
-    pd.DataFrame(reg.epocas).to_csv(carpeta / "epocas.csv", index=False)
+    lecturas = monitor.detener(carpeta / "monitor.csv")
+    pd.DataFrame(registro.epocas).to_csv(carpeta / "epocas.csv", index=False)
 
-    total_mib = mon["memory_total"].dropna().max()
-    pico_mib = mon["memory_used"].dropna().max()
-    lote_final = tr.batch_size if tr is not None else None
+    total_mib = lecturas["memory_total"].dropna().max()
+    pico_mib = lecturas["memory_used"].dropna().max()
+    lote_final = entrenador.batch_size if entrenador is not None else None
     entra = (error is None and lote_final == ultra["batch"]
-             and pico_mib <= comp["memoria"]["fraccion_maxima"] * total_mib)
-    bajo_carga = mon[mon["utilization_gpu"] >= 50]
+             and pico_mib <= comprobaciones["memoria"]["fraccion_maxima"] * total_mib)
+    bajo_carga = lecturas[lecturas["utilization_gpu"] >= 50]
     resumen = {
-        "corrida": nombre, "configuracion": c, "canales": canales, "carpeta": str(carpeta),
+        "corrida": nombre, "configuracion": corrida_cfg, "canales": canales, "carpeta": str(carpeta),
         "fitness": EntrenadorFase7.clave_fitness, "p_sin_rgb": EntrenadorFase7.p_sin_rgb,
-        "potencia_antes": potencia, **reg.info, "lote_pedido": ultra["batch"], "lote_final": lote_final,
+        "potencia_antes": potencia, **registro.info, "lote_pedido": ultra["batch"], "lote_final": lote_final,
         "entra": bool(entra), "error": repr(error) if error else None,
         "gpu_pico_memoria_mib": pico_mib, "gpu_memoria_total_mib": total_mib,
         "gpu_limite_aplicado_mediana_w": float(bajo_carga["enforced_power_limit"].median()) if len(bajo_carga) else None,
         "gpu_consumo_mediana_w": float(bajo_carga["power_draw"].median()) if len(bajo_carga) else None,
-        "gpu_temperatura_max": mon["temperature_gpu"].max(),
-        "ram_pico_mib": int(mon["ram_usada_mib"].max()), "ram_pico_pct": float(mon["ram_pct"].max()),
-        "epocas": reg.epocas,
+        "gpu_temperatura_max": lecturas["temperature_gpu"].max(),
+        "ram_pico_mib": int(lecturas["ram_usada_mib"].max()), "ram_pico_pct": float(lecturas["ram_pct"].max()),
+        "epocas": registro.epocas,
     }
     if error is None:
-        res = pd.read_csv(carpeta / "results.csv")
-        res.columns = [k.strip() for k in res.columns]
-        ultima = res.iloc[-1]
-        elegida = res.loc[res[EntrenadorFase7.clave_fitness].idxmax()]  # la primera, si hay empate (como best.pt)
+        resultados = pd.read_csv(carpeta / "results.csv")
+        resultados.columns = [k.strip() for k in resultados.columns]
+        ultima = resultados.iloc[-1]
+        elegida = resultados.loc[resultados[EntrenadorFase7.clave_fitness].idxmax()]  # la primera, si hay empate (como best.pt)
         resumen["val_elegida"] = {k: float(elegida[k]) for k in CLAVES} | {"epoca": int(elegida["epoch"])}
         resumen["val_ultima_epoca"] = {k: float(ultima[k]) for k in CLAVES} | {"epoca": int(ultima["epoch"])}
-        n_ult = c3["ultimas_epocas"]
-        ult = res.tail(n_ult)
-        resumen["val_promedio_ultimas"] = {k: float(ult[k].mean()) for k in CLAVES} | {
-            "epocas": [int(e) for e in ult["epoch"]]}
-        resumen["epocas_corridas"] = len(res)
-        resumen["paro_antes"] = len(res) < ultra["epochs"]
-        resumen["val_best_pt_final_eval"] = {k: float(v) for k, v in tr.metrics.items() if k in CLAVES}
+        n_ultimas = c3["ultimas_epocas"]
+        ultimas = resultados.tail(n_ultimas)
+        resumen["val_promedio_ultimas"] = {k: float(ultimas[k].mean()) for k in CLAVES} | {
+            "epocas": [int(e) for e in ultimas["epoch"]]}
+        resumen["epocas_corridas"] = len(resultados)
+        resumen["paro_antes"] = len(resultados) < ultra["epochs"]
+        resumen["val_best_pt_final_eval"] = {k: float(v) for k, v in entrenador.metrics.items() if k in CLAVES}
         best = torch.load(carpeta / "weights" / "best.pt", map_location="cpu", weights_only=False)
-        tm = best.get("train_metrics", {})
-        resumen["best_pt_train_metrics"] = {k: tm.get(k) for k in CLAVES + ["fitness"]}
-        resumen["best_pt_es_la_elegida"] = bool(np.isclose(tm.get("fitness", np.nan),
+        metricas_best = best.get("train_metrics", {})
+        resumen["best_pt_train_metrics"] = {k: metricas_best.get(k) for k in CLAVES + ["fitness"]}
+        resumen["best_pt_es_la_elegida"] = bool(np.isclose(metricas_best.get("fitness", np.nan),
                                                            elegida[EntrenadorFase7.clave_fitness], atol=1e-5))
         args_yaml = leer_yaml(carpeta / "args.yaml")
         resumen["args_yaml"] = {k: args_yaml.get(k) for k in ["optimizer", "lr0", "momentum", "lrf", "weight_decay",
@@ -383,31 +383,31 @@ def entrenar(cfg, rutas, nombre):
     with open(carpeta / "resumen.json", "w", encoding="utf-8") as f:
         json.dump(resumen, f, ensure_ascii=False, indent=2, default=str)
 
-    tiempos = [e["s_total"] for e in reg.epocas]
-    config_txt = (f"corrida {nombre}; {c['datos']} ({canales} canales); pesos {c3['pesos']}; "
+    tiempos = [e["s_total"] for e in registro.epocas]
+    config_txt = (f"corrida {nombre}; {corrida_cfg['datos']} ({canales} canales); pesos {c3['pesos']}; "
                   + ", ".join(f"{k}={v}" for k, v in ultra.items())
                   + f"; mejor época por {EntrenadorFase7.clave_fitness}"
-                  + (f"; cuarto canal: {c['inicio_cuarto_canal']}; dropout de modalidad p={c['p_sin_rgb']}"
+                  + (f"; cuarto canal: {corrida_cfg['inicio_cuarto_canal']}; dropout de modalidad p={corrida_cfg['p_sin_rgb']}"
                      if canales == 4 else "")
-                  + (f"; optimizador {reg.info['optimizador']} lr0={reg.info['lr0']}" if reg.info else "")
+                  + (f"; optimizador {registro.info['optimizador']} lr0={registro.info['lr0']}" if registro.info else "")
                   + f"; potencia bajo carga {potencia['limite_mediana_w']} W; {carpeta.relative_to(RAIZ).as_posix()}")
     if error is None:
-        e, u, pm = resumen["val_elegida"], resumen["val_ultima_epoca"], resumen["val_promedio_ultimas"]
+        e, ultima_val, promedio_ultimas = resumen["val_elegida"], resumen["val_ultima_epoca"], resumen["val_promedio_ultimas"]
         res_txt = (f"{'entra' if entra else 'no entra'} (lote {lote_final}); {resumen['epocas_corridas']} épocas"
                    f"{' (paró antes, patience)' if resumen['paro_antes'] else ''}; pico de memoria GPU {pico_mib:.0f} de "
                    f"{total_mib:.0f} MiB; mediana por época {np.median(tiempos):.0f} s; "
-                   f"val última época {u['epoca']}: mAP50 {u['metrics/mAP50(B)']:.4f}, mAP50-95 "
-                   f"{u['metrics/mAP50-95(B)']:.4f}, P {u['metrics/precision(B)']:.3f}, R {u['metrics/recall(B)']:.3f}; "
-                   f"promedio de las épocas {pm['epocas'][0]}-{pm['epocas'][-1]}: mAP50 {pm['metrics/mAP50(B)']:.4f}, "
-                   f"mAP50-95 {pm['metrics/mAP50-95(B)']:.4f}; best.pt (época {e['epoca']}): mAP50 "
+                   f"val última época {ultima_val['epoca']}: mAP50 {ultima_val['metrics/mAP50(B)']:.4f}, mAP50-95 "
+                   f"{ultima_val['metrics/mAP50-95(B)']:.4f}, P {ultima_val['metrics/precision(B)']:.3f}, R {ultima_val['metrics/recall(B)']:.3f}; "
+                   f"promedio de las épocas {promedio_ultimas['epocas'][0]}-{promedio_ultimas['epocas'][-1]}: mAP50 {promedio_ultimas['metrics/mAP50(B)']:.4f}, "
+                   f"mAP50-95 {promedio_ultimas['metrics/mAP50-95(B)']:.4f}; best.pt (época {e['epoca']}): mAP50 "
                    f"{e['metrics/mAP50(B)']:.4f}, mAP50-95 {e['metrics/mAP50-95(B)']:.4f}; best.pt es la elegida: "
                    f"{'sí' if resumen['best_pt_es_la_elegida'] else 'NO'}")
     else:
         res_txt = f"error: {repr(error)[:300]}; pico de memoria GPU {pico_mib:.0f} de {total_mib:.0f} MiB"
-    lim = resumen["gpu_limite_aplicado_mediana_w"]
-    res_txt += (f"; límite aplicado de la GPU al entrenar (mediana) {lim:.1f} W" if lim else "") \
+    limite_w = resumen["gpu_limite_aplicado_mediana_w"]
+    res_txt += (f"; límite aplicado de la GPU al entrenar (mediana) {limite_w:.1f} W" if limite_w else "") \
         + f"; pico de RAM {resumen['ram_pico_pct']:.1f} %"
-    agregar_a_bitacora(rutas["bitacora"], c["fase"], f"YOLO26s {nombre}", config_txt, res_txt)
+    agregar_a_bitacora(rutas["bitacora"], corrida_cfg["fase"], f"YOLO26s {nombre}", config_txt, res_txt)
     print(res_txt)
     print(f"Resumen en {carpeta / 'resumen.json'}")
     if error is not None:

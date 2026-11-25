@@ -38,8 +38,8 @@ import yaml
 
 from src.oclusion.anotar_oclusion import CAJA_WISARD, GRIS, OTRAS, AnotadorSimple
 from src.comun import RAIZ, agregar_a_bitacora, leer_rutas, leer_yaml, ruta_del_dataset
-from src.alineacion.semejanza_por_vuelo import cajas_llevadas, centros
-from src.oclusion.oclusion_auto import cajas_px
+from src.cajas import cajas_llevadas, centros
+from src.oclusion.oclusion_auto import cajas_px_en_orden
 
 CAJA = ["x0", "y0", "x1", "y1"]
 NIVEL = {"se_ve_rgb": "baja", "no_se_ve_rgb": "severa", "no_es_persona": None}
@@ -194,7 +194,7 @@ def nivel(cfg, rutas):
     auto = []
     for f in df.itertuples():
         nombre = f"{f.vuelo}_{f.posicion:04d}.txt"
-        cr = cajas_px(etq / "rgb" / f.vuelo / nombre, tuple(Hs[f.vuelo]["tam_rgb"]))
+        cr = cajas_px_en_orden(etq / "rgb" / f.vuelo / nombre, tuple(Hs[f.vuelo]["tam_rgb"]))
         b = np.array([[f.ter_x0, f.ter_y0, f.ter_x1, f.ter_y1]])
         if not len(cr):
             auto.append(True)

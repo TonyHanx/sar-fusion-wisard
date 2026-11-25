@@ -50,42 +50,12 @@ import yaml
 from PIL import Image, ImageDraw, ImageFont
 from scipy.optimize import linear_sum_assignment
 
-from src.comun import (AMARILLO, RAIZ, ROJO, agregar_a_bitacora, homografia_franja, lado_a_lado, leer_cajas_yolo,
-                   leer_rutas, leer_yaml, pares_utilizables)
-
-VERDE = (0, 230, 0)
+from src.cajas import cajas_llevadas, cajas_px_sin_repetidas, centros, dentro, llevar
+from src.comun import (AMARILLO, RAIZ, ROJO, VERDE, agregar_a_bitacora, apilar, homografia_franja, lado_a_lado,
+                       leer_rutas, leer_yaml, pares_utilizables)
 
 
 # ---------------------------------------------------------------------------------------------------- geometría
-def llevar(H, puntos):
-    return cv2.perspectiveTransform(np.asarray(puntos, np.float64).reshape(-1, 1, 2), H).reshape(-1, 2)
-
-
-def cajas_px(ruta_txt, tam):
-    """Cajas (x0, y0, x1, y1) en píxeles, sin repetidas."""
-    w, h = tam
-    unicas = sorted(set(leer_cajas_yolo(ruta_txt)))
-    return np.array([[(cx - bw / 2) * w, (cy - bh / 2) * h, (cx + bw / 2) * w, (cy + bh / 2) * h]
-                     for _, cx, cy, bw, bh in unicas], dtype=np.float64).reshape(-1, 4)
-
-
-def centros(cajas):
-    return np.column_stack([(cajas[:, 0] + cajas[:, 2]) / 2, (cajas[:, 1] + cajas[:, 3]) / 2])
-
-
-def cajas_llevadas(H, cajas):
-    """Rectángulo que encierra cada caja RGB llevada a la térmica."""
-    esquinas = llevar(H, cajas[:, [0, 1, 2, 1, 2, 3, 0, 3]].reshape(-1, 2)).reshape(-1, 4, 2)
-    return np.column_stack([esquinas[..., 0].min(1), esquinas[..., 1].min(1),
-                            esquinas[..., 0].max(1), esquinas[..., 1].max(1)])
-
-
-def dentro(cajas, tam_ter, margen):
-    """Cajas (en px térmicos) que no tocan el borde de la térmica."""
-    tw, th = tam_ter
-    return (cajas[:, 0] >= margen) & (cajas[:, 1] >= margen) & (cajas[:, 2] <= tw - margen) & (cajas[:, 3] <= th - margen)
-
-
 def validas(cr, ct, H, tam_ter, margen):
     """Cajas RGB que caen enteras dentro de la térmica y cajas térmicas que no tocan el borde."""
     return cr[dentro(cajas_llevadas(H, cr), tam_ter, margen)], ct[dentro(ct, tam_ter, margen)]
@@ -218,8 +188,8 @@ def paneles_superposicion(dataset, par, H, tam_rgb, tam_ter, alto):
     al = Image.fromarray(cv2.cvtColor(cv2.warpPerspective(rgb, H, tuple(tam_ter)), cv2.COLOR_BGR2RGB))
     ter = Image.open(dataset / par.ruta_termica).convert("RGB")
     mezcla = Image.blend(al, ter, 0.5)
-    cr = cajas_px((dataset / par.ruta_rgb).with_suffix(".txt"), tam_rgb)
-    ct = cajas_px((dataset / par.ruta_termica).with_suffix(".txt"), tam_ter)
+    cr = cajas_px_sin_repetidas((dataset / par.ruta_rgb).with_suffix(".txt"), tam_rgb)
+    ct = cajas_px_sin_repetidas((dataset / par.ruta_termica).with_suffix(".txt"), tam_ter)
     crl = cajas_llevadas(H, cr) if len(cr) else cr
     paneles = []
     for img in (al, ter, mezcla):
@@ -285,16 +255,6 @@ def figura_puntos(dataset, fotogramas, H, alto, fuente):
     return apilar(filas)
 
 
-def apilar(filas, sep=8):
-    lienzo = Image.new("RGB", (max(f.width for f in filas), sum(f.height for f in filas) + sep * (len(filas) - 1)),
-                       (255, 255, 255))
-    y = 0
-    for f in filas:
-        lienzo.paste(f, (0, y))
-        y += f.height + sep
-    return lienzo
-
-
 # --------------------------------------------------------------------------------------------------------- main
 def main():
     ap = argparse.ArgumentParser()
@@ -324,8 +284,8 @@ def main():
         ambos = g[(g.cajas_rgb > 0) & (g.cajas_termica > 0)]
         bloque = ambos.posicion // c["bloque_reparto_posiciones"]
         mitad = pd.Series(np.where(bloque % 2 == 0, "calibración", "evaluación"), index=ambos.index)
-        leidos = {r.posicion: (r.posicion, cajas_px((D / r.ruta_rgb).with_suffix(".txt"), tam_rgb),
-                               cajas_px((D / r.ruta_termica).with_suffix(".txt"), tam_ter)) for r in ambos.itertuples()}
+        leidos = {r.posicion: (r.posicion, cajas_px_sin_repetidas((D / r.ruta_rgb).with_suffix(".txt"), tam_rgb),
+                               cajas_px_sin_repetidas((D / r.ruta_termica).with_suffix(".txt"), tam_ter)) for r in ambos.itertuples()}
         cal = [leidos[p] for p in mitad.index[mitad == "calibración"]]
         ev = [leidos[p] for p in mitad.index[mitad == "evaluación"]]
 

@@ -23,11 +23,11 @@ class DatasetSinRGB(YOLODataset):
     p_sin_rgb = 0.0
 
     def load_image(self, i, rect_mode=True, resize_short=False):
-        im, hw0, hw = super().load_image(i, rect_mode, resize_short)
+        imagen, hw0, hw = super().load_image(i, rect_mode, resize_short)
         if self.p_sin_rgb >= 1 or (self.p_sin_rgb > 0 and random.random() < self.p_sin_rgb):
-            im = im.copy()  # el original puede estar en el búfer del mosaico
-            im[..., :3] = 0
-        return im, hw0, hw
+            imagen = imagen.copy()  # el original puede estar en el búfer del mosaico
+            imagen[..., :3] = 0
+        return imagen, hw0, hw
 
 
 def quitar_rgb(dataset, p):

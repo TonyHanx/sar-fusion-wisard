@@ -21,13 +21,13 @@ import pandas as pd
 import yaml
 
 from src.comun import RAIZ, leer_rutas, leer_yaml
-from src.alineacion.semejanza_por_vuelo import cajas_llevadas, cajas_px, centros
+from src.cajas import cajas_llevadas, cajas_px_sin_repetidas, centros
 
 
 def personas_del_par(par, dataset, H, tam_rgb, tam_ter, radio):
     """Cajas térmicas sin repetidas del par y, para cada una, si tiene una caja RGB llevada cerca."""
-    ct = cajas_px((dataset / par.ruta_termica).with_suffix(".txt"), tam_ter)
-    cr = cajas_px((dataset / par.ruta_rgb).with_suffix(".txt"), tam_rgb)
+    ct = cajas_px_sin_repetidas((dataset / par.ruta_termica).with_suffix(".txt"), tam_ter)
+    cr = cajas_px_sin_repetidas((dataset / par.ruta_rgb).with_suffix(".txt"), tam_rgb)
     if not len(ct):
         return 0, 0
     if not len(cr):

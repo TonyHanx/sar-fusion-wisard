@@ -38,20 +38,20 @@ import pandas as pd  # noqa: E402
 from matplotlib.lines import Line2D  # noqa: E402
 from statsmodels.stats.contingency_tables import mcnemar  # noqa: E402
 
-import src.evaluacion.evaluar as e6  # noqa: E402
+import src.evaluacion.evaluar as evaluar_fase6  # noqa: E402
 from src.comun import RAIZ, agregar_a_bitacora, fijar_semilla, leer_rutas, leer_yaml  # noqa: E402
 
 PARTICION = "validacion"
-METRICAS = e6.METRICAS
+METRICAS = evaluar_fase6.METRICAS
 COLOR = {"fusion": "#2a78d6", "termico": "#1baf7a"}  # los de configs/fase6.yaml
 
 
 def ruta(p):
-    return e6.ruta(p)
+    return evaluar_fase6.ruta(p)
 
 
 def rel(p):
-    return e6.rel(p)
+    return evaluar_fase6.rel(p)
 
 
 def clave(nombre, peso):
@@ -102,15 +102,15 @@ def elegir_umbrales(cfg, modelos, preds, datos, ev):
     """Por cada modelo con la RGB real, el umbral de mayor F2 (todas las personas, todos los fotogramas)."""
     u = cfg["c4"]["umbral"]
     rejilla = np.round(np.arange(u["desde"], u["hasta"] + u["paso"] / 2, u["paso"]), 2)
-    gt = e6.coco_gt(datos, np.zeros(len(datos["per"]), bool))
+    gt = evaluar_fase6.coco_gt(datos, np.zeros(len(datos["per"]), bool))
     filas, umbral = [], {}
     for k, info in modelos.items():
         if info["rgb0"]:
             continue
-        dt = e6.coco_dt(gt, preds[k], datos, ev["max_dets"])
+        dt = evaluar_fase6.coco_dt(gt, preds[k], datos, ev["max_dets"])
         mejor = None
         for t in rejilla:
-            r = e6.evaluar(gt, dt, datos["fot"].img_id, datos, {**ev, "conf": float(t)})
+            r = evaluar_fase6.evaluar(gt, dt, datos["fot"].img_id, datos, {**ev, "conf": float(t)})
             p = r["punto"]
             f2 = round(float(p["f2"]), 12) if not np.isnan(p["f2"]) else -1.0
             filas.append({"modelo": k, "umbral": float(t), "f2": p["f2"], "recall": p["recall"],
@@ -202,8 +202,8 @@ def main():
     part = base["particiones"][PARTICION]
     modelos = armar_modelos(cfg)
 
-    datos = e6.preparar(base, rutas, PARTICION, modelos)
-    e6.verificar(datos, PARTICION)
+    datos = evaluar_fase6.preparar(base, rutas, PARTICION, modelos)
+    evaluar_fase6.verificar(datos, PARTICION)
     per = datos["per"]
     if not args.solo_predecir:
         per["dudosa"] = per.nivel == "sin_nivel"  # "no es persona": sin nivel, caja dudosa (como en la prueba)
@@ -211,7 +211,7 @@ def main():
 
     preds, ultra = {}, {}
     for k, info in modelos.items():
-        preds[k], ultra[k] = e6.predecir(info["pred"], info, base, rutas, PARTICION, part, rgb_cero=info["rgb0"])
+        preds[k], ultra[k] = evaluar_fase6.predecir(info["pred"], info, base, rutas, PARTICION, part, rgb_cero=info["rgb0"])
         print(f"{k}: {len(preds[k])} predicciones; Ultralytics: mAP@0.5 {ultra[k].get('map50', float('nan')):.4f}")
     if args.solo_predecir:
         for k, info in modelos.items():
@@ -242,20 +242,20 @@ def main():
             cuenta = pd.Series(True, index=per.index) if sc["personas"] == "todas" else (per.nivel == sc["personas"])
             if dud == "sin":
                 cuenta &= ~per.dudosa
-            gt = e6.coco_gt(datos, ~cuenta.to_numpy())
+            gt = evaluar_fase6.coco_gt(datos, ~cuenta.to_numpy())
             boot = {}
             for k, info in modelos.items():
-                dt = e6.coco_dt(gt, preds[k], datos, ev["max_dets"])
-                r = e6.evaluar(gt, dt, datos["fot"].img_id, datos, {**ev, "conf": umbral[k]})
+                dt = evaluar_fase6.coco_dt(gt, preds[k], datos, ev["max_dets"])
+                r = evaluar_fase6.evaluar(gt, dt, datos["fot"].img_id, datos, {**ev, "conf": umbral[k]})
                 evals[(sc["nombre"], dud, k)] = r
-                boot[k] = e6.bootstrap(r, cuentas_b)
+                boot[k] = evaluar_fase6.bootstrap(r, cuentas_b)
                 fila = {"particion": PARTICION, "subconjunto": sc["nombre"], "dudosas": dud, "tipo": "modelo",
                         "modelo": k, "corrida": info["corrida"], "peso": info["peso"], "rgb_cero": info["rgb0"],
                         "umbral": umbral[k], "n_fotogramas": r["n_fotogramas"], "n_personas": r["n_personas"],
                         "tp": r["tp_conf"], "fp": r["fp_conf"], "fn": r["n_personas"] - r["tp_conf"]}
                 for mt in METRICAS:
                     fila[mt] = r["punto"][mt]
-                    fila[f"{mt}_ic_inf"], fila[f"{mt}_ic_sup"] = e6.intervalo(boot[k][mt], conf_ic)
+                    fila[f"{mt}_ic_inf"], fila[f"{mt}_ic_sup"] = evaluar_fase6.intervalo(boot[k][mt], conf_ic)
                 fila["remuestreos"] = B
                 fila["remuestreos_sin_valor"] = int(max(np.isnan(boot[k][mt]).sum() for mt in METRICAS))
                 filas.append(fila)
@@ -267,7 +267,7 @@ def main():
                             "n_personas": evals[(sc["nombre"], dud, a)]["n_personas"]}
                     for mt in METRICAS:
                         fila[mt] = evals[(sc["nombre"], dud, a)]["punto"][mt] - evals[(sc["nombre"], dud, b)]["punto"][mt]
-                        fila[f"{mt}_ic_inf"], fila[f"{mt}_ic_sup"] = e6.intervalo(boot[a][mt] - boot[b][mt], conf_ic)
+                        fila[f"{mt}_ic_inf"], fila[f"{mt}_ic_sup"] = evaluar_fase6.intervalo(boot[a][mt] - boot[b][mt], conf_ic)
                     fila["remuestreos"] = B
                     fila["remuestreos_sin_valor"] = int(max(np.isnan(boot[a][mt] - boot[b][mt]).sum() for mt in METRICAS))
                     filas.append(fila)

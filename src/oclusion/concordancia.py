@@ -63,7 +63,7 @@ import pandas as pd
 import yaml
 
 from src.comun import RAIZ, agregar_a_bitacora, leer_rutas, leer_yaml
-from src.oclusion.oclusion_auto import NIVELES, _ascii, hashlib_md5, nivel, revisar
+from src.oclusion.oclusion_auto import NIVELES, texto_ascii, md5_de_archivo, nivel, revisar
 
 PARTES = ["comparar", "no_es_persona", "fondo", "entre_anotadores"]
 NOMBRE_ANOTADOR = {"primero": "primer", "segundo": "segundo"}
@@ -182,7 +182,7 @@ def no_es_persona(cfg, rutas, carpeta):
     with tempfile.TemporaryDirectory() as tmp:  # la herramienta trabaja sobre una copia: no toca las anotaciones
         copia = Path(tmp) / "oclusion.csv"
         shutil.copy(rutas["data"] / o["anotaciones"], copia)
-        huella = hashlib_md5(copia)
+        huella = md5_de_archivo(copia)
         an = crear_anotador(cfg, rutas, segundo=False, salida=copia, muestra=True)
         for i, f in sel.iterrows():
             an.i = an.ids.index(i)
@@ -220,7 +220,7 @@ def no_es_persona(cfg, rutas, carpeta):
                                                                  f"caja RGB a {ad.rgb_dist_alturas:.2f} alturas")
                      + (f" | {motivo}" if motivo else ""))
             rot = np.full((30, fila.shape[1], 3), 255, np.uint8)
-            cv2.putText(rot, _ascii(texto)[:170], (6, 21), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 0, 0), 1, cv2.LINE_AA)
+            cv2.putText(rot, texto_ascii(texto)[:170], (6, 21), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 0, 0), 1, cv2.LINE_AA)
             losetas.append(np.vstack([rot, fila]))
             filas.append({"n_muestra": int(f.n_muestra), "id": i, "posicion": int(p.posicion),
                           "indice_caja": int(p.indice_caja), "cajas_en_fotograma": int(p.cajas_en_fotograma),
@@ -228,7 +228,7 @@ def no_es_persona(cfg, rutas, carpeta):
                           "rgb_estado_manual": f.rgb_estado, "termica_estado_manual": f.termica_estado,
                           "sin_caja_rgb_cerca": bool(ad.sin_caja_rgb_cerca), "rgb_dist_alturas": ad.rgb_dist_alturas,
                           "nivel_auto_dos": "severa" if ad.sin_caja_rgb_cerca else "baja", "motivo": motivo})
-        if hashlib_md5(copia) != huella:
+        if md5_de_archivo(copia) != huella:
             raise SystemExit("El mosaico cambió la copia de las anotaciones: revisar el código")
     ancho = losetas[0].shape[1]
     cab = np.full((30, ancho, 3), 255, np.uint8)

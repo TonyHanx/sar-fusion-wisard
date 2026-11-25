@@ -17,11 +17,11 @@ import argparse
 import numpy as np
 import pandas as pd
 
-import src.evaluacion.evaluar as e6
-import src.evaluacion.c4_evaluar_validacion as c4e
+import src.evaluacion.evaluar as evaluar_fase6
+import src.evaluacion.c4_evaluar_validacion as c4_evaluar
 from src.comun import agregar_a_bitacora, leer_rutas, leer_yaml
 
-PARTICION = c4e.PARTICION
+PARTICION = c4_evaluar.PARTICION
 
 
 def corto(vuelo):
@@ -38,14 +38,14 @@ def main():
     cfg = leer_yaml(args.config)
     rutas = leer_rutas(args.rutas)
     c4 = cfg["c4"]
-    base = c4e.config_base(cfg, rutas, con_nivel=True)
+    base = c4_evaluar.config_base(cfg, rutas, con_nivel=True)
     part = base["particiones"][PARTICION]
     ev = base["evaluacion"]
-    modelos = c4e.armar_modelos(cfg)
-    salidas = c4e.ruta(c4["salidas"])
+    modelos = c4_evaluar.armar_modelos(cfg)
+    salidas = c4_evaluar.ruta(c4["salidas"])
 
-    datos = e6.preparar(base, rutas, PARTICION, modelos)
-    e6.verificar(datos, PARTICION)
+    datos = evaluar_fase6.preparar(base, rutas, PARTICION, modelos)
+    evaluar_fase6.verificar(datos, PARTICION)
     per, fot, nb = datos["per"], datos["fot"], datos["nb"]
     per["dudosa"] = per.nivel == "sin_nivel"
     per["vuelo_corto"] = per.vuelo.map(corto)
@@ -83,15 +83,15 @@ def main():
     alto.round(1).reset_index().to_csv(salidas / "alto_por_nivel.csv", index=False)
 
     # detectadas por persona, con el umbral de cada modelo
-    preds = {k: e6.predecir(info["pred"], info, base, rutas, PARTICION, part, rgb_cero=info["rgb0"])[0]
+    preds = {k: evaluar_fase6.predecir(info["pred"], info, base, rutas, PARTICION, part, rgb_cero=info["rgb0"])[0]
              for k, info in modelos.items()}
     det = {}
     for nivel in ("todas", "baja", "severa"):
         cuenta = ~per.dudosa if nivel == "todas" else (per.nivel == nivel)
-        gt = e6.coco_gt(datos, ~cuenta.to_numpy())
+        gt = evaluar_fase6.coco_gt(datos, ~cuenta.to_numpy())
         for k in modelos:
-            dt = e6.coco_dt(gt, preds[k], datos, ev["max_dets"])
-            r = e6.evaluar(gt, dt, fot.img_id, datos, {**ev, "conf": umbral[k]})
+            dt = evaluar_fase6.coco_dt(gt, preds[k], datos, ev["max_dets"])
+            r = evaluar_fase6.evaluar(gt, dt, fot.img_id, datos, {**ev, "conf": umbral[k]})
             det[(nivel, k)] = pd.Series(r["detectada"])
 
     pg = per.set_index("gt_id")
@@ -107,7 +107,7 @@ def main():
 
     filas = []
     for a0, b0 in c4["pares"]:
-        a, b = c4e.clave(a0, c4["principal"]), c4e.clave(b0, c4["principal"])
+        a, b = c4_evaluar.clave(a0, c4["principal"]), c4_evaluar.clave(b0, c4["principal"])
         for nivel in ("todas", "baja", "severa"):
             da, db = det[(nivel, a)], det[(nivel, b)]
             s = pg.loc[da.index].assign(sa=(da & ~db.loc[da.index]).to_numpy(), sb=(db.loc[da.index] & ~da).to_numpy())
@@ -132,7 +132,7 @@ def main():
     agregar_a_bitacora(rutas["bitacora"], cfg["fase_bitacora"], "YOLO26s (12 modelos de C4)",
                        f"C4, desglose descriptivo en validación (scripts/fase7_c4_desglose.py): por vuelo y por bloque "
                        f"del bootstrap, con los umbrales de umbrales.csv; sin pruebas nuevas; salidas en "
-                       f"{c4e.rel(salidas)}",
+                       f"{c4_evaluar.rel(salidas)}",
                        f"{nb} bloques; el más grande ({grande.vuelo}, bloque {grande.bloque}) tiene "
                        f"{int(grande.personas_sin_dudosas)} de {int(bl.personas_sin_dudosas.sum())} personas y falta en "
                        f"{sin_grande:.1%} de los remuestreos; recall last.pt por vuelo en recall_por_vuelo.csv")
