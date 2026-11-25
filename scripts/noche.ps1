@@ -40,6 +40,11 @@ function Leer-Yaml([string]$ruta) {
     return (($json -join "`n") | ConvertFrom-Json)
 }
 
+function Modulo([string]$ruta) {
+    # src/entrenamiento/entrenar.py -> src.entrenamiento.entrenar, para correrlo con `python -m` desde la raíz
+    return ($ruta -replace '\.py$', '') -replace '[\\/]', '.'
+}
+
 $cfg = Leer-Yaml $Config
 $rutasCfg = Leer-Yaml $cfg.rutas
 $cfg5 = Leer-Yaml $cfg.entrenar.config
@@ -167,7 +172,7 @@ function Entrenar([string]$corrida) {
     $paso = "entrenar_$corrida"
     for ($intento = 0; $intento -le $max; $intento++) {
         Anotar "Entrenando $corrida (intento $($intento + 1)). Salida completa en $($cfg.pasos)/$paso.log."
-        $c = Correr $paso "$python $($cfg.entrenar.script) --config $($cfg.entrenar.config) --rutas $($cfg.rutas) --corrida $corrida"
+        $c = Correr $paso "$python -m $(Modulo $cfg.entrenar.script) --config $($cfg.entrenar.config) --rutas $($cfg.rutas) --corrida $corrida"
         $pot = Select-String -LiteralPath (Join-Path $dirPasos "$paso.log") -Pattern '^Potencia:' -Encoding UTF8 |
             Select-Object -Last 1 | ForEach-Object { $_.Line }
         if ($c -eq 0) { return (Resumir-Corrida $corrida) }
@@ -256,7 +261,7 @@ function Prueba-En-Seco {
     }
 
     # 3. datos de la prueba (sin predecir)
-    $c = Correr 'seco_evaluar' "$python $($cfg.evaluar.script) --config $($cfg.evaluar.config) --rutas $($cfg.rutas) --particion $($cfg.evaluar.particion) --solo-verificar"
+    $c = Correr 'seco_evaluar' "$python -m $(Modulo $cfg.evaluar.script) --config $($cfg.evaluar.config) --rutas $($cfg.rutas) --particion $($cfg.evaluar.particion) --solo-verificar"
     if ($c -ne 0) { $problemas.Add("evaluar.py --solo-verificar falló (código $c): $(Motivo 'seco_evaluar')") }
     $ver = Select-String -LiteralPath (Join-Path $dirPasos 'seco_evaluar.log') -Pattern '^Partición' -Encoding UTF8 |
         Select-Object -Last 1 | ForEach-Object { $_.Line }
@@ -264,7 +269,7 @@ function Prueba-En-Seco {
 
     # 4. aplicaciones y potencia (30 s con la GPU cargada)
     $primera = @($cfg.entrenar.corridas)[0]
-    $c = Correr 'seco_entrenar' "$python $($cfg.entrenar.script) --config $($cfg.entrenar.config) --rutas $($cfg.rutas) --corrida $primera --solo-comprobar"
+    $c = Correr 'seco_entrenar' "$python -m $(Modulo $cfg.entrenar.script) --config $($cfg.entrenar.config) --rutas $($cfg.rutas) --corrida $primera --solo-comprobar"
     $pot = Select-String -LiteralPath (Join-Path $dirPasos 'seco_entrenar.log') -Pattern '^Potencia:' -Encoding UTF8 |
         Select-Object -Last 1 | ForEach-Object { $_.Line }
     if ($c -ne 0) {
@@ -309,7 +314,7 @@ foreach ($c in $cfg.entrenar.corridas) {
     try { $ok[$c] = [bool](Entrenar $c) } catch { Anotar "Error inesperado entrenando ${c}: $_"; $ok[$c] = $false }
     try {
         if ($ok[$c]) {
-            $k = Correr "copiar_$c" "$python $($cfg.entrenar.copiar) --config $($cfg.entrenar.config) --rutas $($cfg.rutas) --corrida $c"
+            $k = Correr "copiar_$c" "$python -m $(Modulo $cfg.entrenar.copiar) --config $($cfg.entrenar.config) --rutas $($cfg.rutas) --corrida $c"
             if ($k -ne 0) { Anotar "No se pudieron copiar los archivos de $c (código $k): $(Motivo "copiar_$c")" }
             Guardar "Fase 5b: $c, 100 épocas (noche)" @("$($cfg.entrenar.carpeta_reports)/$c", $bitacora, $cfg.log)
         } else {
@@ -326,7 +331,7 @@ foreach ($c in $cfg.entrenar.corridas) { if (-not $ok[$c]) { $faltan += $c } }
 
 if ($faltan.Count -eq 0) {
     try {
-        $k = Correr 'resumen_5b' "$python $($cfg.entrenar.resumen) --config $($cfg.entrenar.config) --rutas $($cfg.rutas)"
+        $k = Correr 'resumen_5b' "$python -m $(Modulo $cfg.entrenar.resumen) --config $($cfg.entrenar.config) --rutas $($cfg.rutas)"
         if ($k -eq 0) { Anotar "Curvas y tabla de los tres modelos en $($cfg.entrenar.carpeta_reports)/." }
         else { Anotar "No se pudieron hacer las curvas de los tres (código $k): $(Motivo 'resumen_5b')" }
         Guardar 'Fase 5b: curvas y tabla de los tres modelos (noche)' @($cfg.entrenar.carpeta_reports, $cfg.log)
@@ -334,7 +339,7 @@ if ($faltan.Count -eq 0) {
         # 3. solo predicciones crudas (sin métricas): los umbrales se fijan mañana en validación (CLAUDE.md)
         foreach ($pp in $cfg.evaluar.predecir) {
             Anotar "Guardando las predicciones crudas de $pp con los tres modelos (sin métricas). Salida completa en $($cfg.pasos)/predecir_$pp.log."
-            $k = Correr "predecir_$pp" "$python $($cfg.evaluar.script) --config $($cfg.evaluar.config) --rutas $($cfg.rutas) --particion $pp --solo-predecir"
+            $k = Correr "predecir_$pp" "$python -m $(Modulo $cfg.evaluar.script) --config $($cfg.evaluar.config) --rutas $($cfg.rutas) --particion $pp --solo-predecir"
             if ($k -eq 0) { Anotar "Predicciones de $pp guardadas en $($rutasCfg.runs)/$($cfg6.carpeta)/$pp/<modelo>/predictions.json." }
             else { Anotar "FALLO al predecir $pp (código $k): $(Motivo "predecir_$pp")" }
         }

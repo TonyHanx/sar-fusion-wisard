@@ -12,18 +12,18 @@ log_seco: runs/noche/seco_log.txt       # la prueba en seco (fuera de git)
 pasos: runs/noche                       # salida completa de cada comando (fuera de git)
 
 entrenar:
-  script: scripts/entrenar.py
+  script: src/entrenamiento/entrenar.py
   config: configs/fase5.yaml            # misma configuración que fusion_100ep (base de fase5.yaml)
   corridas: [rgb_100ep, termico_100ep]  # en este orden
   ya_entrenadas: [fusion_100ep]         # tienen que tener resumen.json para evaluar
   reintentos_potencia: 3                # si falla la comprobación de potencia, espera y reintenta hasta 3 veces
   espera_reintento_s: 300
-  copiar: scripts/fase5b_copiar.py      # archivos de cada corrida a reports/fase5b/<corrida>/
-  resumen: scripts/fase5b_resumen.py    # curvas y tabla de los tres (solo lee las corridas), si los tres terminaron
+  copiar: src/utilidades/copiar_fase5b.py   # archivos de cada corrida a reports/fase5b/<corrida>/
+  resumen: src/entrenamiento/resumen_fase5b.py   # curvas y tabla de los tres (solo lee las corridas), si los tres terminaron
   carpeta_reports: reports/fase5b
 
 evaluar:
-  script: scripts/evaluar.py
+  script: src/evaluacion/evaluar.py
   config: configs/fase6.yaml            # salidas en particiones.prueba.salidas; predicciones en runs/<carpeta>/prueba
   particion: prueba                     # la prueba en seco verifica sus datos y que no existan sus predicciones
   predecir: [validacion, prueba]        # solo predicciones crudas (evaluar.py --solo-predecir); ninguna métrica
