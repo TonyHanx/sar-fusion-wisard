@@ -1,14 +1,29 @@
-# Datos y salidas pesadas
+# Datos y salidas pesadas (se regeneran con los scripts; ver ESTRUCTURA.md, "De dónde salen los datos")
 data/
 runs/
+weights/
 *.pt
+*.onnx
+*.engine
 *.tif
 *.tiff
+*.cache
+
+# El dataset WiSARD va fuera del repositorio (configs/rutas.yaml). Si alguien lo copia aquí, no se sube.
+/WiSARDv1/
+/WiSARD*/
+*.zip
 
 # Entorno de Python
 .venv/
 __pycache__/
 *.pyc
+.ipynb_checkpoints/
+
+# Editores y herramientas
+.vscode/
+.idea/
+.claude/settings.local.json
 
 # Sistema
 .DS_Store

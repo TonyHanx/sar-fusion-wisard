@@ -37,7 +37,7 @@ import pandas as pd
 import yaml
 
 from src.oclusion.anotar_oclusion import CAJA_WISARD, GRIS, OTRAS, AnotadorSimple
-from src.comun import RAIZ, agregar_a_bitacora, leer_rutas, leer_yaml
+from src.comun import RAIZ, agregar_a_bitacora, leer_rutas, leer_yaml, ruta_del_dataset
 from src.alineacion.semejanza_por_vuelo import cajas_llevadas, centros
 from src.oclusion.oclusion_auto import cajas_px
 
@@ -73,7 +73,7 @@ def preparar(cfg, rutas):
     W, H = base["evaluacion"]["tam_imagen"]
     primera = c4["corridas"][0]
     datos = leer_yaml(ruta(cfg["c3"]["corridas"][primera]["datos"]))
-    d_lab = Path(datos["path"]) / "labels" / part["split"]
+    d_lab = ruta_del_dataset(datos) / "labels" / part["split"]
     stems = sorted(p.stem for p in d_lab.glob("*.txt"))
     indice = pd.read_csv(rutas["data"] / herr["datasets"]["alineados"] / "indice.csv").set_index(["vuelo", "posicion"])
     etq = rutas["data"] / herr["datasets"]["etiquetas"] / "termica"

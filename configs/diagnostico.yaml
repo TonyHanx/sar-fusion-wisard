@@ -85,7 +85,7 @@ evaluar_b:
 
 base:
   fase: diagnostico
-  pesos: yolo26s.pt
+  pesos: weights/yolo26s.pt
   datos: configs/termico.yaml
   carpeta: diagnostico
   inicio_cuarto_canal: azar          # no aplica: 3 canales

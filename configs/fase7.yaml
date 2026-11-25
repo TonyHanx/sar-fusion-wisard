@@ -255,7 +255,7 @@ c2:
 # C3: corridas, en este orden (scripts/fase7_entrenar.py --corrida NOMBRE). Cada una toma `base` y cambia lo que dice.
 c3:
   carpeta: fase7                     # runs/fase7/<corrida>/
-  pesos: yolo26s.pt
+  pesos: weights/yolo26s.pt
   # potencia, cerrar_antes, codigos_salida, monitor y memoria: las mismas comprobaciones que en la fase 5
   comprobaciones: configs/fase5.yaml
   # Cifra principal de cada corrida en C4: la última época y el promedio de las `ultimas_epocas` últimas de results.csv;

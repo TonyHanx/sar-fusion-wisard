@@ -31,7 +31,7 @@ import numpy as np
 import pandas as pd
 from PIL import Image, ImageDraw, ImageFont
 
-from src.comun import RAIZ, agregar_a_bitacora, leer_rutas, leer_yaml
+from src.comun import RAIZ, agregar_a_bitacora, leer_rutas, leer_yaml, ruta_del_dataset
 
 TRAMOS_ETIQUETA = None  # se fija con la configuración
 
@@ -105,7 +105,7 @@ def cajas_txt(p, W, H):
 
 def dataset_yaml(datos):
     d = leer_yaml(ruta(datos))
-    return Path(d["path"]), d
+    return ruta_del_dataset(d), d
 
 
 # ------------------------------------------------------------------------------------------------------------- A1

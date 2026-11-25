@@ -26,6 +26,14 @@ def leer_rutas(ruta):
     return {k: (RAIZ / v if not Path(v).is_absolute() else Path(v)) for k, v in leer_yaml(ruta).items()}
 
 
+def ruta_del_dataset(datos):
+    """Carpeta raíz de un dataset de Ultralytics (la clave `path` de su yaml), como ruta absoluta.
+
+    Los yaml guardan `path` relativo a la raíz del repositorio, para que no dependan de la laptop."""
+    p = Path(datos["path"])
+    return p if p.is_absolute() else RAIZ / p
+
+
 def fijar_semilla(seed):
     random.seed(seed)
     np.random.seed(seed)

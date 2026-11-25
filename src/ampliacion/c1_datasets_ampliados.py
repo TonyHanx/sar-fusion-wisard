@@ -92,8 +92,8 @@ def componer(cfg, rutas, out):
 
     # base: el entrenamiento actual (mismas imágenes en termico y fusion)
     base = leer_yaml(ruta(c["base"]["termico"]))
-    lab = Path(base["path"]) / "labels" / "train"
-    img = sorted((Path(base["path"]) / base["train"]).iterdir())
+    lab = ruta(base["path"]) / "labels" / "train"
+    img = sorted((ruta(base["path"]) / base["train"]).iterdir())
     filas_base = []
     for f in img:
         lados = lados_txt(lab / f"{f.stem}.txt", tam)
@@ -323,7 +323,7 @@ def construir(cfg, rutas, out):
     filas_real, resumen = [], []
     for modelo, nombre in k["nombres"].items():
         b = leer_yaml(ruta(c["base"][modelo]))
-        bp = Path(b["path"])
+        bp = ruta(b["path"])
         ds = raiz / "datasets" / nombre
         vaciar(ds, data)
         for split in ("train", "val"):
@@ -350,7 +350,7 @@ def construir(cfg, rutas, out):
             f"configs/fase7.yaml: no editar a mano.\n"
             f"# Entrenamiento: el de {c['base'][modelo]} más las imágenes nuevas de runs/{cfg['carpeta']}/c1/composicion.csv. "
             f"Validación: la de siempre.\n"
-            + yaml.safe_dump({"path": ds.as_posix(), "train": "images/train", "val": "images/val",
+            + yaml.safe_dump({"path": ds.resolve().relative_to(RAIZ).as_posix(), "train": "images/train", "val": "images/val",
                               "channels": b["channels"], "names": b["names"]}, allow_unicode=True, sort_keys=False),
             encoding="utf-8")
         n = {s: len(list((ds / "images" / s).iterdir())) for s in ("train", "val")}
@@ -372,7 +372,7 @@ def construir(cfg, rutas, out):
     for fila in resumen:
         y = leer_yaml(fila["yaml"])
         for split in ("train", "val"):
-            ds = YOLODataset(img_path=str(Path(y["path"]) / y[split]), imgsz=max(tw, th), augment=False,
+            ds = YOLODataset(img_path=str(ruta(y["path"]) / y[split]), imgsz=max(tw, th), augment=False,
                              data={"names": y["names"], "nc": len(y["names"]), "channels": y["channels"]},
                              task="detect")
             fila[f"cajas_{split}"] = int(sum(len(l["cls"]) for l in ds.labels))

@@ -46,7 +46,8 @@ from pycocotools.coco import COCO  # noqa: E402
 from pycocotools.cocoeval import COCOeval  # noqa: E402
 from statsmodels.stats.contingency_tables import mcnemar  # noqa: E402
 
-from src.comun import RAIZ, agregar_a_bitacora, fijar_semilla, leer_rutas, leer_yaml, pares_anotados  # noqa: E402
+from src.comun import (RAIZ, agregar_a_bitacora, fijar_semilla, leer_rutas, leer_yaml, pares_anotados,  # noqa: E402
+                       ruta_del_dataset)
 
 METRICAS = ["recall", "precision", "f2", "map50"]
 SUFIJO_RGB_CERO = "_rgb0"  # carpeta de predicciones y sufijo de las salidas con --rgb-cero
@@ -117,7 +118,7 @@ def preparar(cfg, rutas, nombre_part, modelos):
     W, H = ev["tam_imagen"]
     stems, txt = None, {}
     for m, info in modelos.items():
-        d = Path(leer_yaml(ruta(info["datos"]))["path"]) / "labels" / part["split"]
+        d = ruta_del_dataset(leer_yaml(ruta(info["datos"]))) / "labels" / part["split"]
         s = sorted(p.stem for p in d.glob("*.txt"))
         if stems is None:
             stems = s

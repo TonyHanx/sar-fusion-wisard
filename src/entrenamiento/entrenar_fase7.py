@@ -39,7 +39,7 @@ from ultralytics import YOLO
 from ultralytics.data.dataset import YOLODataset
 
 import src.entrenamiento.entrenar as en
-from src.comun import RAIZ, agregar_a_bitacora, leer_rutas, leer_yaml
+from src.comun import RAIZ, agregar_a_bitacora, leer_rutas, leer_yaml, ruta_del_dataset
 from src.entrenamiento.dropout_modalidad import DatasetSinRGB, quitar_rgb
 
 CLAVES = ["metrics/precision(B)", "metrics/recall(B)", "metrics/mAP50(B)", "metrics/mAP50-95(B)"]
@@ -122,7 +122,7 @@ def comprobar_datos(datos_yaml, cfg):
     pro = prohibidos(cfg)
     malos = []
     for split in ("train", "val"):
-        for f in (Path(d["path"]) / d[split]).iterdir():
+        for f in (ruta_del_dataset(d) / d[split]).iterdir():
             if any(x in f.stem for x in pro):
                 malos.append(f"{split}/{f.name}")
     if malos:

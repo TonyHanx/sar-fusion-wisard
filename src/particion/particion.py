@@ -181,7 +181,7 @@ def main():
             enlazar(alineados / img, base / "images" / d / img.name, c["enlace"])
             enlazar(etq / "termica" / f.vuelo / f"{f.vuelo}_{f.posicion:04d}.txt",
                     base / "labels" / d / f"{img.stem}.txt", c["enlace"])
-        contenido = {"path": base.resolve().as_posix(), **{d: f"images/{d}" for d in divisiones.values()},
+        contenido = {"path": base.resolve().relative_to(RAIZ).as_posix(), **{d: f"images/{d}" for d in divisiones.values()},
                      "channels": m["channels"], "names": c["nombres"]}
         rutas_yaml[modelo] = RAIZ / m["yaml"]
         rutas_yaml[modelo].write_text(
