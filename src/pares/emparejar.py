@@ -71,7 +71,7 @@ def parejas_de_carpetas(carpetas):
 
 def main():
     """Arma data/pares.csv con todos los pares RGB y térmica, marca los anotados y los excluidos de configs/fase1.yaml,
-    y escribe el resumen de la fase 1."""
+    escribe la tabla por vuelo y comprueba los totales esperados (sale con 1 si no coinciden)."""
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", required=True)
     ap.add_argument("--rutas", required=True)

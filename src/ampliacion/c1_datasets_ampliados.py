@@ -285,7 +285,7 @@ def construir(cfg, rutas, out):
     duros y los verifica."""
     import yaml
 
-    from src.comun import agregar_a_bitacora, leer_yaml
+    from src.comun import agregar_a_bitacora, leer_yaml, ruta_para_yaml
 
     c = cfg["c1"]
     k = c["construir"]
@@ -361,7 +361,7 @@ def construir(cfg, rutas, out):
             f"configs/fase7.yaml: no editar a mano.\n"
             f"# Entrenamiento: el de {c['base'][modelo]} más las imágenes nuevas de runs/{cfg['carpeta']}/c1/composicion.csv. "
             f"Validación: la de siempre.\n"
-            + yaml.safe_dump({"path": ds.resolve().relative_to(RAIZ).as_posix(), "train": "images/train", "val": "images/val",
+            + yaml.safe_dump({"path": ruta_para_yaml(ds), "train": "images/train", "val": "images/val",
                               "channels": b["channels"], "names": b["names"]}, allow_unicode=True, sort_keys=False),
             encoding="utf-8")
         n = {s: len(list((ds / "images" / s).iterdir())) for s in ("train", "val")}
@@ -407,7 +407,7 @@ def construir(cfg, rutas, out):
     ver = pd.DataFrame(filas_v)
     ver.to_csv(out / "c1" / "verificacion.csv", index=False)
     res = pd.DataFrame(resumen)
-    res["yaml"] = res.yaml.map(lambda p: Path(p).relative_to(RAIZ).as_posix())
+    res["yaml"] = res.yaml.map(ruta_para_yaml)
     res.to_csv(out / "c1" / "datasets.csv", index=False)
     print(md(res, 0))
     print(md(ver, 0))

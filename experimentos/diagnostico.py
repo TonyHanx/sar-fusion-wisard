@@ -14,6 +14,8 @@ Partes (--parte):
 - hoja (A5): 16 imágenes de validación al azar, anotadas en verde y predicciones en rojo, en la térmica y en la RGB.
 - b1_datos (B1): dataset de solo térmica con los 6 vuelos que no son FHL 0405, al azar por fotograma 60/20/20.
 - b_evaluar (B): model.val del best.pt de una corrida de diagnóstico en sus splits (B1: su prueba aleatoria).
+- b_por_vuelo (B): lo mismo, separado por vuelo.
+- copiar: copia las salidas livianas a reports/<copiar.destino>/ para git (sin los pesos).
 
 Uso: python -m experimentos.diagnostico --config configs/diagnostico.yaml --rutas configs/rutas.yaml --parte inventario
 """

@@ -9,13 +9,14 @@ Por cada carpeta IR de `c0.carpetas` (configs/fase7.yaml):
     cajas en verde, las predicciones en rojo, recortes ampliados de los candidatos y un gráfico por fotograma.
 
 Otras partes:
+  - ampliar: fotogramas completos de `c0.ampliaciones`, 2 por fila, con las cajas y las predicciones del detector;
   - alineacion: corrimiento del fondo de FHL 0403/0564/0566 con las semejanzas candidatas (`c0.alineacion`);
   - clasificar: aplica `c0.clasificacion` y cuenta fotogramas, personas y tramos de tamaño por carpeta y por sitio;
   - puntos: error de las semejanzas en los puntos marcados a mano con src/ampliacion/marcar_puntos_vuelos_nuevos.py.
 
 Uso:
   .venv\\Scripts\\python.exe -m src.ampliacion.c0_auditoria_termicas --config configs\\fase7.yaml --rutas configs\\rutas.yaml --parte auditar
-  (partes: auditar, alineacion, clasificar, puntos)
+  (partes: auditar, ampliar, alineacion, clasificar, puntos)
 Salidas en runs/<carpeta>/c0/<parte>/ (alineacion y puntos en c0/alineacion/).
 """
 import argparse

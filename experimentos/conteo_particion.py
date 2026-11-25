@@ -20,8 +20,9 @@ import numpy as np
 import pandas as pd
 import yaml
 
-from src.comun import RAIZ, leer_rutas, leer_yaml
 from src.cajas import cajas_llevadas, cajas_px_sin_repetidas, centros
+from src.comun import RAIZ, leer_rutas, leer_yaml
+from src.particion.particion import episodios
 
 
 def personas_del_par(par, dataset, H, tam_rgb, tam_ter, radio):
@@ -36,31 +37,6 @@ def personas_del_par(par, dataset, H, tam_rgb, tam_ter, radio):
     d = np.linalg.norm(centros(ct)[:, None, :] - rgb[None, :, :], axis=2).min(axis=1)
     alto = ct[:, 3] - ct[:, 1]
     return len(ct), int((d > radio * alto).sum())
-
-
-def episodios(estado):
-    """Tramos de posiciones seguidas con persona. `estado`: Serie indexada por posición (todas las posiciones del
-    vuelo) con 'persona', 'sin persona' o 'excluido'. Devuelve las longitudes estrictas (cualquier otro estado corta)
-    y las que se obtienen si 'excluido' no corta (los pares excluidos no se cuentan en la longitud)."""
-    estrictos, unidos = [], []
-    n = m = 0
-    for e in estado.to_numpy():
-        if e == "persona":
-            n += 1
-            m += 1
-        else:
-            if n:
-                estrictos.append(n)
-            n = 0
-            if e != "excluido":
-                if m:
-                    unidos.append(m)
-                m = 0
-    if n:
-        estrictos.append(n)
-    if m:
-        unidos.append(m)
-    return estrictos, unidos
 
 
 def main():

@@ -36,6 +36,14 @@ def ruta_del_dataset(datos):
     return p if p.is_absolute() else RAIZ / p
 
 
+def ruta_para_yaml(carpeta):
+    """La clave `path` que se escribe en el yaml de un dataset: relativa a la raíz del repositorio si la carpeta está
+    dentro (data/ por omisión), o absoluta si `data` de configs/rutas.yaml apunta fuera. Es la inversa de
+    ruta_del_dataset."""
+    p = Path(carpeta).resolve()
+    return (p.relative_to(RAIZ) if p.is_relative_to(RAIZ) else p).as_posix()
+
+
 def fijar_semilla(seed):
     """Fija la semilla de random, NumPy y PyTorch (CPU y GPU), para que lo aleatorio salga igual en cada corrida (seed=0
     en todo el proyecto)."""

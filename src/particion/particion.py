@@ -29,8 +29,7 @@ import numpy as np
 import pandas as pd
 import yaml
 
-from src.comun import RAIZ, agregar_a_bitacora, leer_rutas, leer_yaml, pares_anotados
-from experimentos.conteo_particion import episodios
+from src.comun import RAIZ, agregar_a_bitacora, leer_rutas, leer_yaml, pares_anotados, ruta_para_yaml
 
 RUTA_ETIQUETA = {"rgb": "ruta_rgb", "termica": "ruta_termica"}
 
@@ -124,6 +123,31 @@ def verificar(cfg_modelos, divisiones, salida, rutas_yaml, n, seed, alineados, i
     return pd.DataFrame(filas), pd.DataFrame(muestras)
 
 
+def episodios(estado):
+    """Tramos de posiciones seguidas con persona. `estado`: Serie indexada por posición (todas las posiciones del
+    vuelo) con 'persona', 'sin persona' o 'excluido'. Devuelve las longitudes estrictas (cualquier otro estado corta)
+    y las que se obtienen si 'excluido' no corta (los pares excluidos no se cuentan en la longitud)."""
+    estrictos, unidos = [], []
+    n = m = 0
+    for e in estado.to_numpy():
+        if e == "persona":
+            n += 1
+            m += 1
+        else:
+            if n:
+                estrictos.append(n)
+            n = 0
+            if e != "excluido":
+                if m:
+                    unidos.append(m)
+                m = 0
+    if n:
+        estrictos.append(n)
+    if m:
+        unidos.append(m)
+    return estrictos, unidos
+
+
 def main():
     """Escribe las etiquetas sin cajas repetidas y los datasets de Ultralytics de los tres modelos, con sus yaml, según
     la partición por vuelo."""
@@ -189,7 +213,7 @@ def main():
             enlazar(alineados / img, base / "images" / d / img.name, c["enlace"])
             enlazar(etq / "termica" / f.vuelo / f"{f.vuelo}_{f.posicion:04d}.txt",
                     base / "labels" / d / f"{img.stem}.txt", c["enlace"])
-        contenido = {"path": base.resolve().relative_to(RAIZ).as_posix(), **{d: f"images/{d}" for d in divisiones.values()},
+        contenido = {"path": ruta_para_yaml(base), **{d: f"images/{d}" for d in divisiones.values()},
                      "channels": m["channels"], "names": c["nombres"]}
         rutas_yaml[modelo] = RAIZ / m["yaml"]
         rutas_yaml[modelo].write_text(
