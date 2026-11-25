@@ -11,10 +11,10 @@ Por cada carpeta IR de `c0.carpetas` (configs/fase7.yaml):
 Otras partes:
   - alineacion: corrimiento del fondo de FHL 0403/0564/0566 con las semejanzas candidatas (`c0.alineacion`);
   - clasificar: aplica `c0.clasificacion` y cuenta fotogramas, personas y tramos de tamaño por carpeta y por sitio;
-  - puntos: error de las semejanzas en los puntos marcados a mano con scripts/fase7_marcar_puntos.py.
+  - puntos: error de las semejanzas en los puntos marcados a mano con src/ampliacion/marcar_puntos_vuelos_nuevos.py.
 
 Uso:
-  .venv\\Scripts\\python.exe scripts\\fase7_c0_auditoria.py --config configs\\fase7.yaml --rutas configs\\rutas.yaml --parte auditar
+  .venv\\Scripts\\python.exe -m src.ampliacion.c0_auditoria_termicas --config configs\\fase7.yaml --rutas configs\\rutas.yaml --parte auditar
   (partes: auditar, alineacion, clasificar, puntos)
 Salidas en runs/<carpeta>/c0/<parte>/ (alineacion y puntos en c0/alineacion/).
 """
@@ -32,22 +32,27 @@ VERDE, ROJO, AMARILLO, BLANCO = (0, 230, 0), (255, 40, 40), (255, 220, 0), (255,
 
 
 def ruta(p):
+    """Ruta absoluta: si es relativa, desde la raíz del repositorio."""
     p = Path(p)
     return p if p.is_absolute() else RAIZ / p
 
 
 def rel(p):
+    """Ruta relativa a la raíz del repositorio para mostrarla, o la ruta entera si está fuera."""
     p = Path(p)
     return p.relative_to(RAIZ).as_posix() if p.is_relative_to(RAIZ) else str(p)
 
 
 def comprobar_prohibidas(cfg, nombres):
+    """Se detiene si la configuración nombra alguna carpeta prohibida (las del vuelo de prueba), para que la prueba no
+    se use en la fase 7."""
     malas = sorted(set(nombres) & set(cfg["prohibidas"]))
     if malas:
         raise SystemExit(f"Carpetas prohibidas (FHL 0405) en la configuración: {malas}")
 
 
 def md(df, dec=3):
+    """Tabla de pandas como tabla de Markdown, con `dec` decimales en los números con coma."""
     cols = list(df.columns)
     filas = ["| " + " | ".join(map(str, cols)) + " |", "|" + "|".join("---" for _ in cols) + "|"]
     for _, r in df.iterrows():
@@ -187,6 +192,8 @@ def huecos_cortos(filas, maximo):
 
 
 def mosaico(cfg, D, nombre, filas, preds, muestra, salida, fuente, fuente_c):
+    """Mosaico de revisión de una carpeta: los fotogramas de la muestra con las cajas en verde, las predicciones en
+    rojo, recortes ampliados de los candidatos y un gráfico por fotograma."""
     mc = cfg["c0"]["mosaico"]
     det = cfg["c0"]["detector"]
     tw, th = cfg["tam_termica"]
@@ -272,6 +279,8 @@ def mosaico(cfg, D, nombre, filas, preds, muestra, salida, fuente, fuente_c):
 
 
 def auditar(cfg, rutas, out):
+    """Audita cada carpeta térmica de c0: estadísticas de las etiquetas, tamaño de las personas, candidatos que señala
+    el detector y el mosaico de revisión."""
     c0 = cfg["c0"]
     comprobar_prohibidas(cfg, c0["carpetas"])
     D = rutas["dataset"]
@@ -374,6 +383,7 @@ def alineacion(cfg, rutas, out):
     filas = []
 
     def medir(vuelo, cand, g):
+        """Mide el corrimiento del fondo en cada par del vuelo con la semejanza candidata `cand`."""
         for par in g.itertuples():
             al, ter = preparar(par, D, H[cand], (tw, th))
             dx, dy, resp = desplazamiento_fondo(al, ter, a["fondo_sigma"], ventana)
@@ -530,7 +540,8 @@ def semejanza_mc(a, b):
 
 
 def puntos(cfg, rutas, out):
-    """Error de cada semejanza candidata en los puntos marcados a mano (scripts/fase7_marcar_puntos.py): distancia en
+    """Error de cada semejanza candidata en los puntos marcados a mano (src/ampliacion/marcar_puntos_vuelos_nuevos.py):
+    distancia en
     la térmica entre el punto RGB llevado con la semejanza y el punto térmico marcado. Coherencia de los puntos: se quita
     uno, se ajusta una semejanza con los demás del fotograma y se mide dónde cae el quitado."""
     import cv2
@@ -582,6 +593,7 @@ def puntos(cfg, rutas, out):
 
 
 def main():
+    """Corre la parte pedida de C0: auditar, ampliar, alineacion, clasificar o puntos."""
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", required=True)
     ap.add_argument("--rutas", required=True)

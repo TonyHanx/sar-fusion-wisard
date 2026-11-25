@@ -1,4 +1,4 @@
-r"""Prueba de scripts/anotar_oclusion.py con 3 personas simuladas, sin abrir ventanas.
+r"""Prueba de src/oclusion/anotar_oclusion.py con 3 personas simuladas, sin abrir ventanas.
 
 Usa la lista real de personas (data/oclusion_personas.csv) y las imágenes alineadas, pero escribe las anotaciones en
 una carpeta temporal: no toca data/oclusion.csv ni data/oclusion_segundo.csv. Simula el ratón y el teclado llamando a
@@ -37,7 +37,7 @@ los mismos métodos que usa la ventana (raton y tecla) y comprueba:
 No toca los archivos de anotaciones de data/. Guarda capturas del lienzo de los modos en reports/oclusion/.
 
 Uso:
-    .venv\Scripts\python.exe scripts\probar_anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml
+    .venv\Scripts\python.exe -m pruebas.probar_anotar_oclusion --config configs\fase3.yaml --rutas configs\rutas.yaml
 """
 import argparse
 import hashlib
@@ -48,8 +48,8 @@ import cv2
 import numpy as np
 import pandas as pd
 
-from src.oclusion.anotar_oclusion import (CAJA_WISARD, COLUMNAS_SIMPLE, COMPLETA, COMPLETA_OTRA, REGLA_SIMPLE, VISIBLE, centro,
-                             crear_anotador, terminada)
+from src.oclusion.anotar_oclusion import (CAJA_WISARD, COLUMNAS_SIMPLE, COMPLETA, COMPLETA_OTRA, REGLA_SIMPLE,
+                                         VISIBLE, centro, crear_anotador, terminada)
 from src.comun import leer_rutas, leer_yaml
 from src.alineacion.marcar_puntos import preparar_pantalla
 
@@ -57,12 +57,14 @@ MAYUS = cv2.EVENT_FLAG_SHIFTKEY
 
 
 def comprobar(cond, texto):
+    """Falla con el texto dado si la condición no se cumple; si se cumple, lo imprime como ok."""
     if not cond:
         raise AssertionError(texto)
     print(f"  ok: {texto}")
 
 
 def a_pantalla(a, lado, x, y):
+    """Convierte un punto en px de la térmica a la posición del ratón en la ventana, en el panel `lado`."""
     u, v = a.a_panel(x, y)
     return int(round(a.x_panel[lado] + u)), int(round(v))
 
@@ -79,6 +81,7 @@ def arrastrar(a, lado, p0, p1, boton="izq", flags=0):
 
 
 def dibujar_caja(a, lado, caja, boton="izq"):
+    """Simula dibujar una caja con el ratón en el panel `lado`."""
     arrastrar(a, lado, caja[:2], caja[2:], boton)
 
 
@@ -89,6 +92,7 @@ def cerca(x, y, a, tol=None):
 
 
 def tam(b):
+    """Ancho y alto de una caja, redondeados."""
     return round(b[2] - b[0], 2), round(b[3] - b[1], 2)
 
 
@@ -102,15 +106,19 @@ def lam(visible, completa):
 
 
 def pixeles_de(a, color):
+    """Cuántos píxeles de los paneles tienen exactamente ese color; sirve para ver si se dibujó una caja."""
     lienzo = a.dibujar()[:a.ph]
     return int((lienzo == np.array(color, np.uint8)).all(axis=2).sum())
 
 
 def tecla(a, c):
+    """Simula pulsar una tecla en la herramienta."""
     return a.tecla(ord(c))
 
 
 def main():
+    """Simula la anotación de 3 personas con el ratón y las teclas, sin abrir ventanas, y comprueba las cajas, λ,
+    deshacer, retomar y los modos simples. Escribe solo en una carpeta temporal."""
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--config", required=True)
     ap.add_argument("--rutas", required=True)

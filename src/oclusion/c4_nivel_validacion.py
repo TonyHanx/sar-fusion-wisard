@@ -2,7 +2,8 @@ r"""Fase 7, C4: nivel de oclusión de la validación (FHL 0134 y MtErie 0007), a
 
 Decidido por el usuario el 21 de noviembre de 2026 (configs/fase7.yaml, `c4.oclusion`): las 500 personas de los 442
 fotogramas de validación se anotan con la misma pantalla, las mismas teclas y la regla de la ronda 2 que el nivel a mano
-de la prueba (scripts/anotar_oclusion.py, modo simple del primer anotador). Esa herramienta no se cambia: aquí se usa su
+de la prueba (src/oclusion/anotar_oclusion.py, modo simple del primer anotador). Esa herramienta no se cambia: aquí se
+usa su
 AnotadorSimple, con dos ajustes porque la validación tiene dos vuelos y la herramienta suponía uno solo:
 - la imagen cargada se reconoce por vuelo y fotograma, no solo por fotograma;
 - las otras cajas de WiSARD (gris) son las del mismo vuelo y fotograma.
@@ -22,10 +23,10 @@ Partes:
                     veces cambia su respuesta. Tablas y figuras de los cambios en <c4.salidas>/<carpeta>.
 
 Uso:
-  .venv\Scripts\python.exe scripts\fase7_c4_oclusion.py --config configs\fase7.yaml --rutas configs\rutas.yaml --parte preparar
-  .venv\Scripts\python.exe scripts\fase7_c4_oclusion.py --config configs\fase7.yaml --rutas configs\rutas.yaml --parte anotar
-  .venv\Scripts\python.exe scripts\fase7_c4_oclusion.py --config configs\fase7.yaml --rutas configs\rutas.yaml --parte nivel
-  .venv\Scripts\python.exe scripts\fase7_c4_oclusion.py --config configs\fase7.yaml --rutas configs\rutas.yaml --parte consistencia
+  .venv\Scripts\python.exe -m src.oclusion.c4_nivel_validacion --config configs\fase7.yaml --rutas configs\rutas.yaml --parte preparar
+  .venv\Scripts\python.exe -m src.oclusion.c4_nivel_validacion --config configs\fase7.yaml --rutas configs\rutas.yaml --parte anotar
+  .venv\Scripts\python.exe -m src.oclusion.c4_nivel_validacion --config configs\fase7.yaml --rutas configs\rutas.yaml --parte nivel
+  .venv\Scripts\python.exe -m src.oclusion.c4_nivel_validacion --config configs\fase7.yaml --rutas configs\rutas.yaml --parte consistencia
 """
 import argparse
 import shutil
@@ -46,21 +47,25 @@ NIVEL = {"se_ve_rgb": "baja", "no_se_ve_rgb": "severa", "no_es_persona": None}
 
 
 def ruta(p):
+    """Ruta absoluta: si es relativa, desde la raíz del repositorio."""
     p = Path(p)
     return p if p.is_absolute() else RAIZ / p
 
 
 def corto(vuelo):
+    """Nombre corto de un vuelo (sitio y número), para la pantalla."""
     partes = vuelo.split("_")
     return f"{partes[1]} {partes[-1]}"
 
 
 def contexto(cfg):
+    """Lee la configuración común de las partes: la sección c4, la configuración de la fase 6, la partición de
+    validación y la de la herramienta. Comprueba que no se lea ningún vuelo de la prueba."""
     c4 = cfg["c4"]
     base = leer_yaml(ruta(c4["base"]))
     part = base["particiones"]["validacion"]
     herr = leer_yaml(ruta(c4["oclusion"]["herramienta"]))
-    # como scripts/fase7_entrenar.py: los vuelos de la prueba no se leen
+    # como src/entrenamiento/entrenar_fase7.py: los vuelos de la prueba no se leen
     prohibidos = set(cfg["prohibidas"]) | set(leer_yaml(ruta(cfg["c1"]["particion"]))["prueba"])
     if any(x in v for v in part["vuelos"] for x in prohibidos):
         raise SystemExit(f"La validación incluye un vuelo de la prueba: {part['vuelos']}")
@@ -68,6 +73,8 @@ def contexto(cfg):
 
 
 def preparar(cfg, rutas):
+    """Arma la lista fija de personas de la validación con las cajas térmicas de sus etiquetas, en orden de vuelo y
+    fotograma."""
     c4, base, part, herr = contexto(cfg)
     oc = c4["oclusion"]
     W, H = base["evaluacion"]["tam_imagen"]
@@ -130,12 +137,14 @@ class AnotadorValidacion(AnotadorSimple):
         self._lista = valor
 
     def cargar_imagenes(self):
+        """Carga las imágenes reconociendo el fotograma por vuelo y posición, porque la validación tiene dos vuelos."""
         if getattr(self, "_vuelo_cargado", None) != self.p.vuelo:  # la herramienta reconoce la imagen solo por
             self._pos_cargada = None                               # fotograma
             self._vuelo_cargado = self.p.vuelo
         super().cargar_imagenes()
 
     def panel(self, lado):  # como AnotadorSimple.panel, con las otras cajas del mismo vuelo
+        """Como AnotadorSimple.panel, pero con las otras cajas del mismo vuelo y fotograma."""
         img = self.fondo_panel(lado)
         p = self.p
         if self.ver_cajas:
@@ -151,6 +160,7 @@ class AnotadorValidacion(AnotadorSimple):
 
 
 def anotar(cfg, rutas, inicio=None):
+    """Abre la herramienta de modo simple sobre la lista de la validación; retoma si se cierra."""
     c4, base, part, herr = contexto(cfg)
     oc = c4["oclusion"]
     ruta_personas = rutas["data"] / oc["personas"]
@@ -165,6 +175,7 @@ def anotar(cfg, rutas, inicio=None):
 
 
 def kappa(a, b):
+    """Kappa de Cohen sin pesos entre dos listas de respuestas."""
     a, b = np.asarray(a), np.asarray(b)
     po = (a == b).mean()
     pe = sum((a == c).mean() * (b == c).mean() for c in set(a) | set(b))
@@ -172,6 +183,8 @@ def kappa(a, b):
 
 
 def nivel(cfg, rutas):
+    """Con las 500 respondidas, escribe el nivel de la validación (baja, severa o vacío si no es persona) y, como
+    referencia, el kappa contra la regla automática."""
     c4, base, part, herr = contexto(cfg)
     oc = c4["oclusion"]
     personas = pd.read_csv(rutas["data"] / oc["personas"], dtype={"id": str}).sort_values("orden")
@@ -240,6 +253,7 @@ def nivel(cfg, rutas):
 
 
 def rel(p):
+    """Ruta relativa a la raíz del repositorio para mostrarla, o la ruta entera si está fuera."""
     p = Path(p)
     return p.relative_to(RAIZ).as_posix() if p.is_relative_to(RAIZ) else str(p)
 
@@ -406,6 +420,7 @@ def consistencia(cfg, rutas):
 
 
 def main():
+    """Corre la parte pedida: preparar, anotar, nivel o consistencia."""
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--config", required=True)
     ap.add_argument("--rutas", required=True)

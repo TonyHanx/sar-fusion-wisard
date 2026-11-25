@@ -15,7 +15,7 @@ Partes (--parte):
 - b1_datos (B1): dataset de solo térmica con los 6 vuelos que no son FHL 0405, al azar por fotograma 60/20/20.
 - b_evaluar (B): model.val del best.pt de una corrida de diagnóstico en sus splits (B1: su prueba aleatoria).
 
-Uso: python scripts/diagnostico.py --config configs/diagnostico.yaml --rutas configs/rutas.yaml --parte inventario
+Uso: python -m experimentos.diagnostico --config configs/diagnostico.yaml --rutas configs/rutas.yaml --parte inventario
 """
 import argparse
 import contextlib
@@ -37,40 +37,48 @@ TRAMOS_ETIQUETA = None  # se fija con la configuración
 
 
 def ruta(p):
+    """Ruta absoluta: si es relativa, desde la raíz del repositorio."""
     p = Path(p)
     return p if p.is_absolute() else RAIZ / p
 
 
 def rel(p):
+    """Ruta relativa a la raíz del repositorio para mostrarla, o la ruta entera si está fuera."""
     p = Path(p)
     return p.relative_to(RAIZ).as_posix() if p.is_relative_to(RAIZ) else str(p)
 
 
 @contextlib.contextmanager
 def silencio():
+    """Oculta lo que imprime pycocotools mientras dura el bloque."""
     with contextlib.redirect_stdout(io.StringIO()):
         yield
 
 
 def vuelo_de(stem):
+    """Vuelo de una imagen, sacado de su nombre (<vuelo>_<posición>)."""
     return stem.rsplit("_", 1)[0]
 
 
 def particion_de_vuelo(cfg):
+    """Partición (entrenamiento, validación o prueba) de cada vuelo, según la partición por vuelo."""
     p = leer_yaml(ruta(cfg["particion"]))
     return {v: k for k, vs in p.items() for v in vs}
 
 
 def etiquetas_tramos(tramos):
+    """Rótulos de los tramos de tamaño a partir de sus bordes: <a, a-b, ..., >=z."""
     e = [f"<{tramos[0]}"] + [f"{a}-{b}" for a, b in zip(tramos[:-1], tramos[1:])] + [f">={tramos[-1]}"]
     return e
 
 
 def tramo_de(x, tramos):
+    """Índice del tramo de tamaño en que cae `x`."""
     return int(np.searchsorted(np.asarray(tramos, float), x, side="right"))
 
 
 def escala_semejanza(H):
+    """Escala de una semejanza (cuánto se reduce la RGB al llevarla a la térmica)."""
     return float(np.hypot(H[0][0], H[0][1]))
 
 
@@ -104,6 +112,7 @@ def cajas_txt(p, W, H):
 
 
 def dataset_yaml(datos):
+    """Carpeta raíz y contenido del yaml de un dataset de Ultralytics."""
     d = leer_yaml(ruta(datos))
     return ruta_del_dataset(d), d
 
@@ -111,6 +120,8 @@ def dataset_yaml(datos):
 # ------------------------------------------------------------------------------------------------------------- A1
 
 def inventario(cfg, rutas, out):
+    """A1: inventario de las carpetas de WiSARDv1 y de las térmicas anotadas que quedan fuera de los pares usados, por
+    sitio y motivo."""
     ds = rutas["dataset"]
     ext = set(cfg["inventario"]["extensiones"])
     pares = pd.read_csv(rutas["data"] / cfg["pares"])
@@ -203,6 +214,8 @@ def inventario(cfg, rutas, out):
 # ------------------------------------------------------------------------------------------------------------- A2
 
 def estado(cfg, rutas, out):
+    """A2: estado de las corridas de la fase 5b (época de best.pt, sus métricas, el máximo de mAP@0.5 y la última
+    época)."""
     e = cfg["estado"]
     base = rutas["runs"] / "fase5"
     filas = []
@@ -250,6 +263,8 @@ def estado(cfg, rutas, out):
 # ------------------------------------------------------------------------------------------------------------- A3
 
 def tamanos(cfg, rutas, out):
+    """A3: tamaño de las cajas térmicas por partición y vuelo, por tramos, y su tamaño equivalente en la RGB original.
+    """
     t = cfg["tamanos"]
     W, H = cfg["tam_termica"]
     raiz, _ = dataset_yaml(t["datos"])
@@ -269,6 +284,7 @@ def tamanos(cfg, rutas, out):
     pc = t["percentiles"]
 
     def resumen(g):
+        """Percentiles del ancho, el alto y el lado mayor de un grupo de cajas."""
         r = {"cajas": len(g)}
         for col, nom in [("w", "ancho"), ("h", "alto"), ("lado", "lado mayor"), ("lado_rgb", "lado mayor RGB orig.")]:
             q = np.percentile(g[col], pc)
@@ -295,6 +311,8 @@ def tamanos(cfg, rutas, out):
 # ------------------------------------------------------------------------------------------------------------- A6
 
 def integridad(cfg, rutas, out):
+    """A6: comprueba con Ultralytics las imágenes y etiquetas de los tres datasets, los conteos, las cachés y que las
+    particiones no compartan archivos."""
     from ultralytics.data.utils import get_hash, img2label_paths, load_dataset_cache_file, verify_image_label
 
     g = cfg["integridad"]
@@ -385,6 +403,7 @@ def integridad(cfg, rutas, out):
 # ------------------------------------------------------------------------------------------------------------- A4
 
 def enlazar(origen, destino):
+    """Enlace duro de `origen` en `destino`, si todavía no existe."""
     destino.parent.mkdir(parents=True, exist_ok=True)
     if not destino.exists():
         os.link(origen, destino)
@@ -405,10 +424,12 @@ def subconjunto(nombre, raiz_origen, y_origen, split, stems, d):
 
 
 def validador():
+    """Validador de Ultralytics que no hace la evaluación COCO (se hace aquí con pycocotools)."""
     from ultralytics.models.yolo.detect import DetectionValidator
 
     class Validador(DetectionValidator):
         def eval_json(self, stats):  # sin faster-coco-eval: lo de COCO se hace aquí con pycocotools
+            """No hace la evaluación COCO de Ultralytics: se hace aquí con pycocotools."""
             return stats
     return Validador
 
@@ -485,6 +506,8 @@ def map50_por_tramo(gt_df, preds, stems, tramos, etq, iou, max_dets):
 
 
 def validar(cfg, rutas, out):
+    """A4: valida por vuelo y por grupo (solo térmica y resto), el mAP@0.5 por tramo de tamaño y las personas detectadas
+    con confianza 0.25 y 0.5."""
     from ultralytics import YOLO
 
     v = cfg["validar"]
@@ -604,6 +627,8 @@ def validar(cfg, rutas, out):
 # ------------------------------------------------------------------------------------------------------------- A5
 
 def hoja(cfg, rutas, out):
+    """A5: hoja de imágenes de validación al azar, con las cajas en verde y las predicciones en rojo, en la térmica y en
+    la RGB."""
     h = cfg["hoja"]
     v = cfg["validar"]
     W, H = cfg["tam_termica"]
@@ -618,6 +643,7 @@ def hoja(cfg, rutas, out):
     pj = out / "a4" / f"predict_fusion_best_conf{h['conf']}.json"
     preds = {r["image_id"]: r for r in json.loads(pj.read_text(encoding="utf-8"))}
     try:
+        # fuente de Windows; si no está, la de PIL por omisión (solo cambia el aspecto de la hoja)
         fuente = ImageFont.truetype("arial.ttf", 18)
     except OSError:
         fuente = ImageFont.load_default()
@@ -665,6 +691,7 @@ def hoja(cfg, rutas, out):
 # ------------------------------------------------------------------------------------------------------------- B
 
 def b1_datos(cfg, rutas, out):
+    """B1: dataset de solo térmica con los vuelos que no son de la prueba, repartido al azar por fotograma."""
     b = cfg["b1"]
     raiz, y = dataset_yaml(b["origen"])
     filas = []
@@ -704,6 +731,7 @@ def b1_datos(cfg, rutas, out):
 
 
 def b_evaluar(cfg, rutas, out, corrida):
+    """B: valida el best.pt de una corrida de diagnóstico en sus particiones."""
     from ultralytics import YOLO
 
     c = rutas["runs"] / cfg["base"]["carpeta"] / corrida
@@ -816,6 +844,7 @@ def copiar(cfg, rutas, out):
 
 
 def main():
+    """Corre la parte pedida del diagnóstico (A1 a A6, B1 o B)."""
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", required=True)
     ap.add_argument("--rutas", required=True)

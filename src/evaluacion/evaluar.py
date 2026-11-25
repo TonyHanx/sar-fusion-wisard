@@ -15,17 +15,21 @@ Ultralytics (faster-coco-eval) se salta. Luego calcula con pycocotools, a IoU 0.
 Escribe las salidas de la partición (resultados, mcnemar y el gráfico de recall, en configs/fase6.yaml) y una fila por
 modelo en la bitácora. En la prueba corre una sola vez: si ya existe alguna salida, no evalúa.
 
+OBSOLETO para la prueba: la evaluación de la prueba la hace src/evaluacion/evaluar_prueba.py (fase 8), con los
+umbrales fijados en la validación. Aquí quedó bloqueada (ver main) y solo se usa --solo-predecir o --solo-verificar.
+
 Con --rgb-cero (fase 7), los modelos de 4 canales (la fusión) reciben la RGB en 0: los 3 canales de color de cada imagen
-se ponen en 0 al leerla (scripts/modalidad.py, p = 1), y la térmica queda igual. Los modelos de 3 canales no cambian.
+se ponen en 0 al leerla (src/entrenamiento/dropout_modalidad.py, p = 1), y la térmica queda igual. Los modelos de 3
+canales no cambian.
 Sirve para ver cuánto depende la fusión de la RGB. Las predicciones van a <modelo>_rgb0/ y las salidas llevan el sufijo
 _rgb0, así que no se mezclan con las de siempre ni cuentan para "una sola vez".
 
 Uso:
-  python scripts/evaluar.py --config configs/fase6.yaml --rutas configs/rutas.yaml --particion prueba
-  python scripts/evaluar.py --config configs/fase6.yaml --rutas configs/rutas.yaml --particion prueba --solo-verificar
-  python scripts/evaluar.py --config configs/fase6.yaml --rutas configs/rutas.yaml --particion validacion \
+  python -m src.evaluacion.evaluar --config configs/fase6.yaml --rutas configs/rutas.yaml --particion prueba
+  python -m src.evaluacion.evaluar --config configs/fase6.yaml --rutas configs/rutas.yaml --particion prueba --solo-verificar
+  python -m src.evaluacion.evaluar --config configs/fase6.yaml --rutas configs/rutas.yaml --particion validacion \
       --modelos fusion fusion_last
-  python scripts/evaluar.py --config configs/fase6.yaml --rutas configs/rutas.yaml --particion prueba \
+  python -m src.evaluacion.evaluar --config configs/fase6.yaml --rutas configs/rutas.yaml --particion prueba \
       --modelos fusion --rgb-cero --solo-predecir
 """
 import argparse
@@ -55,21 +59,25 @@ SUFIJO_RGB_CERO = "_rgb0"  # carpeta de predicciones y sufijo de las salidas con
 
 @contextlib.contextmanager
 def silencio():
+    """Oculta lo que imprime pycocotools mientras dura el bloque."""
     with contextlib.redirect_stdout(io.StringIO()):
         yield
 
 
 def ruta(p):
+    """Ruta absoluta: si es relativa, desde la raíz del repositorio."""
     p = Path(p)
     return p if p.is_absolute() else RAIZ / p
 
 
 def rel(p):
+    """Ruta relativa a la raíz del repositorio para mostrarla, o la ruta entera si está fuera."""
     p = Path(p)
     return str(p.relative_to(RAIZ)) if p.is_relative_to(RAIZ) else str(p)
 
 
 def lineas(txt):
+    """Líneas no vacías de un .txt de etiquetas, sin espacios a los lados."""
     return [x.strip() for x in Path(txt).read_text().splitlines() if x.strip()]
 
 
@@ -193,6 +201,8 @@ def preparar(cfg, rutas, nombre_part, modelos):
 
 
 def verificar(datos, nombre_part):
+    """Imprime cuántos fotogramas, personas, cajas dudosas y bloques tiene la partición, y se detiene si no coinciden
+    con los esperados de `comprobar` en la configuración."""
     fot, per, part = datos["fot"], datos["per"], datos["part"]
     hay = {"fotogramas": len(fot), "anotados": int(fot.anotado.sum()), "personas": len(per),
            "dudosas": int(per.dudosa.sum()), "bloques": datos["nb"]}
@@ -220,6 +230,7 @@ def predecir(clave, info, cfg, rutas, nombre_part, part, sin_metricas=False, rgb
 
     class Validador(DetectionValidator):
         def build_dataset(self, img_path, mode="val", batch=None):
+            """Arma el dataset de validación como Ultralytics y, con --rgb-cero, pone en 0 la RGB de cada imagen."""
             ds = super().build_dataset(img_path, mode, batch)
             if rgb_cero:
                 from src.entrenamiento.dropout_modalidad import quitar_rgb
@@ -228,12 +239,15 @@ def predecir(clave, info, cfg, rutas, nombre_part, part, sin_metricas=False, rgb
             return ds
 
         def eval_json(self, stats):  # sin faster-coco-eval: la evaluación se hace aquí con pycocotools
+            """No hace la evaluación COCO de Ultralytics: las métricas se calculan aquí con pycocotools."""
             return stats
 
         def get_stats(self):
+            """Las métricas de Ultralytics, o nada si solo se guardan las predicciones."""
             return {} if sin_metricas else super().get_stats()
 
         def print_results(self):
+            """Imprime las métricas de Ultralytics, salvo si solo se guardan las predicciones."""
             if not sin_metricas:
                 super().print_results()
 
@@ -267,6 +281,8 @@ def predecir(clave, info, cfg, rutas, nombre_part, part, sin_metricas=False, rgb
 # ------------------------------------------------------------------------------------------------------- evaluación
 
 def coco_gt(datos, ignorar):
+    """Personas de la partición en formato COCO. Las marcadas en `ignorar` van como iscrowd=1, así que no cuentan ni
+    como acierto ni como fallo."""
     W, H = datos["W"], datos["H"]
     per = datos["per"]
     dataset_coco = {"images": [{"id": int(i), "width": W, "height": H} for i in datos["fot"].img_id],
@@ -394,6 +410,7 @@ def metricas(r, cuentas):
 
 
 def bootstrap(r, cuentas_b):
+    """Métricas de cada remuestreo a partir de sus cuentas, en una columna por métrica."""
     return {k: np.array(v) for k, v in pd.DataFrame([metricas(r, c) for c in cuentas_b]).items()}
 
 
@@ -409,6 +426,8 @@ def intervalo(valores, confianza):
 # ----------------------------------------------------------------------------------------------------------- salidas
 
 def grafico(res, cfg, part, modelos, ruta_png, dudosas, n_remuestreos):
+    """Gráfico del recall por subconjunto (global, anotados y cada nivel) de cada modelo, con su intervalo de confianza.
+    """
     estilo = cfg["figura"]
     subconjuntos = [s for s in part["subconjuntos"] if s.get("grafico")]
     nombres = [s["nombre"] for s in subconjuntos]
@@ -447,6 +466,8 @@ def grafico(res, cfg, part, modelos, ruta_png, dudosas, n_remuestreos):
 
 
 def main():
+    """Evalúa los modelos pedidos en una partición: predice, calcula las métricas por subconjunto con y sin dudosas, los
+    intervalos por bootstrap y McNemar, y escribe las tablas, el gráfico y la bitácora."""
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--config", required=True)
     ap.add_argument("--rutas", required=True)
@@ -495,6 +516,9 @@ def main():
                                + ("; RGB en 0 (los 3 canales de color)" if rgb0[k] else ""),
                                f"{len(p)} predicciones en {rel(destino)}; no se calculó ninguna métrica")
         return
+    # OBSOLETO: la evaluación de la prueba la reemplaza src/evaluacion/evaluar_prueba.py (fase 8), que fija el umbral
+    # de cada modelo en la validación y lo aplica a la prueba. Este bloqueo y el camino de `una_sola_vez` de abajo
+    # se dejan como estaban para no cambiar la fase 6; la prueba no se evalúa con este script.
     if args.particion == "prueba":  # hasta implementar la regla del 3 de noviembre de 2026 (CLAUDE.md, "Métricas")
         raise SystemExit("La evaluación de la prueba espera los umbrales por modelo fijados en validación (F2). "
                          "Por ahora solo --solo-predecir o --solo-verificar.")

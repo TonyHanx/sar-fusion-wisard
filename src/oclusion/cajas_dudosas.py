@@ -32,7 +32,7 @@ reports/<cajas_dudosas.carpeta>/:
 No modifica data/ ni el dataset original.
 
 Uso:
-    .venv\Scripts\python.exe scripts\fase4_cajas_dudosas.py --config configs\fase3.yaml --rutas configs\rutas.yaml
+    .venv\Scripts\python.exe -m src.oclusion.cajas_dudosas --config configs\fase3.yaml --rutas configs\rutas.yaml
 """
 import argparse
 import sys
@@ -110,6 +110,7 @@ def clasificar(llega):
 
 
 def caja_px(c):
+    """Caja (cx, cy, w, h) en píxeles a (x0, y0, x1, y1), redondeada a 0.1 px."""
     cx, cy, w, h = c
     return [round(float(v), 1) for v in (cx - w / 2, cy - h / 2, cx + w / 2, cy + h / 2)]
 
@@ -131,6 +132,8 @@ def recorte(img, c, lado, escala, color, otras=()):
 
 
 def mosaico(pares, cajas, alineados, vuelo, cfg_m, ruta):
+    """Mosaico de las cajas dudosas de unos pares: recortes de la térmica y de la RGB alineada alrededor de cada caja,
+    para revisarlas."""
     lado, escala = cfg_m["lado_px"], cfg_m["escala"]
     t = round(lado * escala)
     filas = []
@@ -164,6 +167,8 @@ def mosaico(pares, cajas, alineados, vuelo, cfg_m, ruta):
 
 
 def linea_yaml(d):
+    """Escribe un diccionario plano como una línea de yaml ({clave: valor, ...}), para que el yaml generado tenga una
+    caja por línea."""
     partes = []
     for k, v in d.items():
         if isinstance(v, bool):
@@ -177,6 +182,8 @@ def linea_yaml(d):
 
 
 def main():
+    """Toma las cajas dudosas anotadas, las sigue por los fotogramas no anotados con la regla del fotograma anotado más
+    cercano y escribe configs/cajas_dudosas.yaml con sus tablas."""
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--config", required=True)
     ap.add_argument("--rutas", required=True)
@@ -219,6 +226,7 @@ def main():
         raise SystemExit(f"Los fotogramas anotados tienen {n_anot} cajas y el nivel final {len(anotadas)} personas")
 
     def comprobar_linea(q, j):
+        """Comprueba que la línea de la caja es la misma en las etiquetas de prueba de los tres datasets."""
         linea = cajas[q][1][j]
         for d in pruebas:
             lt = [l.strip() for l in (d / f"{vuelo}_{q:04d}.txt").read_text(encoding="utf-8").splitlines()
@@ -277,7 +285,7 @@ def main():
     pd.DataFrame(seg_filas).to_csv(carpeta / "seguimiento.csv", index=False, encoding="utf-8")
 
     r0 = resumen[resumen.usado].iloc[0]
-    cab = f"""# Cajas térmicas de WiSARD dudosas de la prueba ({vuelo}). GENERADO por scripts/fase4_cajas_dudosas.py a partir
+    cab = f"""# Cajas térmicas de WiSARD dudosas de la prueba ({vuelo}). GENERADO por src/oclusion/cajas_dudosas.py a partir
 # de data/{cfg['nivel_final']['salida']}: no editar a mano. Decidido el 2026-11-01.
 # - Las etiquetas de prueba NO se tocan: estas cajas siguen en data/etiquetas/termica/ y en
 #   data/datasets/<modelo>/labels/test/ (enlaces duros), como las dejó WiSARD (sin cajas repetidas).

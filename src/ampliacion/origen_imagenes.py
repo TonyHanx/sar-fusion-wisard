@@ -13,7 +13,7 @@ Escribe en runs/<carpeta>/<origen.carpeta>/ las tablas origen_por_vuelo.csv y or
 imagen en origen/origen_imagenes.csv. Solo lee el dataset original y data/.
 
 Uso:
-  .venv\\Scripts\\python.exe scripts\\fase7_origen.py --config configs\\fase7.yaml --rutas configs\\rutas.yaml
+  .venv\\Scripts\\python.exe -m src.ampliacion.origen_imagenes --config configs\\fase7.yaml --rutas configs\\rutas.yaml
 """
 # Solo importaciones livianas arriba: en Windows cada proceso hijo vuelve a importar este módulo (comun importa torch).
 import argparse
@@ -29,12 +29,14 @@ import tifffile
 
 
 def huella(a):
+    """Huella de una imagen por su contenido (forma, tipo y hash de los píxeles), para encontrar de qué térmica original
+    viene."""
     a = np.ascontiguousarray(a)
     return f"{a.shape}:{a.dtype}:" + hashlib.blake2b(a.tobytes(), digest_size=16).hexdigest()
 
 
 def original(ruta):
-    """Térmica original en gris, como scripts/alinear.py y la parte construir de C1."""
+    """Térmica original en gris, como src/alineacion/alinear.py y la parte construir de C1."""
     im = cv2.imread(ruta, cv2.IMREAD_COLOR)
     return ruta, (huella(cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)) if im is not None else None)
 
@@ -53,11 +55,14 @@ def imagen(ruta):
 
 
 def ident(p):
+    """Identificador del archivo en el disco (dispositivo e i-nodo). Dos enlaces duros al mismo archivo tienen el mismo.
+    """
     s = os.stat(p)
     return s.st_dev, s.st_ino
 
 
 def md(df):
+    """Tabla de pandas como tabla de Markdown."""
     cols = list(df.columns)
     filas = ["| " + " | ".join(map(str, cols)) + " |", "|" + "|".join("---" for _ in cols) + "|"]
     filas += ["| " + " | ".join(map(str, r)) + " |" for r in df.itertuples(index=False)]
@@ -65,6 +70,8 @@ def md(df):
 
 
 def main():
+    """Comprueba de qué vuelo viene cada imagen de los datasets ampliados, por enlace duro y por contenido, y escribe
+    las tablas de origen."""
     from src.comun import leer_rutas, leer_yaml
 
     ap = argparse.ArgumentParser()

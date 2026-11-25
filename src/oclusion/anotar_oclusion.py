@@ -16,11 +16,11 @@ Tres usos:
               cercana (llevada a la térmica con la semejanza congelada) a `radio_precarga_alturas` alturas o menos, si
               hay. Guarda en data/<anotaciones>.
   --muestra   primer anotador (con la precarga), solo las personas de la muestra (data/<muestra_segundo>), para
-              validar el λ automático (scripts/oclusion_auto.py). Guarda en data/<anotaciones>; las personas de ese
+              validar el λ automático (src/oclusion/oclusion_auto.py). Guarda en data/<anotaciones>; las personas de ese
               archivo que no son de la muestra se conservan sin cambios.
   --ajuste    como --muestra, pero con las personas de data/<lista_ajuste> en su orden (las de la muestra con visible
               RGB, de mayor a menor según cuánto se sale la visible de la completa; la arma
-              scripts/corregir_oclusion.py), para ajustar la visible RGB a lo que se ve.
+              src/oclusion/corregir_oclusion.py), para ajustar la visible RGB a lo que se ve.
   --segundo   segundo anotador: solo las personas de la muestra, sin precarga, sin las cajas de WiSARD y sin las del
               primer anotador (no lee su archivo). La persona a anotar se señala con triángulos amarillos en los bordes
               de la vista. Guarda en data/<anotaciones_segundo>.
@@ -43,19 +43,20 @@ Tres usos:
               `modo_simple.reanotaciones` (decidida el 2026-11-01 para la escena en sombra): todas las personas de la
               lista con fotograma entre `desde` y `hasta` (muestra y resto juntas), en orden de fotograma, con la misma
               pantalla y la regla de la ronda `ronda`. Guarda en data/<archivo> y retoma desde ahí; no lee ningún otro
-              archivo de respuestas. Sus respuestas reemplazan las anteriores en el nivel final (scripts/fase4_nivel.py).
+              archivo de respuestas. Sus respuestas reemplazan las anteriores en el nivel final
+              (src/oclusion/nivel_final.py).
   --persona N abre en la persona N (desde 1); si no, en la primera sin terminar.
 
 Uso:
-    .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --preparar
-    .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml
-    .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --muestra
-    .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --ajuste
-    .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --segundo
-    .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --segundo-simple
-    .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --primero-simple
-    .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --primero-simple-resto
-    .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --primero-simple-reanotar escena_sombra
+    .venv\Scripts\python.exe -m src.oclusion.anotar_oclusion --config configs\fase3.yaml --rutas configs\rutas.yaml --preparar
+    .venv\Scripts\python.exe -m src.oclusion.anotar_oclusion --config configs\fase3.yaml --rutas configs\rutas.yaml
+    .venv\Scripts\python.exe -m src.oclusion.anotar_oclusion --config configs\fase3.yaml --rutas configs\rutas.yaml --muestra
+    .venv\Scripts\python.exe -m src.oclusion.anotar_oclusion --config configs\fase3.yaml --rutas configs\rutas.yaml --ajuste
+    .venv\Scripts\python.exe -m src.oclusion.anotar_oclusion --config configs\fase3.yaml --rutas configs\rutas.yaml --segundo
+    .venv\Scripts\python.exe -m src.oclusion.anotar_oclusion --config configs\fase3.yaml --rutas configs\rutas.yaml --segundo-simple
+    .venv\Scripts\python.exe -m src.oclusion.anotar_oclusion --config configs\fase3.yaml --rutas configs\rutas.yaml --primero-simple
+    .venv\Scripts\python.exe -m src.oclusion.anotar_oclusion --config configs\fase3.yaml --rutas configs\rutas.yaml --primero-simple-resto
+    .venv\Scripts\python.exe -m src.oclusion.anotar_oclusion --config configs\fase3.yaml --rutas configs\rutas.yaml --primero-simple-reanotar escena_sombra
 
 Ventana: arriba, la RGB alineada y la térmica lado a lado, ampliadas alrededor de la persona y con la misma vista (el
 cursor se repite en las dos). La vista se centra en la persona; cerca del borde del fotograma se corre lo justo para
@@ -124,14 +125,17 @@ COLUMNAS = (["id", "vuelo", "posicion", "indice_caja", "anotador"]
 
 # ---------------------------------------------------------------------------------------------------- cajas y λ
 def area(b):
+    """Área de una caja (x0, y0, x1, y1); 0 si está vacía."""
     return max(0.0, b[2] - b[0]) * max(0.0, b[3] - b[1])
 
 
 def interseccion(a, b):
+    """Área de la intersección de dos cajas, para calcular λ."""
     return area([max(a[0], b[0]), max(a[1], b[1]), min(a[2], b[2]), min(a[3], b[3])])
 
 
 def centro(b):
+    """Centro (x, y) de una caja."""
     return (b[0] + b[2]) / 2, (b[1] + b[3]) / 2
 
 
@@ -153,6 +157,7 @@ def lambda_oclusion(visible, completa):
 
 
 def completa_de(r, lado):
+    """Caja completa de la persona en una imagen (`ter` o `rgb`), o None si aún no se dibujó."""
     return None if r["completa"] is None else r["completa"][lado]
 
 
@@ -163,10 +168,13 @@ def normalizar(r):
 
 
 def vacia():
+    """Visible sin anotar de una imagen: estado pendiente y sin caja."""
     return {"estado": "pendiente", "caja": None, "guardada": None}
 
 
 def registro_inicial(p, precargar):
+    """Anotación nueva de una persona. Con precarga (primer anotador), la visible térmica es la caja de WiSARD y la
+    visible RGB, la caja RGB más cercana, si la hay."""
     r = {"completa": None, "rgb": vacia(), "ter": vacia(), "fuera_de_cuadro": False, "no_es_persona": False,
          "tiempo_s": 0.0, "guardado": ""}
     if precargar:
@@ -177,18 +185,23 @@ def registro_inicial(p, precargar):
 
 
 def terminada(r):
+    """True si la persona ya está completa: tiene la caja completa y las dos visibles (caja o no visible), o está
+    marcada como fuera de cuadro o no es persona."""
     if r["no_es_persona"] or r["fuera_de_cuadro"]:
         return True
     return r["completa"] is not None and r["rgb"]["estado"] != "pendiente" and r["ter"]["estado"] != "pendiente"
 
 
 def faltante(r):
+    """Lista de lo que le falta a la anotación de una persona, para mostrarlo en pantalla."""
     falta = [] if r["completa"] is not None else ["caja completa"]
     falta += [f"visible {NOMBRE[l]} (caja o no visible)" for l in LADOS if r[l]["estado"] == "pendiente"]
     return falta
 
 
 def a_fila(p, r, anotador):
+    """Convierte la anotación de una persona en una fila del CSV de salida, con las cajas, las marcas y λ de cada
+    imagen."""
     fila = {"id": p.id, "vuelo": p.vuelo, "posicion": int(p.posicion), "indice_caja": int(p.indice_caja),
             "anotador": anotador}
     for l, pre in (("ter", "termica"), ("rgb", "rgb")):
@@ -211,7 +224,9 @@ def a_fila(p, r, anotador):
 
 
 def desde_fila(f):
+    """Convierte una fila del CSV de salida en la anotación de una persona, para retomar."""
     def caja(pre):
+        """Lee la caja con prefijo `pre` de la fila; None si falta alguna coordenada."""
         v = [f[f"{pre}_{c}"] for c in CAJA]
         return None if any(pd.isna(x) for x in v) else [float(x) for x in v]
     ter, rgb = caja("completa_termica"), caja("completa_rgb")
@@ -273,6 +288,7 @@ def preparar(cfg, rutas, forzar=False):
     etq = data / d["etiquetas"]
 
     def px(ruta, tam):  # en el orden del archivo (el índice de la caja identifica a la persona)
+        """Cajas del .txt en píxeles, en el orden del archivo, porque el índice de la caja identifica a la persona."""
         w, h = tam
         return np.array([[(cx - bw / 2) * w, (cy - bh / 2) * h, (cx + bw / 2) * w, (cy + bh / 2) * h]
                          for _, cx, cy, bw, bh in leer_cajas_yolo(ruta)], np.float64).reshape(-1, 4)
@@ -339,6 +355,8 @@ def preparar(cfg, rutas, forzar=False):
 class Anotador:
     def __init__(self, o, personas, ids, alineados, salida, modo, tam_ter, area=None, inicio=None, muestra=False,
                  lista=None):
+        """Prepara la herramienta con cajas: las personas que se anotan, las imágenes alineadas, el archivo de salida
+        (que se retoma si existe) y el tamaño de los paneles según la pantalla."""
         self.o, self.modo, self.salida = o, modo, Path(salida)
         self.primero, self.muestra = modo == "primero", muestra
         self.nombre_lista = lista or ("muestra" if muestra else None)
@@ -389,17 +407,22 @@ class Anotador:
     # ------------------------------------------------------------------ datos
     @property
     def id(self):
+        """Identificador de la persona actual."""
         return self.ids[self.i]
 
     @property
     def p(self):
+        """Fila de la lista de personas de la persona actual (vuelo, posición y caja de WiSARD)."""
         return self.todas.loc[self.id]
 
     @property
     def r(self):
+        """Anotación de la persona actual."""
         return self.anot[self.id]
 
     def cargar(self):
+        """Lee las anotaciones ya guardadas en el archivo de salida, para retomar. Se detiene si el archivo tiene
+        personas que no están en la lista."""
         if not self.salida.exists():
             return
         df = pd.read_csv(self.salida, dtype={"id": str})
@@ -422,6 +445,7 @@ class Anotador:
               + (f"; {len(self.ajenas)} de fuera de la lista se conservan sin cambios" if len(self.ajenas) else ""))
 
     def guardar(self):
+        """Suma el tiempo de la persona actual y reescribe el archivo de salida con todas las personas tocadas."""
         ahora = time.monotonic()
         self.r["tiempo_s"] += ahora - self.t0
         self.t0 = ahora
@@ -445,6 +469,7 @@ class Anotador:
                                    f"(se reintenta en el proximo cambio)")
 
     def cambiar(self, fn, mensaje=""):
+        """Aplica un cambio a la anotación actual, guardando antes una copia para poder deshacerlo."""
         self.pilas.setdefault(self.id, []).append(copy.deepcopy(self.r))
         fn(self.r)
         normalizar(self.r)
@@ -454,6 +479,7 @@ class Anotador:
         self.guardar()
 
     def deshacer(self):
+        """Vuelve la anotación actual al estado anterior al último cambio."""
         pila = self.pilas.get(self.id)
         if not pila:
             self.mensaje = "nada que deshacer en esta persona"
@@ -467,6 +493,8 @@ class Anotador:
     def poner_caja(self, destino, caja, lado):
         """Pone la caja dibujada en el panel `lado`: la completa (destino 'completa') o la visible de ese panel."""
         def fn(r):
+            """Pone la caja dibujada como completa (en las dos imágenes, con el mismo tamaño) o como visible de una
+            imagen."""
             if destino == "completa":
                 if r["completa"] is None:  # primera vez: en el mismo lugar en las dos (donde la pone la semejanza)
                     r["completa"] = {"ter": list(caja), "rgb": list(caja)}
@@ -492,12 +520,14 @@ class Anotador:
             self.mensaje = "la RGB esta marcada no visible: su completa queda donde la pone la semejanza"
             return
         def fn(r):
+            """Mueve la completa de una imagen a un centro nuevo, sin cambiar su tamaño."""
             b = r["completa"][lado]
             cx, cy = centro_xy if centro_xy is not None else (centro(b)[0] + dx, centro(b)[1] + dy)
             r["completa"][lado] = con_centro(b, cx, cy)
         self.cambiar(fn, f"completa {NOMBRE[lado]} movida")
 
     def completa_a_semejanza(self):
+        """Devuelve la completa RGB al lugar de la térmica, donde la pone la semejanza."""
         if self.r["completa"] is None:
             self.mensaje = "primero dibuja la caja completa"
             return
@@ -505,7 +535,9 @@ class Anotador:
                      "completa RGB donde la pone la semejanza (en el lugar de la termica)")
 
     def alternar_no_visible(self, lado):
+        """Marca o desmarca la visible de una imagen como "no visible". Al desmarcar recupera la caja que tenía."""
         def fn(r):
+            """Cambia el estado de la visible entre "no visible" y la caja guardada."""
             v = r[lado]
             if v["estado"] == "no_visible":
                 r[lado] = ({"estado": "caja", "caja": v["guardada"], "guardada": None} if v["guardada"] else vacia())
@@ -516,17 +548,21 @@ class Anotador:
                                                       else "se quito 'no visible'")
 
     def alternar(self, marca, texto):
+        """Activa o desactiva una marca de la persona (fuera de cuadro o no es persona)."""
         self.cambiar(lambda r: r.__setitem__(marca, not r[marca]))
         self.mensaje = f"{texto}: {'si' if self.r[marca] else 'no'}"
 
     # ------------------------------------------------------------------ navegación
     def terminada_en(self, j):
+        """True si la persona en la posición `j` de la lista ya está terminada."""
         return terminada(self.anot[self.ids[j]])
 
     def n_terminadas(self):
+        """Cuántas personas de la lista están terminadas."""
         return sum(self.terminada_en(j) for j in range(len(self.ids)))
 
     def siguiente_sin_terminar(self, desde=None):
+        """Posición de la siguiente persona sin terminar, dando la vuelta a la lista; None si están todas."""
         desde = self.i if desde is None else desde
         n = len(self.ids)
         for k in range(1, n + 1):
@@ -536,10 +572,12 @@ class Anotador:
         return None
 
     def salir_de_persona(self):
+        """Guarda antes de dejar la persona actual, si se tocó."""
         if self.id in self.tocadas:
             self.guardar()
 
     def ir_a(self, j):
+        """Pasa a la persona en la posición `j` de la lista, guardando la actual."""
         if not 0 <= j < len(self.ids):
             self.mensaje = ("es la primera persona" if j < 0 else
                             "es la ultima persona; espacio va a la siguiente sin terminar")
@@ -550,6 +588,7 @@ class Anotador:
         self.abrir()
 
     def cargar_imagenes(self):
+        """Lee la RGB y la térmica alineadas del fotograma de la persona actual, solo si cambió el fotograma."""
         p = self.p
         if self._pos_cargada != p.posicion:
             rgb = cv2.imread(str(self.alineados / p.imagen_rgb), cv2.IMREAD_COLOR)
@@ -561,12 +600,15 @@ class Anotador:
             self.preparar_imagenes()
 
     def abrir(self):
+        """Prepara la persona actual: imágenes, vista inicial, herramienta y reloj."""
         self.cargar_imagenes()
         self.vista = self.vista_inicial()
         self.herramienta = "completa" if self.r["completa"] is None else "visible"
         self.t0 = time.monotonic()
 
     def preparar_imagenes(self):
+        """Imágenes que se muestran: las originales o, con el realce activado, con ecualización local del contraste
+        (CLAHE) en la luminancia de la RGB y en la térmica."""
         if not self.realce:
             self.mostrar = self.img
             return
@@ -588,6 +630,7 @@ class Anotador:
         return [cx, cy, z]
 
     def vista_inicial(self):
+        """Centro y zoom iniciales: la caja térmica de la persona con margen y, con precarga, también su caja RGB."""
         p, o = self.p, self.o
         x0, y0, x1, y1 = p.ter_x0, p.ter_y0, p.ter_x1, p.ter_y1
         cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
@@ -601,6 +644,7 @@ class Anotador:
         return self.limitar(cx, cy, self.ph / alto)
 
     def origen(self):
+        """Esquina superior izquierda y zoom de la vista actual, en píxeles térmicos."""
         cx, cy, z = self.vista
         return cx - self.pw / (2 * z), cy - self.ph / (2 * z), z
 
@@ -615,6 +659,7 @@ class Anotador:
         return x0 + (u + 0.5) / z, y0 + (v + 0.5) / z
 
     def panel_en(self, u, v):
+        """Panel (`rgb` o `ter`) bajo el punto (u, v) de la ventana, o None."""
         if not 0 <= v < self.ph:
             return None
         for lado, xp in self.x_panel.items():
@@ -623,6 +668,7 @@ class Anotador:
         return None
 
     def zoom(self, factor, pos=None):
+        """Cambia el zoom por `factor`, manteniendo fijo el punto bajo el cursor si se da."""
         cx, cy, z = self.vista
         nz = min(self.o["zoom_max"], max(self.z_min, z * factor))
         lado = self.panel_en(*pos) if pos is not None else None
@@ -635,11 +681,13 @@ class Anotador:
         self.vista = self.limitar(x0n + self.pw / (2 * nz), y0n + self.ph / (2 * nz), nz)
 
     def mover(self, dx, dy):
+        """Desplaza la vista un octavo del panel en la dirección dada."""
         cx, cy, z = self.vista
         self.vista = self.limitar(cx + dx * self.pw / (8 * z), cy + dy * self.ph / (8 * z), z)
 
     # ------------------------------------------------------------------ dibujo
     def rect(self, img, caja, color, grosor):
+        """Dibuja en el panel una caja dada en píxeles térmicos."""
         u0, v0 = self.a_panel(caja[0], caja[1])
         u1, v1 = self.a_panel(caja[2], caja[3])
         cv2.rectangle(img, (int(round(u0)), int(round(v0))), (int(round(u1)) - 1, int(round(v1)) - 1), color, grosor)
@@ -674,11 +722,13 @@ class Anotador:
             cv2.line(img, (0, v), (self.pw - 1, v), color, 1)
 
     def rotular(self, img, rotulo, color=BLANCO):
+        """Escribe un rótulo con fondo negro en la esquina del panel."""
         (w, h), _ = cv2.getTextSize(rotulo, FUENTE, 0.6, 1)
         cv2.rectangle(img, (0, 0), (w + 16, h + 12), (0, 0, 0), -1)
         cv2.putText(img, rotulo, (8, h + 5), FUENTE, 0.6, color, 1, cv2.LINE_AA)
 
     def panel(self, lado):
+        """Dibuja el panel de una imagen con la caja de WiSARD, la completa, la visible y el arrastre en curso."""
         img = self.fondo_panel(lado)
         r, p = self.r, self.p
         a = self.arrastre
@@ -712,6 +762,7 @@ class Anotador:
         return img
 
     def vista_general(self, lado):
+        """Imagen entera reducida, con un rectángulo en la zona que muestra el panel."""
         img = cv2.resize(self.mostrar[lado], (self.gw, self.gh), interpolation=cv2.INTER_AREA)
         s = self.gw / self.tw
         x0, y0, z = self.origen()
@@ -722,6 +773,7 @@ class Anotador:
         return img
 
     def texto(self, img, linea, x, y, color=GRIS, escala=0.5):
+        """Escribe una línea de texto en la ventana."""
         cv2.putText(img, linea, (x, y), FUENTE, escala, color, 1, cv2.LINE_AA)
 
     def lienzo(self):
@@ -735,6 +787,8 @@ class Anotador:
         return L
 
     def dibujar(self):
+        """Dibuja la ventana completa: los dos paneles, las vistas generales, el estado de la persona, λ, la ayuda de
+        teclas y los mensajes."""
         L = self.lienzo()
         p, r = self.p, self.r
         x = 2 * (self.gw + self.sep) + self.sep
@@ -793,6 +847,8 @@ class Anotador:
 
     # ------------------------------------------------------------------ eventos
     def destino_de_arrastre(self, a):
+        """Qué cambia un arrastre del ratón: la completa, la visible de un panel o la posición de la completa (mover),
+        según el botón y la herramienta."""
         if a["boton"] == "der":
             return a["lado"]
         if a["mover"] or self.herramienta == "mover":
@@ -808,11 +864,13 @@ class Anotador:
         return pts
 
     def caja_de_arrastre(self, a):
+        """Caja del arrastre en píxeles térmicos, recortada a la imagen."""
         (xa, ya), (xb, yb) = self.puntos_de_arrastre(a)
         return [round(min(max(c, 0.0), lim), 2) for c, lim in
                 ((min(xa, xb), self.tw), (min(ya, yb), self.th), (max(xa, xb), self.tw), (max(ya, yb), self.th))]
 
     def raton(self, evento, u, v, flags, _=None):
+        """Atiende el ratón: la rueda hace zoom y los arrastres dibujan o mueven cajas."""
         if evento == cv2.EVENT_MOUSEWHEEL:  # en Windows (u, v) llegan en coordenadas de pantalla: se usa el último
             if self.raton_pos is not None:  # el giro va en los 16 bits altos de flags, con signo: > 0 hacia adelante
                 self.zoom(self.o["zoom_paso"] if flags > 0 else 1 / self.o["zoom_paso"], self.raton_pos)
@@ -925,6 +983,7 @@ class Anotador:
               f"{(ax0, ay0, ax1, ay1)} -> {'entra completa' if dentro else 'NO ENTRA'}", flush=True)
 
     def ejecutar(self):
+        """Bucle de la herramienta: dibuja la ventana y atiende las teclas hasta salir. Guarda al salir."""
         cv2.namedWindow(VENTANA, cv2.WINDOW_AUTOSIZE)
         cv2.setMouseCallback(VENTANA, self.raton)
         cv2.imshow(VENTANA, self.dibujar())
@@ -965,6 +1024,8 @@ class AnotadorSimple(Anotador):
 
     def __init__(self, o, personas, ids, alineados, salida, tam_ter, area=None, inicio=None, ronda=None,
                  quien="segundo", lista=None):
+        """Prepara el modo simple: las mismas pantallas que la herramienta con cajas, pero se responde con una tecla por
+        persona (1 se ve en la RGB, 2 no se ve, 3 no es persona), sin precarga ni realce."""
         if quien not in ("primero", "segundo"):
             raise ValueError(quien)
         self.o, self.modo, self.salida, self.ronda = o, f"{quien}_simple", Path(salida), ronda
@@ -993,6 +1054,8 @@ class AnotadorSimple(Anotador):
 
     # ------------------------------------------------------------------ datos
     def cargar(self):
+        """Lee las respuestas ya guardadas, para retomar. Se detiene si el archivo no tiene las columnas del modo
+        simple."""
         if not self.salida.exists():
             return
         df = pd.read_csv(self.salida, dtype={"id": str})
@@ -1014,6 +1077,7 @@ class AnotadorSimple(Anotador):
         print(f"Retomando {self.salida}: {len(df)} de {len(self.ids)} personas respondidas")
 
     def guardar(self):
+        """Suma el tiempo de la persona actual y reescribe el archivo con todas las respuestas."""
         ahora = time.monotonic()
         self.resp[self.id]["tiempo_s"] += ahora - self.t0
         self.t0 = ahora
@@ -1028,6 +1092,7 @@ class AnotadorSimple(Anotador):
         self.escribir(pd.DataFrame(filas, columns=COLUMNAS_SIMPLE))
 
     def responder(self, respuesta):
+        """Guarda la respuesta de la persona actual y pasa a la siguiente sin responder."""
         r = self.resp[self.id]
         r["respuesta"], r["guardado"] = respuesta, datetime.now().isoformat(timespec="seconds")
         self.guardar()
@@ -1040,6 +1105,7 @@ class AnotadorSimple(Anotador):
         self.mensaje = texto
 
     def borrar(self):
+        """Borra la respuesta de la persona actual."""
         r = self.resp[self.id]
         if r["respuesta"] is None:
             self.mensaje = "esta persona no tiene respuesta"
@@ -1049,19 +1115,24 @@ class AnotadorSimple(Anotador):
         self.mensaje = "respuesta borrada"
 
     def terminada_en(self, j):
+        """True si la persona en la posición `j` de la lista ya tiene respuesta."""
         return self.resp[self.ids[j]]["respuesta"] is not None
 
     def salir_de_persona(self):
+        """Guarda antes de dejar la persona actual, si tiene respuesta."""
         if self.resp[self.id]["respuesta"] is not None:
             self.guardar()
 
     def abrir(self):
+        """Prepara la persona actual: imágenes, vista inicial y reloj."""
         self.cargar_imagenes()
         self.vista = self.vista_inicial()
         self.t0 = time.monotonic()
 
     # ------------------------------------------------------------------ dibujo
     def panel(self, lado):
+        """Dibuja el panel de una imagen con la caja térmica de WiSARD de la persona y, más tenues, las de las otras
+        personas del fotograma."""
         img = self.fondo_panel(lado)
         p = self.p
         if self.ver_cajas:
@@ -1075,6 +1146,7 @@ class AnotadorSimple(Anotador):
         return img
 
     def dibujar(self):
+        """Dibuja la ventana del modo simple: paneles, vistas generales, la regla y las teclas."""
         L = self.lienzo()
         p = self.p
         x = 2 * (self.gw + self.sep) + self.sep
@@ -1108,6 +1180,7 @@ class AnotadorSimple(Anotador):
 
     # ------------------------------------------------------------------ eventos
     def raton(self, evento, u, v, flags, _=None):
+        """Atiende el ratón: solo la rueda, para hacer zoom."""
         if evento == cv2.EVENT_MOUSEWHEEL:  # como en la herramienta: (u, v) en coordenadas de pantalla
             if self.raton_pos is not None:
                 self.zoom(self.o["zoom_paso"] if flags > 0 else 1 / self.o["zoom_paso"], self.raton_pos)
@@ -1213,7 +1286,7 @@ def crear_anotador(cfg, rutas, segundo, salida=None, area=None, inicio=None, mue
     if ajuste:
         ruta_lista = data / o["lista_ajuste"]
         if not ruta_lista.exists():
-            raise SystemExit(f"No existe {ruta_lista}: corre antes scripts/corregir_oclusion.py")
+            raise SystemExit(f"No existe {ruta_lista}: corre antes src/oclusion/corregir_oclusion.py")
         ids = pd.read_csv(ruta_lista, dtype={"id": str}).sort_values("orden").id
     if segundo:
         salida = salida or data / o["anotaciones_segundo"]
@@ -1228,6 +1301,7 @@ def crear_anotador(cfg, rutas, segundo, salida=None, area=None, inicio=None, mue
 
 
 def main():
+    """Prepara la lista de personas y la muestra (--preparar) o abre la herramienta en el modo pedido."""
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--config", required=True)
     ap.add_argument("--rutas", required=True)

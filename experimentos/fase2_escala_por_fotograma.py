@@ -7,7 +7,7 @@ nominal (la de la franja de CLAUDE.md) y en cada una se busca el centro de la t�
 "distinto" si su escala se aleja de la mediana del vuelo o si la correlación cae mucho (la RGB ya no coincide con la
 térmica por ninguna escala: aterrizaje, paralaje o desfase).
 
-Uso: python scripts/fase2_escala_por_fotograma.py --config configs/fase2.yaml --rutas configs/rutas.yaml
+Uso: python -m experimentos.fase2_escala_por_fotograma --config configs/fase2.yaml --rutas configs/rutas.yaml
 """
 import argparse
 from concurrent.futures import ProcessPoolExecutor
@@ -20,12 +20,16 @@ from src.comun import leer_rutas, leer_yaml, pares_utilizables
 
 
 def bordes(img, sigma):
+    """Magnitud del gradiente suavizado, normalizada por su media. Se comparan bordes y no brillo porque la RGB y la
+    térmica no se parecen en brillo."""
     g = cv2.GaussianBlur(img.astype(np.float32), (0, 0), sigma)
     m = cv2.magnitude(cv2.Sobel(g, cv2.CV_32F, 1, 0), cv2.Sobel(g, cv2.CV_32F, 0, 1))
     return m / (m.mean() + 1e-6)
 
 
 def correlacion(rgb, plantilla, escala, sigma):
+    """Busca la térmica (como plantilla de bordes) dentro de la RGB reducida a `escala`. Devuelve la correlación más
+    alta y su posición."""
     rs = cv2.resize(rgb, None, fx=escala, fy=escala, interpolation=cv2.INTER_AREA)
     if rs.shape[0] < plantilla.shape[0] or rs.shape[1] < plantilla.shape[1]:
         return -1.0, None
@@ -35,6 +39,8 @@ def correlacion(rgb, plantilla, escala, sigma):
 
 
 def estimar(args):
+    """Escala y posición en que la RGB de un par coincide mejor con la térmica: primero una búsqueda gruesa de escalas y
+    luego una fina alrededor de la mejor."""
     ruta_rgb, ruta_ter, c = args
     ter = cv2.imread(str(ruta_ter), cv2.IMREAD_GRAYSCALE)
     rgb = cv2.imread(str(ruta_rgb), cv2.IMREAD_GRAYSCALE)
@@ -71,6 +77,8 @@ def tramos(distinto, posiciones, hueco_max):
 
 
 def main():
+    """Estima la escala de cada par de los vuelos pedidos, en paralelo, y escribe la tabla por par y los tramos en que
+    la escala se aparta de la nominal."""
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", required=True)
     ap.add_argument("--rutas", required=True)

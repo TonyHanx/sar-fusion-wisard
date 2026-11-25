@@ -17,7 +17,7 @@ r"""Fase 3a: partición por vuelo, etiquetas sin cajas repetidas y datasets de U
 6. Agrega una fila a la bitácora. No entrena nada.
 
 Uso:
-    .venv\Scripts\python.exe scripts\fase3_particion.py --config configs\fase3.yaml --rutas configs\rutas.yaml
+    .venv\Scripts\python.exe -m src.particion.particion --config configs\fase3.yaml --rutas configs\rutas.yaml
 """
 import argparse
 import os
@@ -62,6 +62,8 @@ def vaciar(carpeta, data):
 
 
 def enlazar(origen, destino, modo):
+    """Pone una imagen en la carpeta del dataset sin duplicarla en disco: enlace duro (`duro`) o copia (`copia`), según
+    la configuración."""
     if modo == "duro":
         os.link(origen, destino)
     elif modo == "copia":
@@ -71,6 +73,8 @@ def enlazar(origen, destino, modo):
 
 
 def leer_division(ruta):
+    """Lee la partición por vuelo (configs/particion.yaml) y devuelve el vuelo con su división. Se detiene si un vuelo
+    aparece en dos divisiones."""
     part = leer_yaml(ruta)
     division = {}
     for d, vuelos in part.items():
@@ -93,6 +97,8 @@ def verificar(cfg_modelos, divisiones, salida, rutas_yaml, n, seed, alineados, i
         if datos.get("channels", 3) != m["channels"]:
             raise SystemExit(f"{modelo}: Ultralytics leyó channels {datos.get('channels')}, se esperaba {m['channels']}")
         for d in divisiones.values():
+            # Solo se cuentan las etiquetas (la caché que arma Ultralytics al crear el dataset), sin leer imágenes,
+            # así que imgsz no cambia nada; 640 es el tamaño de entrenamiento.
             ds = YOLODataset(img_path=datos[d], imgsz=640, augment=False, data=datos, task="detect")
             cache = load_dataset_cache_file(Path(ds.label_files[0]).parent.with_suffix(".cache"))
             nf, nm, ne, nc, _ = cache["results"]
@@ -119,6 +125,8 @@ def verificar(cfg_modelos, divisiones, salida, rutas_yaml, n, seed, alineados, i
 
 
 def main():
+    """Escribe las etiquetas sin cajas repetidas y los datasets de Ultralytics de los tres modelos, con sus yaml, según
+    la partición por vuelo."""
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--config", required=True)
     ap.add_argument("--rutas", required=True)
@@ -185,7 +193,7 @@ def main():
                      "channels": m["channels"], "names": c["nombres"]}
         rutas_yaml[modelo] = RAIZ / m["yaml"]
         rutas_yaml[modelo].write_text(
-            f"# Dataset de Ultralytics del modelo '{modelo}'. Generado por scripts/fase3_particion.py con "
+            f"# Dataset de Ultralytics del modelo '{modelo}'. Generado por src/particion/particion.py con "
             f"{args.config}: no editar a mano.\n# Imágenes: data/{c['alineados']}/{m['imagenes']} (enlaces duros). "
             f"Etiquetas: las térmicas sin cajas repetidas.\n"
             + yaml.safe_dump(contenido, allow_unicode=True, sort_keys=False), encoding="utf-8")

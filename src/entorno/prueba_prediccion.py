@@ -1,6 +1,6 @@
 """Fase 0: carga yolo26s.pt y predice sobre una imagen térmica de WiSARD.
 
-Uso: python scripts/fase0_prueba_prediccion.py --config configs/fase0.yaml --rutas configs/rutas.yaml
+Uso: python -m src.entorno.prueba_prediccion --config configs/fase0.yaml --rutas configs/rutas.yaml
 """
 import argparse
 import time
@@ -13,6 +13,8 @@ from src.comun import RAIZ, agregar_a_bitacora, fijar_semilla, leer_cajas_yolo, 
 
 
 def main():
+    """Comprueba que el detector funciona: carga los pesos preentrenados, predice sobre una térmica de WiSARD y guarda
+    la imagen con las cajas."""
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", required=True)
     ap.add_argument("--rutas", required=True)

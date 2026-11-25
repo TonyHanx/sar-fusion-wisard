@@ -1,8 +1,8 @@
 """Fase 2: marca puntos de control RGB-térmica en los fotogramas de inicio, mitad y final de un vuelo.
 
 Uso:
-  python scripts/marcar_puntos.py --config configs/fase2.yaml --rutas configs/rutas.yaml --vuelo 210924_FHL_Enterprise_0401
-  python scripts/marcar_puntos.py --config configs/fase2.yaml --rutas configs/rutas.yaml --listar
+  python -m src.alineacion.marcar_puntos --config configs/fase2.yaml --rutas configs/rutas.yaml --vuelo 210924_FHL_Enterprise_0401
+  python -m src.alineacion.marcar_puntos --config configs/fase2.yaml --rutas configs/rutas.yaml --listar
 
 Ventana principal: RGB a la izquierda y térmica a la derecha. Un punto de control es un clic en la RGB y otro en la
 térmica sobre el mismo objeto (una roca, un tronco, una esquina), en cualquier orden. La ventana "lupa" amplía la zona
@@ -30,7 +30,8 @@ import cv2
 import numpy as np
 import yaml
 
-from src.comun import RAIZ, fotogramas_clave, homografia_franja, leer_cajas_yolo, leer_rutas, leer_yaml, pares_utilizables
+from src.comun import (RAIZ, fotogramas_clave, homografia_franja, leer_cajas_yolo, leer_rutas, leer_yaml,
+                       pares_utilizables)
 
 VENTANA, LUPA = "marcar puntos", "lupa"
 NOMBRES = ["inicio", "mitad", "final"]
@@ -39,6 +40,7 @@ SEPARACION, BARRA = 10, 56
 
 
 def aplicar(H, x, y):
+    """Lleva el punto (x, y) con la transformación H de 3 x 3."""
     p = H @ np.array([x, y, 1.0])
     return p[0] / p[2], p[1] / p[2]
 
@@ -69,6 +71,8 @@ def borde_inferior(nombre):
 
 class Marcador:
     def __init__(self, cfg, rutas, vuelo, area=None):
+        """Prepara la herramienta para un vuelo: sus pares utilizables, el tamaño de las ventanas según la pantalla y
+        los puntos ya guardados, si los hay."""
         self.cfg, self.m = cfg, cfg["marcado"]
         self.area = area
         # tamaño máximo del lienzo principal: el del config, recortado para que quepan en el área de trabajo la
@@ -99,6 +103,8 @@ class Marcador:
 
     # ------------------------------------------------------------------ datos
     def cargar(self):
+        """Carga los fotogramas de inicio, mitad y final (los del config o los calculados) y los puntos guardados del
+        vuelo, para retomar."""
         # fotogramas preconfigurados en la parte estable del vuelo; si no hay, el primero, el del medio y el último
         clave = self.m.get("fotogramas", {}).get(self.vuelo) or fotogramas_clave(self.pares.index)
         fuera = {n: clave[n] for n in NOMBRES if clave[n] not in self.pares.index}
@@ -117,6 +123,7 @@ class Marcador:
         return fot
 
     def guardar(self):
+        """Guarda los puntos del vuelo en configs/puntos_control/<vuelo>.yaml, en píxeles de las imágenes originales."""
         self.archivo.parent.mkdir(parents=True, exist_ok=True)
         datos = {"vuelo": self.vuelo, "guardado": datetime.now().isoformat(timespec="seconds"),
                  "formato_punto": "[x_rgb, y_rgb, x_termica, y_termica] en píxeles de las imágenes originales",
@@ -132,9 +139,11 @@ class Marcador:
 
     @property
     def actual(self):
+        """Fotograma que se está marcando (inicio, mitad o final)."""
         return self.fotogramas[NOMBRES[self.i]]
 
     def abrir_fotograma(self):
+        """Lee la RGB, la térmica y sus cajas del fotograma actual y las prepara a la escala de la pantalla."""
         p = self.pares.loc[self.actual["posicion"]]
         self.rgb = cv2.imread(str(self.dataset / p.ruta_rgb))
         self.ter = cv2.imread(str(self.dataset / p.ruta_termica))
@@ -162,6 +171,8 @@ class Marcador:
         return None if self.invertido else homografia_franja(self.cfg["franja_inicial"], self.tam_rgb, self.tam_termica)
 
     def errores(self):
+        """Con 5 puntos o más, ajusta una homografía con los demás y mide el error de cada punto, en px térmicos. Con
+        menos, devuelve None."""
         puntos = self.actual["puntos"]
         if len(puntos) < 5:  # con 4 puntos el ajuste es exacto y el error no informa
             return None
@@ -173,9 +184,12 @@ class Marcador:
         return np.linalg.norm(proy - a[:, 2:], axis=1)
 
     def a_pantalla(self, lado, x, y):
+        """Convierte un punto de la imagen original (RGB o térmica) a píxeles de la ventana."""
         return (int(round(x * self.esc[lado])) + (self.x_ter if lado == "ter" else 0), int(round(y * self.esc[lado])))
 
     def desde_pantalla(self, u, v):
+        """Convierte un clic en la ventana a (lado, x, y) de la imagen original, o None si cae fuera de las dos
+        imágenes."""
         if v >= self.alto:
             return None
         if u < self.x_ter - SEPARACION:
@@ -186,6 +200,8 @@ class Marcador:
 
     # ------------------------------------------------------------------ edición
     def agregar(self, lado, x, y):
+        """Registra un clic. El primero queda pendiente; con el segundo, en la otra imagen, se completa el punto de
+        control."""
         f = self.actual
         pend = f["pendiente"]
         if pend is None or pend[0] == lado:
@@ -197,6 +213,7 @@ class Marcador:
         self.cambios, self.aviso_salida, self.mensaje = True, False, ""
 
     def deshacer(self):
+        """Quita el clic pendiente o, si no hay, el último punto de control."""
         f = self.actual
         if f["pendiente"] is not None:
             f["pendiente"] = None
@@ -205,6 +222,7 @@ class Marcador:
         self.cambios, self.aviso_salida, self.mensaje = True, False, ""
 
     def mover(self, delta):
+        """Cambia el fotograma actual `delta` posiciones, solo si todavía no tiene puntos."""
         if self.actual["puntos"] or self.actual["pendiente"]:
             self.mensaje = "el fotograma ya tiene puntos: deshazlos antes de moverlo"
             return
@@ -216,6 +234,8 @@ class Marcador:
 
     # ------------------------------------------------------------------ dibujo
     def dibujar(self):
+        """Dibuja la ventana principal: las dos imágenes, sus cajas, los puntos, la predicción del punto que falta y la
+        barra de estado."""
         lienzo = np.zeros((self.alto + BARRA, self.x_ter + self.disp["ter"].shape[1], 3), np.uint8)
         lienzo[:self.alto, :self.disp["rgb"].shape[1]] = self.disp["rgb"]
         lienzo[:self.alto, self.x_ter:] = self.disp["ter"]
@@ -254,6 +274,7 @@ class Marcador:
         return lienzo
 
     def dibujar_lupa(self):
+        """Dibuja la lupa: la zona bajo el cursor ampliada, con los puntos que caen en ella."""
         lado_px = self.m["lado_lupa"]
         lupa = np.zeros((lado_px, lado_px, 3), np.uint8)
         if self.hover is None:
@@ -264,6 +285,7 @@ class Marcador:
         M = np.array([[aum, 0, lado_px / 2 - aum * x], [0, aum, lado_px / 2 - aum * y]])
         lupa = cv2.warpAffine(img, M, (lado_px, lado_px), flags=cv2.INTER_NEAREST if aum > 2 else cv2.INTER_AREA)
         def en_lupa(px, py):
+            """Convierte un punto de la imagen original a píxeles de la lupa."""
             return int(round(lado_px / 2 + aum * (px - x))), int(round(lado_px / 2 + aum * (py - y)))
         for k, q in enumerate(self.actual["puntos"]):
             px, py = q[:2] if lado == "rgb" else q[2:]
@@ -283,6 +305,7 @@ class Marcador:
 
     # ------------------------------------------------------------------ eventos
     def raton(self, evento, u, v, flags, _):
+        """Atiende el ratón en la ventana principal: mover actualiza la lupa y el clic agrega un punto."""
         p = self.desde_pantalla(u, v)
         if evento == cv2.EVENT_MOUSEMOVE and p is not None:
             self.hover = p
@@ -290,6 +313,7 @@ class Marcador:
             self.agregar(*p)
 
     def raton_lupa(self, evento, u, v, flags, _):
+        """Atiende el clic en la lupa: agrega el punto con la precisión de la ampliación."""
         if evento == cv2.EVENT_LBUTTONDOWN and self.lupa_centro is not None:
             lado, x, y, aum = self.lupa_centro
             c = self.m["lado_lupa"] / 2
@@ -328,6 +352,7 @@ class Marcador:
         cv2.moveWindow(LUPA, x0, abajo if abajo is not None else y0 + self.alto + BARRA + self.m["reserva_titulo_px"])
 
     def ejecutar(self):
+        """Bucle de la herramienta: dibuja las ventanas y atiende las teclas hasta salir."""
         cv2.namedWindow(VENTANA, cv2.WINDOW_AUTOSIZE)
         cv2.namedWindow(LUPA, cv2.WINDOW_AUTOSIZE)
         cv2.setMouseCallback(VENTANA, self.raton)
@@ -355,6 +380,7 @@ class Marcador:
 
 
 def main():
+    """Lista los vuelos con sus puntos (--listar) o abre la herramienta para marcar un vuelo."""
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", required=True)
     ap.add_argument("--rutas", required=True)

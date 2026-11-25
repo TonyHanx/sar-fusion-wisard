@@ -9,7 +9,7 @@ Calcular (por omisión), para cada persona térmica de los pares finales del vue
 Guarda data/<salida> (ids iguales a los de data/<oclusion.personas>) y agrega una fila a la bitácora.
 
 La comparación con la anotación manual de la muestra (antes --comparar, con 3 niveles) está en
-scripts/fase4_validacion_auto.py: desde el 2026-11-01 el nivel tiene dos clases (se ve o no en la RGB) y el kappa de 3
+src/oclusion/concordancia.py: desde el 2026-11-01 el nivel tiene dos clases (se ve o no en la RGB) y el kappa de 3
 niveles solo se reporta.
 
 --revisar: antes de comparar, lista las personas de la muestra anotada con la completa RGB corrida más de
@@ -19,8 +19,8 @@ herramienta (con las cajas) y, debajo, los mismos paneles sin cajas; además un 
 data/<oclusion.anotaciones> (la herramienta se arma sobre una copia temporal).
 
 Uso:
-    .venv\Scripts\python.exe scripts\oclusion_auto.py --config configs\fase3.yaml --rutas configs\rutas.yaml
-    .venv\Scripts\python.exe scripts\oclusion_auto.py --config configs\fase3.yaml --rutas configs\rutas.yaml --revisar
+    .venv\Scripts\python.exe -m src.oclusion.oclusion_auto --config configs\fase3.yaml --rutas configs\rutas.yaml
+    .venv\Scripts\python.exe -m src.oclusion.oclusion_auto --config configs\fase3.yaml --rutas configs\rutas.yaml --revisar
 """
 import argparse
 import sys
@@ -38,6 +38,8 @@ CAJA = ["x0", "y0", "x1", "y1"]
 
 
 def nivel(lam, limites):
+    """Nivel de oclusión de tres clases según λ y los límites: baja, moderada o severa. Desde el 1 de noviembre de 2026
+    solo se usa para reportar."""
     lam = np.asarray(lam, float)
     return np.where(lam <= limites["baja"], "baja", np.where(lam <= limites["moderada"], "moderada", "severa"))
 
@@ -50,11 +52,14 @@ def cajas_px_en_orden(ruta, tam):
 
 
 def resumen_niveles(df, columna_lambda, columna_nivel):
+    """Cuántas personas hay de cada nivel y la mediana de λ, para la bitácora."""
     return {"personas": len(df), "lambda_mediana": round(float(df[columna_lambda].median()), 3),
             **{n: int((df[columna_nivel] == n).sum()) for n in NIVELES}}
 
 
 def calcular(cfg, rutas):
+    """Calcula el λ RGB automático de cada persona térmica del vuelo de prueba, con la caja RGB de WiSARD más cercana
+    llevada a la térmica, y escribe data/oclusion_auto.csv."""
     o, a, d = cfg["oclusion"], cfg["oclusion_auto"], cfg["datasets"]
     data = rutas["data"]
     v = o["vuelo"]
@@ -264,6 +269,8 @@ def revisar(cfg, rutas, personas=None, nombre=None, base=None, criterio="pedida 
 
 
 def _motivo(f, corrida, dibujada):
+    """Por qué se revisa una persona: la completa RGB corrida, una visible RGB en un par solo térmica o porque se pidió.
+    """
     if corrida:
         return f"corrida {f.corrimiento_px:.1f} px"
     return "solo termica" if dibujada else "pedida"
@@ -349,6 +356,7 @@ def superposicion(cfg, rutas, sel, per, carpeta):
 
 
 def md5_de_archivo(ruta):
+    """Huella MD5 de un archivo, para dejar constancia de qué versión de las anotaciones se usó."""
     import hashlib
     return hashlib.md5(Path(ruta).read_bytes()).hexdigest()
 
@@ -360,6 +368,7 @@ def texto_ascii(t):
 
 
 def main():
+    """Calcula el λ automático (por omisión) o arma las imágenes de revisión de la muestra (--revisar)."""
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--config", required=True)
     ap.add_argument("--rutas", required=True)

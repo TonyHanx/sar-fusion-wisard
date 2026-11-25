@@ -8,7 +8,7 @@ El nivel normal del vuelo es la mediana de ese zoom; los fotogramas que se aleja
 
 Salidas en reports/alineacion/: zoom_temporal.csv (un fotograma por fila) y tramos_zoom.csv (tramos distintos).
 
-Uso: python scripts/fase2_zoom_temporal.py --config configs/fase2.yaml --rutas configs/rutas.yaml
+Uso: python -m experimentos.fase2_zoom_temporal --config configs/fase2.yaml --rutas configs/rutas.yaml
 """
 import argparse
 from concurrent.futures import ProcessPoolExecutor
@@ -21,11 +21,14 @@ from src.comun import leer_rutas, leer_yaml, pares_utilizables
 
 
 def leer(ruta, ancho):
+    """Lee una imagen en gris y la reduce a `ancho` px, manteniendo la proporción."""
     g = cv2.imread(str(ruta), cv2.IMREAD_GRAYSCALE)
     return cv2.resize(g, None, fx=ancho / g.shape[1], fy=ancho / g.shape[1], interpolation=cv2.INTER_AREA)
 
 
 def escala(a, b, c):
+    """Escala de la semejanza entre dos fotogramas seguidos de la misma cámara, con puntos ORB y RANSAC. NaN si hay
+    pocos puntos de acuerdo."""
     orb = cv2.ORB_create(c["puntos_orb"])
     ka, da = orb.detectAndCompute(a, None)
     kb, db = orb.detectAndCompute(b, None)
@@ -52,6 +55,7 @@ def paso(args):
 
 
 def tramos(mascara, posiciones, hueco_max):
+    """Junta las posiciones marcadas en `mascara` en tramos [inicio, fin], admitiendo huecos de hasta `hueco_max`."""
     t = []
     for pos in posiciones[mascara]:
         if t and pos - t[-1][1] <= hueco_max + 1:
@@ -62,6 +66,8 @@ def tramos(mascara, posiciones, hueco_max):
 
 
 def main():
+    """Estima el zoom relativo de la RGB respecto de la térmica a lo largo de cada vuelo y escribe la tabla por par y
+    los tramos en que cambia."""
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", required=True)
     ap.add_argument("--rutas", required=True)

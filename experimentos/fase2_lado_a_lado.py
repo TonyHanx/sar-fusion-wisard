@@ -1,6 +1,6 @@
 """Fase 2: pares RGB y térmica lado a lado, con sus cajas, en los fotogramas de inicio, mitad y final de un vuelo.
 
-Uso: python scripts/fase2_lado_a_lado.py --config configs/fase2.yaml --rutas configs/rutas.yaml
+Uso: python -m experimentos.fase2_lado_a_lado --config configs/fase2.yaml --rutas configs/rutas.yaml
 """
 import argparse
 
@@ -10,6 +10,8 @@ from src.comun import fotogramas_clave, lado_a_lado, leer_rutas, leer_yaml, pane
 
 
 def main():
+    """Guarda los pares RGB y térmica lado a lado, con sus cajas, en los fotogramas de inicio, mitad y final de cada
+    vuelo."""
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", required=True)
     ap.add_argument("--rutas", required=True)

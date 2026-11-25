@@ -7,7 +7,7 @@ RGB completa con la franja que ve la térmica en amarillo, esa franja recortada 
 térmica, todas con sus cajas. Un tramo que empieza en el primer fotograma del vuelo solo tiene borde final, y uno que
 termina en el último solo tiene borde inicial.
 
-Uso: python scripts/fase2_bordes_tramos.py --config configs/fase2.yaml --rutas configs/rutas.yaml
+Uso: python -m experimentos.fase2_bordes_tramos --config configs/fase2.yaml --rutas configs/rutas.yaml
 """
 import argparse
 
@@ -19,6 +19,8 @@ TODA = {"x": [0, 1], "y": [0, 1]}  # la térmica entera
 
 
 def main():
+    """Guarda imágenes de los bordes de cada tramo excluido por despegue, aterrizaje o cambio de zoom, para confirmar a
+    ojo dónde empieza y dónde termina."""
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", required=True)
     ap.add_argument("--rutas", required=True)

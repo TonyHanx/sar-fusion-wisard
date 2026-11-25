@@ -1,7 +1,8 @@
 r"""Fase 7, C4: desglose descriptivo de la evaluación en validación, por vuelo y por bloque del bootstrap.
 
 No cambia ninguna cifra ni agrega pruebas: usa las predicciones de C4, los umbrales elegidos (umbrales.csv de
-scripts/fase7_c4_evaluar.py) y el mismo emparejamiento de pycocotools. Sirve para leer los IC y McNemar de C4:
+src/evaluacion/c4_evaluar_validacion.py) y el mismo emparejamiento de pycocotools. Sirve para leer los IC y McNemar de
+C4:
 - bloques.csv: los bloques (episodios) del bootstrap, con sus fotogramas y sus personas por nivel;
 - alto_por_nivel.csv: alto de la caja térmica (px) por vuelo y nivel (oclusión y tamaño);
 - recall_por_vuelo.csv: personas detectadas por vuelo y subconjunto (sin las cajas dudosas), los 12 modelos;
@@ -9,8 +10,8 @@ scripts/fase7_c4_evaluar.py) y el mismo emparejamiento de pycocotools. Sirve par
 - remuestreos.csv: en cuántos remuestreos del bootstrap falta cada bloque (los mismos de la evaluación, seed=0).
 Una fila en la bitácora.
 
-Uso (después de scripts/fase7_c4_evaluar.py):
-  .venv\Scripts\python.exe scripts\fase7_c4_desglose.py --config configs\fase7.yaml --rutas configs\rutas.yaml
+Uso (después de src/evaluacion/c4_evaluar_validacion.py):
+  .venv\Scripts\python.exe -m src.evaluacion.c4_desglose_validacion --config configs\fase7.yaml --rutas configs\rutas.yaml
 """
 import argparse
 
@@ -31,6 +32,8 @@ def corto(vuelo):
 
 
 def main():
+    """Desglosa la evaluación de C4 en validación por vuelo y por bloque del bootstrap, sin cambiar ninguna cifra, y
+    escribe sus tablas y la fila de la bitácora."""
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--config", required=True)
     ap.add_argument("--rutas", required=True)
@@ -57,7 +60,7 @@ def main():
         if info["rgb0"]:
             umbral[k] = umbral[info["umbral_de"]]
     if set(umbral) != set(modelos):
-        raise SystemExit("umbrales.csv no tiene todos los modelos: corre antes scripts/fase7_c4_evaluar.py")
+        raise SystemExit("umbrales.csv no tiene todos los modelos: corre antes src/evaluacion/c4_evaluar_validacion.py")
 
     # bloques del bootstrap
     bl = fot.groupby("bloque").agg(vuelo=("vuelo", "first"), fotogramas=("img_id", "size"),
@@ -68,7 +71,7 @@ def main():
     bl = bl.fillna(0).reset_index()
     bl.to_csv(salidas / "bloques.csv", index=False)
 
-    # remuestreos: los mismos de fase7_c4_evaluar.py (mismo generador y seed)
+    # remuestreos: los mismos de src/evaluacion/c4_evaluar_validacion.py (mismo generador y seed)
     B = base["bootstrap"]["remuestreos"]
     rng = np.random.default_rng(base["bootstrap"]["seed"])
     cuentas_b = np.stack([np.bincount(rng.integers(0, nb, nb), minlength=nb) for _ in range(B)])
@@ -130,7 +133,8 @@ def main():
     grande = bl.loc[bl.personas_sin_dudosas.idxmax()]
     sin_grande = rem.loc[rem.bloque == grande.bloque, "fraccion"].iloc[0]
     agregar_a_bitacora(rutas["bitacora"], cfg["fase_bitacora"], "YOLO26s (12 modelos de C4)",
-                       f"C4, desglose descriptivo en validación (scripts/fase7_c4_desglose.py): por vuelo y por bloque "
+                       f"C4, desglose descriptivo en validación (src/evaluacion/c4_desglose_validacion.py): "
+                       f"por vuelo y por bloque "
                        f"del bootstrap, con los umbrales de umbrales.csv; sin pruebas nuevas; salidas en "
                        f"{c4_evaluar.rel(salidas)}",
                        f"{nb} bloques; el más grande ({grande.vuelo}, bloque {grande.bloque}) tiene "

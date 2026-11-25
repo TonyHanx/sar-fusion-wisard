@@ -6,7 +6,7 @@ Reglas (CLAUDE.md):
   - Fotogramas: por posición en orden natural, hasta la longitud mínima.
   - Un .txt vacío es 0 cajas; una imagen sin .txt no está anotada.
 
-Uso: python scripts/fase1_pares.py --config configs/fase1.yaml --rutas configs/rutas.yaml
+Uso: python -m src.pares.emparejar --config configs/fase1.yaml --rutas configs/rutas.yaml
 """
 import argparse
 import re
@@ -21,6 +21,7 @@ COLUMNAS = ["vuelo", "sitio", "fecha", "posicion", "carpeta_rgb", "carpeta_termi
 
 
 def clave_natural(s):
+    """Clave para ordenar nombres en orden natural (DJI_2 antes que DJI_10), que es el orden de los fotogramas."""
     return [int(t) if t.isdigit() else t.lower() for t in re.split(r"(\d+)", s)]
 
 
@@ -40,6 +41,8 @@ def leer_txt(ruta):
 
 
 def inventario(dataset, extensiones):
+    """Recorre las carpetas del dataset y, por cada una, guarda sus imágenes en orden natural, la modalidad (VIS o IR),
+    su número y el grupo fecha_sitio_dron. Es la base del emparejamiento."""
     carpetas = {}
     for d in sorted(p for p in dataset.iterdir() if p.is_dir()):
         imagenes = sorted((f.name for f in d.iterdir() if f.suffix.lower() in extensiones), key=clave_natural)
@@ -54,6 +57,8 @@ def inventario(dataset, extensiones):
 
 
 def parejas_de_carpetas(carpetas):
+    """Empareja cada carpeta VIS con número N con la IR con número N+1 del mismo fecha_sitio_dron (regla de CLAUDE.md).
+    """
     parejas = []
     for c_vis, v in carpetas.items():
         if v["modalidad"] != "VIS" or v["numero"] is None:
@@ -65,6 +70,8 @@ def parejas_de_carpetas(carpetas):
 
 
 def main():
+    """Arma data/pares.csv con todos los pares RGB y térmica, marca los anotados y los excluidos de configs/fase1.yaml,
+    y escribe el resumen de la fase 1."""
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", required=True)
     ap.add_argument("--rutas", required=True)

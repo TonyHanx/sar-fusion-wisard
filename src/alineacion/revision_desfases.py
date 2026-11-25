@@ -1,6 +1,7 @@
 """Fase 2: revisión de los tramos de desfase de la regla relativa y exclusiones que salen de ella.
 
-Paso 1 (sin --aplicar). Lee desfases.csv y personas_desfase.csv de la última corrida de fase2_homografias_cajas.py y
+Paso 1 (sin --aplicar). Lee desfases.csv y personas_desfase.csv de la última corrida de
+src/alineacion/semejanza_por_vuelo.py y
 clasifica cada tramo:
 - "todas corridas": en todos los pares del tramo cuentan `min_personas_todas_corridas` personas o más, y todas se
   corren más de `umbral_desfase_relativo` alturas. Se excluyen sin revisión.
@@ -25,7 +26,7 @@ incluidos los pares "solo térmica" vecinos de cada tramo excluido y de cada ext
 `exclusiones_adicionales`. Escribe revision.csv, extensiones.csv y fondo_extensiones.csv, y agrega una fila a la
 bitácora.
 
-Uso: python scripts/fase2_revision_desfases.py --config configs/fase2.yaml --rutas configs/rutas.yaml [--aplicar]
+Uso: python -m src.alineacion.revision_desfases --config configs/fase2.yaml --rutas configs/rutas.yaml [--aplicar]
 """
 import argparse
 from datetime import datetime
@@ -46,6 +47,8 @@ VERDE = (0, 230, 0)
 def desplazamiento_fondo(al, ter, sigma, ventana):
     """Desplazamiento (dx, dy) de la RGB alineada respecto de la térmica y respuesta de la correlación de fase."""
     def gradiente(img):
+        """Gradiente suavizado y normalizado de la imagen. La correlación de fase se hace sobre los bordes, no sobre el
+        brillo, porque la RGB y la térmica no se parecen en brillo."""
         img = cv2.GaussianBlur(cv2.cvtColor(img, cv2.COLOR_RGB2GRAY).astype(np.float64), (0, 0), sigma)
         g = np.hypot(cv2.Sobel(img, cv2.CV_64F, 1, 0), cv2.Sobel(img, cv2.CV_64F, 0, 1))
         return (g - g.mean()) / (g.std() + 1e-9)
@@ -61,6 +64,8 @@ def preparar(par, D, H, tam_ter):
 
 
 def clasificar(des, personas, c, cr):
+    """Clasifica cada tramo de desfase en "todas corridas" (sale sin revisión), "una persona" o "mixto", y marca cuáles
+    se revisan a ojo."""
     filas = []
     for t in des.itertuples():
         x = personas[(personas.vuelo == t.vuelo) & personas.posicion.between(t.desde, t.hasta) & personas.cuenta]
@@ -101,6 +106,9 @@ def personas_de(par, D, H, tam_rgb, tam_ter, c):
 
 
 def imagen_tramo(t, g, D, H, tam_rgb, tam_ter, c, cr, fuente, fuente_t):
+    """Hoja de inspección de un tramo: mezclas de la RGB alineada y la térmica con el mismo recorte (par anterior, los
+    del tramo y el siguiente) y el peor par entero. Devuelve también el detalle por persona y el desplazamiento del
+    fondo de cada par."""
     fuera = [p for p in range(t.desde, t.hasta + 1)]
     if len(fuera) > cr["max_posiciones_por_tramo"]:  # el principio, el final, el peor y repartidas
         idx = np.linspace(0, len(fuera) - 1, cr["max_posiciones_por_tramo"] - 1).round().astype(int)
@@ -121,6 +129,8 @@ def imagen_tramo(t, g, D, H, tam_rgb, tam_ter, c, cr, fuente, fuente_t):
     s = min(cr["panel_ancho_max"] / w, cr["panel_alto_max"] / h, cr["zoom_max"])
 
     def dibujar(img, p, escala, desplaz, cajas=True):
+        """Dibuja en el recorte las cajas térmicas y las RGB llevadas de la posición `p`, con la escala y el
+        desplazamiento del recorte."""
         if not cajas:
             return img
         d = ImageDraw.Draw(img)
@@ -135,6 +145,7 @@ def imagen_tramo(t, g, D, H, tam_rgb, tam_ter, c, cr, fuente, fuente_t):
         return img
 
     def recortar(arr):
+        """Recorta la imagen a la zona común del tramo y la lleva al tamaño del panel."""
         return Image.fromarray(arr).crop(rec).resize((round(w * s), round(h * s)), Image.LANCZOS)
 
     ventana = cv2.createHanningWindow(tuple(tam_ter), cv2.CV_64F)
@@ -191,6 +202,8 @@ def imagen_tramo(t, g, D, H, tam_rgb, tam_ter, c, cr, fuente, fuente_t):
 
 
 def revisar(cfg, c, cr, rutas, carpeta):
+    """Paso 1: clasifica los tramos, escribe la lista congelada (tramos.csv), el detalle por persona y por fondo, y una
+    imagen de inspección por cada tramo que se revisa."""
     rep_al = rutas["reports"] / c["carpeta_reporte"]
     des = pd.read_csv(rep_al / "desfases.csv", keep_default_na=False)
     personas = pd.read_csv(rep_al / "personas_desfase.csv")
@@ -262,6 +275,8 @@ def extender(vuelo, ocupadas, g, bloqueadas, H, D, tam_ter, cr, ventana):
 
 
 def aplicar(cfg, c, cr, rutas, carpeta):
+    """Paso 2: junta los tramos que salen sin revisión con las decisiones tomadas a ojo, los extiende por el fondo
+    corrido y escribe configs/exclusiones_desfase.yaml con su resumen."""
     decisiones = leer_yaml(RAIZ / cr["decisiones"])
     tr = pd.read_csv(carpeta / "tramos.csv", keep_default_na=False)
     dec = pd.DataFrame(decisiones["tramos"])
@@ -284,6 +299,8 @@ def aplicar(cfg, c, cr, rutas, carpeta):
     vec = c["vecindad_solo_termica"]
 
     def vecinos_solo_termica(vuelo, desde, hasta, ya):
+        """Pares solo térmica a `vecindad_solo_termica` posiciones o menos del tramo, que salen con él (sin contar los
+        ya excluidos)."""
         return [p for p in sorted(solo_termica(grupos[vuelo])) if desde - vec <= p <= hasta + vec
                 and not desde <= p <= hasta and p not in bloq.get(vuelo, set()) and p not in ya]
 
@@ -340,6 +357,7 @@ def aplicar(cfg, c, cr, rutas, carpeta):
     umbral = cr["extension_fondo_min_px"]
 
     def fondo_de(e):
+        """Desplazamiento del fondo de cada par de una extensión, en tabla y como texto para el resumen."""
         x = med[(med.vuelo == e.vuelo) & med.posicion.between(e.desde, e.hasta)].sort_values("posicion")
         return x, ", ".join(f"{int(r.posicion)}: ({r.fondo_dx_px:+.0f}, {r.fondo_dy_px:+.0f})" for r in x.itertuples())
 
@@ -387,7 +405,7 @@ def aplicar(cfg, c, cr, rutas, carpeta):
         ext.loc[k, "solo_termica_excluidos"] = " ".join(map(str, vecinos))
     ext.to_csv(carpeta / "extensiones.csv", index=False, encoding="utf-8")
 
-    cabecera = (f"# Generado por scripts/fase2_revision_desfases.py --aplicar el "
+    cabecera = (f"# Generado por src/alineacion/revision_desfases.py --aplicar el "
                 f"{datetime.now().isoformat(timespec='seconds')} (no editar a mano).\n"
                 f"# Desfases de la regla relativa: los tramos 'todas corridas' sin revisión, los revisados a ojo con "
                 f"decisión 'excluir' y los tramos adicionales ({cr['decisiones']}), más su extensión por el fondo.\n")
@@ -415,6 +433,7 @@ def aplicar(cfg, c, cr, rutas, carpeta):
 
 
 def main():
+    """Corre el paso 1 (revisar) o, con --aplicar, el paso 2 (aplicar las decisiones)."""
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", required=True)
     ap.add_argument("--rutas", required=True)

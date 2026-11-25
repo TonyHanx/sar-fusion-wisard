@@ -14,8 +14,8 @@ Partes:
     las etiquetas con Ultralytics y `verificacion` TIFF y PNG al azar leídos como los recibe el modelo.
 
 Uso:
-  .venv\\Scripts\\python.exe scripts\\fase7_c1_datasets.py --config configs\\fase7.yaml --rutas configs\\rutas.yaml --parte componer
-  .venv\\Scripts\\python.exe scripts\\fase7_c1_datasets.py --config configs\\fase7.yaml --rutas configs\\rutas.yaml --parte construir
+  .venv\\Scripts\\python.exe -m src.ampliacion.c1_datasets_ampliados --config configs\\fase7.yaml --rutas configs\\rutas.yaml --parte componer
+  .venv\\Scripts\\python.exe -m src.ampliacion.c1_datasets_ampliados --config configs\\fase7.yaml --rutas configs\\rutas.yaml --parte construir
 """
 # Solo importaciones livianas arriba: en Windows cada proceso hijo vuelve a importar este módulo (comun importa torch).
 import argparse
@@ -36,11 +36,13 @@ RAIZ = Path(__file__).resolve().parents[2]
 
 
 def ruta(p):
+    """Ruta absoluta: si es relativa, desde la raíz del repositorio."""
     p = Path(p)
     return p if p.is_absolute() else RAIZ / p
 
 
 def md(df, dec=1):
+    """Tabla de pandas como tabla de Markdown, con `dec` decimales en los números con coma."""
     cols = list(df.columns)
     filas = ["| " + " | ".join(map(str, cols)) + " |", "|" + "|".join("---" for _ in cols) + "|"]
     for _, r in df.iterrows():
@@ -58,11 +60,13 @@ def lados_txt(txt, tam):
 
 
 def tramos(lados, bordes, etiquetas):
+    """Cuántas personas caen en cada tramo de tamaño (lado mayor en px)."""
     cuenta = np.histogram(lados, bins=bordes)[0] if len(lados) else np.zeros(len(etiquetas), int)
     return {f"tramo {e}": int(c) for e, c in zip(etiquetas, cuenta)}
 
 
 def sitio(nombre):
+    """Sitio de un vuelo, sacado de su nombre (AAMMDD_Sitio_...)."""
     return nombre.split("_")[1]
 
 
@@ -80,6 +84,8 @@ def cupos(disponibles, total):
 
 
 def componer(cfg, rutas, out):
+    """Elige las imágenes nuevas de entrenamiento (las de C0 que quedan, los pares excluidos de los vuelos de
+    entrenamiento y las vacías con su tope) y escribe la composición, sin escribir imágenes."""
     from src.comun import leer_yaml
 
     c = cfg["c1"]
@@ -167,6 +173,8 @@ def componer(cfg, rutas, out):
 
     # tablas
     def resumen(df, clave):
+        """Resumen de la composición agrupada por `clave`: imágenes, con persona, vacías, personas y tramos de tamaño.
+        """
         filas = []
         for k, g in df.groupby(clave, sort=True):
             lados = [x for l in g.lados for x in l]
@@ -273,6 +281,8 @@ def vaciar(carpeta, data):
 
 
 def construir(cfg, rutas, out):
+    """Escribe las imágenes nuevas y sus etiquetas, arma los datasets termico_ampliado y fusion_ampliado con enlaces
+    duros y los verifica."""
     import yaml
 
     from src.comun import agregar_a_bitacora, leer_yaml
@@ -346,7 +356,8 @@ def construir(cfg, rutas, out):
                                    "rgb_real": bool(r.rgb_real)})
         archivo = ds / f"{nombre}.yaml"
         archivo.write_text(
-            f"# Dataset de Ultralytics '{nombre}' (fase 7, C1). Generado por scripts/fase7_c1_datasets.py con "
+            f"# Dataset de Ultralytics '{nombre}' (fase 7, C1). Generado por "
+            f"src/ampliacion/c1_datasets_ampliados.py con "
             f"configs/fase7.yaml: no editar a mano.\n"
             f"# Entrenamiento: el de {c['base'][modelo]} más las imágenes nuevas de runs/{cfg['carpeta']}/c1/composicion.csv. "
             f"Validación: la de siempre.\n"
@@ -410,6 +421,7 @@ def construir(cfg, rutas, out):
 
 
 def main():
+    """Corre la parte pedida de C1: componer o construir."""
     from src.comun import leer_rutas, leer_yaml
 
     ap = argparse.ArgumentParser()

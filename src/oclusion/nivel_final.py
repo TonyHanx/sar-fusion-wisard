@@ -13,7 +13,7 @@ que el nivel es el del primer anotador en modo simple, con la regla aclarada:
 "Se ve en la RGB" = baja y "no se ve en la RGB" = severa (`validacion_auto.niveles`); "no es persona" = sin nivel
 (columna `nivel` vacía). También quedan sin nivel, por decisión, las "no es persona" de los dos anotadores en la ronda 2
 (columna `los_dos_no_es_persona`), aunque una reanotación las cambie (lo avisa). `caja_dudosa` = sin nivel: son las cajas
-que scripts/fase4_cajas_dudosas.py pasa a `oclusion.cajas_dudosas`. Las fuentes tienen que estar completas y no
+que src/oclusion/cajas_dudosas.py pasa a `oclusion.cajas_dudosas`. Las fuentes tienen que estar completas y no
 solaparse.
 
 Escribe data/<nivel_final.salida>, el nivel que usa la fase 6: una fila por persona, en el orden de la lista, con su
@@ -37,7 +37,7 @@ reports/<nivel_final.carpeta>/:
 Agrega una fila a la bitácora. Solo lee las respuestas y no toca el dataset original.
 
 Uso:
-    .venv\Scripts\python.exe scripts\fase4_nivel.py --config configs\fase3.yaml --rutas configs\rutas.yaml
+    .venv\Scripts\python.exe -m src.oclusion.nivel_final --config configs\fase3.yaml --rutas configs\rutas.yaml
 """
 import argparse
 import os
@@ -97,6 +97,8 @@ def escribir_atomico(df, ruta, respaldos):
 
 
 def main():
+    """Junta las respuestas del primer anotador en modo simple (muestra, resto y escena en sombra reanotada) y escribe
+    el nivel final de oclusión de las 498 personas, con sus tablas."""
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--config", required=True)
     ap.add_argument("--rutas", required=True)

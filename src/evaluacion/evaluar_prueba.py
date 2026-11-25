@@ -1,6 +1,7 @@
 r"""Fase 8: evaluación en la prueba (FHL 0405), con las reglas confirmadas en configs/fase8.yaml.
 
-Usa las funciones de scripts/evaluar.py (fase 6) sin cambiar sus reglas: predicciones con el validador de Ultralytics
+Usa las funciones de src/evaluacion/evaluar.py (fase 6) sin cambiar sus reglas: predicciones con el validador de
+Ultralytics
 (confianza >= 0.001, save_json), pycocotools a IoU 0.5 y maxDets 100.
 
 Partes (cada una se detiene y espera al usuario):
@@ -33,9 +34,9 @@ Partes (cada una se detiene y espera al usuario):
     fila por modelo en la bitácora y una con McNemar y el criterio.
 
 Uso:
-  .venv\Scripts\python.exe scripts\fase8_evaluar.py --config configs\fase8.yaml --rutas configs\rutas.yaml --parte umbrales
-  .venv\Scripts\python.exe scripts\fase8_evaluar.py --config configs\fase8.yaml --rutas configs\rutas.yaml --parte verificar
-  .venv\Scripts\python.exe scripts\fase8_evaluar.py --config configs\fase8.yaml --rutas configs\rutas.yaml --parte prueba
+  .venv\Scripts\python.exe -m src.evaluacion.evaluar_prueba --config configs\fase8.yaml --rutas configs\rutas.yaml --parte umbrales
+  .venv\Scripts\python.exe -m src.evaluacion.evaluar_prueba --config configs\fase8.yaml --rutas configs\rutas.yaml --parte verificar
+  .venv\Scripts\python.exe -m src.evaluacion.evaluar_prueba --config configs\fase8.yaml --rutas configs\rutas.yaml --parte prueba
 """
 import argparse
 import copy
@@ -64,14 +65,18 @@ SALIDAS = ["resultados.csv", "mcnemar.csv", "sensibilidad.csv", "prediccion.csv"
 
 
 def ruta(p):
+    """Ruta absoluta: si es relativa, desde la raíz del repositorio (la misma función de la fase 6)."""
     return evaluar_fase6.ruta(p)
 
 
 def rel(p):
+    """Ruta relativa a la raíz del repositorio para mostrarla (la misma función de la fase 6)."""
     return evaluar_fase6.rel(p)
 
 
 def sha256(ruta_archivo):
+    """Huella SHA-256 de un archivo, leída por partes. Comprueba que los pesos y las predicciones son los mismos con que
+    se fijaron los umbrales."""
     suma = hashlib.sha256()
     with open(ruta_archivo, "rb") as f:
         for bloque in iter(lambda: f.read(1 << 20), b""):
@@ -80,6 +85,8 @@ def sha256(ruta_archivo):
 
 
 def leer_config(args):
+    """Lee configs/fase8.yaml y la configuración de la fase 6 en que se basa. Se detiene si las reglas no están
+    confirmadas o si la validación incluye algún vuelo de la prueba."""
     cfg = leer_yaml(args.config)
     if cfg.get("estado") != "confirmada":
         raise SystemExit(f"{args.config}: estado '{cfg.get('estado')}'; las reglas tienen que estar confirmadas.")
@@ -91,6 +98,8 @@ def leer_config(args):
 
 
 def rejillas(cfg_umbral):
+    """Rejillas de umbrales de confianza: la ampliada de la fase 8 (los valores bajos y luego la de 0.05 a 0.95) y la
+    anterior, solo para la sensibilidad."""
     rango = cfg_umbral["rejilla"]
     anterior = [float(x) for x in np.round(np.arange(rango["desde"], rango["hasta"] + rango["paso"] / 2, rango["paso"]), 2)]
     baja = [float(x) for x in cfg_umbral["rejilla_baja"]]
@@ -130,11 +139,14 @@ def clave(nombre, peso):
 
 
 def rotulo(k, info):
+    """Nombre de un modelo para tablas y gráficos, con el peso (last o best) y si tiene la RGB en 0."""
     return (f"{info['modelo']}" + (" con la RGB en 0" if info["rgb0"] else "")
             + ("" if info["fase"] == "7" else f" ({info['peso']}.pt)"))
 
 
 def umbrales(cfg, base, rutas):
+    """Paso 2: fija una sola vez el umbral de confianza de cada modelo y peso, el de mayor F2 en la validación, sin leer
+    la prueba. Escribe la tabla de umbrales con las huellas de los pesos y de las predicciones, y la bitácora."""
     cfg_umbral = cfg["umbral"]
     destino, completa = ruta(cfg_umbral["umbrales"]), ruta(cfg_umbral["rejilla_completa"])
     if destino.exists():
@@ -233,6 +245,7 @@ def umbrales(cfg, base, rutas):
 
 
 def git(*argumentos):
+    """Corre un comando de git en el repositorio y devuelve su salida, o vacío si falla."""
     proceso = subprocess.run(["git", *argumentos], cwd=RAIZ, capture_output=True, text=True)
     return proceso.stdout.strip() if proceso.returncode == 0 else ""
 
@@ -489,6 +502,7 @@ def prueba(cfg, base, rutas):
 
 
 def main():
+    """Corre la parte pedida de la fase 8: umbrales, verificar o prueba."""
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--config", required=True)
     ap.add_argument("--rutas", required=True)

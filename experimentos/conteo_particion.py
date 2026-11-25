@@ -12,7 +12,7 @@ Para el vuelo de prueba: personas a anotar si se anota todo, 1 de cada 3 o 1 de 
 también el mínimo y el máximo con los k desfases posibles), y cuántas son "solo térmica".
 
 Uso:
-    .venv\Scripts\python.exe scripts\conteo_particion.py --config configs\conteo_particion.yaml --rutas configs\rutas.yaml
+    .venv\Scripts\python.exe -m experimentos.conteo_particion --config configs\conteo_particion.yaml --rutas configs\rutas.yaml
 """
 import argparse
 
@@ -64,6 +64,8 @@ def episodios(estado):
 
 
 def main():
+    """Cuenta, por vuelo, los pares finales, las personas y los pares solo térmica, para planear la partición y la
+    anotación de oclusión."""
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--config", required=True)
     ap.add_argument("--rutas", required=True)

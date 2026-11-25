@@ -9,7 +9,7 @@ Escribe en reports/<resumen_5b.carpeta>/:
 - resumen.csv: por modelo, el mejor modelo (best.pt), la última época, el tiempo, la potencia y la temperatura;
 - resultados_<corrida>.csv y resultados_<corrida>.png: copias de results.csv y results.png de Ultralytics.
 
-Uso: python scripts/fase5b_resumen.py --config configs/fase5.yaml --rutas configs/rutas.yaml
+Uso: python -m src.entrenamiento.resumen_fase5b --config configs/fase5.yaml --rutas configs/rutas.yaml
 """
 import argparse
 import json
@@ -30,6 +30,8 @@ FITNESS = "metrics/mAP50-95(B)"  # Ultralytics guarda best.pt en la primera épo
 
 
 def estilo(ax, f):
+    """Da a un panel de matplotlib el estilo común de las figuras: fondo, rejilla horizontal y sin bordes arriba ni a la
+    derecha."""
     ax.set_facecolor(f["fondo"])
     for lado in ("top", "right"):
         ax.spines[lado].set_visible(False)
@@ -42,6 +44,8 @@ def estilo(ax, f):
 
 
 def figura(paneles, filas, cols, datos, corridas, f, cierre, mejores, ruta, titulo):
+    """Dibuja una figura con un panel por métrica y una línea por corrida, y la guarda en `ruta`. Marca la época en que
+    se quita el mosaico (`cierre`) y, si se pasan, las épocas de best.pt (`mejores`)."""
     fig, axs = plt.subplots(filas, cols, figsize=(3.6 * cols, 2.7 * filas), sharex=True, facecolor=f["fondo"],
                             squeeze=False)
     for ax, (col, rotulo) in zip(axs.flat, paneles):
@@ -72,6 +76,8 @@ def figura(paneles, filas, cols, datos, corridas, f, cierre, mejores, ruta, titu
 
 
 def main():
+    """Lee las corridas de 100 épocas y escribe sus curvas, la tabla del mejor modelo y los datos de tiempo, potencia y
+    temperatura."""
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", required=True)
     ap.add_argument("--rutas", required=True)

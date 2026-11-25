@@ -1,6 +1,7 @@
 """Fase 7, C2 y C3: entrena YOLO26s con la receta de la fase 7 (sección `c3` de configs/fase7.yaml).
 
-Reutiliza de scripts/entrenar.py, sin cambiarlo, las comprobaciones previas (aplicaciones cerradas, enchufe, plan de
+Reutiliza de src/entrenamiento/entrenar.py, sin cambiarlo, las comprobaciones previas (aplicaciones cerradas, enchufe,
+plan de
 energía y potencia; los valores son los de `c3.comprobaciones`), el monitor de nvidia-smi y la RAM, el registro por
 época y el inicio del cuarto canal. Lo nuevo de la receta (C2):
 - **Criterio de la mejor época:** best.pt y la parada temprana (`patience`; con 0 no hay) van por el mAP@0.5 de
@@ -8,18 +9,19 @@ energía y potencia; los valores son los de `c3.comprobaciones`), el monitor de 
   resumen.json y la bitácora llevan la última época, el promedio de las `c3.ultimas_epocas` últimas (la cifra
   principal en C4) y best.pt (secundaria).
 - **Dropout de modalidad:** en la fusión, cada imagen de entrenamiento pierde la RGB (los 3 canales de color en 0) con
-  probabilidad `p_sin_rgb` (scripts/modalidad.py). Nunca en la validación. Con p = 0, el dataset es el de Ultralytics.
+  probabilidad `p_sin_rgb` (src/entrenamiento/dropout_modalidad.py). Nunca en la validación. Con p = 0, el dataset es el
+  de Ultralytics.
 
 Antes de entrenar comprueba que la carpeta de la corrida no exista y que ni el entrenamiento ni la validación tengan
-imágenes de FHL 0405/0406 (la prueba). Guarda lo mismo que scripts/entrenar.py (monitor.csv, epocas.csv,
+imágenes de FHL 0405/0406 (la prueba). Guarda lo mismo que src/entrenamiento/entrenar.py (monitor.csv, epocas.csv,
 resumen.json); monitor.csv y epocas.csv, además, al final de cada época, por si el proceso se corta, y en resumen.json además la época elegida, la última, el promedio de las últimas y si paró antes.
 
 Con --verificar no entrena: comprueba el criterio (con un validador simulado) y el dropout con `c2.verificacion.imagenes`
 imágenes, y escribe runs/<carpeta>/c2/verificacion_*.csv.
 
 Uso:
-  .venv\\Scripts\\python.exe scripts\\fase7_entrenar.py --config configs\\fase7.yaml --rutas configs\\rutas.yaml --verificar
-  .venv\\Scripts\\python.exe scripts\\fase7_entrenar.py --config configs\\fase7.yaml --rutas configs\\rutas.yaml --corrida termico_base
+  .venv\\Scripts\\python.exe -m src.entrenamiento.entrenar_fase7 --config configs\\fase7.yaml --rutas configs\\rutas.yaml --verificar
+  .venv\\Scripts\\python.exe -m src.entrenamiento.entrenar_fase7 --config configs\\fase7.yaml --rutas configs\\rutas.yaml --corrida termico_base
 """
 import argparse
 import json
@@ -46,6 +48,7 @@ CLAVES = ["metrics/precision(B)", "metrics/recall(B)", "metrics/mAP50(B)", "metr
 
 
 def ruta(p):
+    """Ruta absoluta: si es relativa, desde la raíz del repositorio."""
     p = Path(p)
     return p if p.is_absolute() else RAIZ / p
 
@@ -69,6 +72,8 @@ class EntrenadorFase7(entrenar_fase5.Entrenador):
         return metrics, fitness
 
     def build_dataset(self, img_path, mode="train", batch=None):
+        """Arma el dataset como Ultralytics y, solo en el entrenamiento, le aplica el dropout de modalidad (quita la RGB
+        con probabilidad `p_sin_rgb`)."""
         ds = super().build_dataset(img_path, mode, batch)
         return quitar_rgb(ds, self.p_sin_rgb) if mode == "train" else ds
 
@@ -87,6 +92,7 @@ class MonitorFase7(entrenar_fase5.Monitor):
     """El monitor de la fase 5, que además puede guardar lo leído hasta ahora sin pararse."""
 
     def guardar(self, ruta):
+        """Guarda las lecturas hasta ahora en monitor.csv, sin parar el hilo."""
         escribir_csv(pd.DataFrame(list(self.filas), columns=COLUMNAS_MONITOR), ruta)
 
 
@@ -98,10 +104,13 @@ class RegistroFase7(entrenar_fase5.Registro):
     monitor = None
 
     def inicio_epoca(self, tr):
+        """Como en la fase 5, y además recuerda qué época está en curso."""
         super().inicio_epoca(tr)
         self.epoca_en_curso = tr.epoch
 
     def fin_epoca(self, tr):
+        """Como en la fase 5, pero ignora la evaluación final de best.pt y guarda epocas.csv y monitor.csv al final de
+        cada época, por si el proceso se corta."""
         if tr.epoch != getattr(self, "epoca_en_curso", None):  # final_eval sube tr.epoch en 1 para registrar best.pt
             return
         super().fin_epoca(tr)
@@ -118,6 +127,8 @@ def prohibidos(cfg):
 
 
 def comprobar_datos(datos_yaml, cfg):
+    """Lee el yaml del dataset y se detiene si el entrenamiento o la validación tienen alguna imagen de los vuelos de la
+    prueba. Devuelve el contenido del yaml."""
     datos = leer_yaml(datos_yaml)
     prefijos_prohibidos = prohibidos(cfg)
     malos = []
@@ -133,6 +144,8 @@ def comprobar_datos(datos_yaml, cfg):
 # ------------------------------------------------------------------------------------------------------- verificación
 
 def verificar(cfg, rutas):
+    """Sin entrenar, comprueba el criterio de la mejor época con un validador simulado y el dropout de modalidad con
+    unas imágenes, y escribe las tablas de verificación."""
     cfg_verif = cfg["c2"]["verificacion"]
     c3 = cfg["c3"]
     carpeta_salida = rutas["runs"] / cfg["carpeta"] / cfg_verif["carpeta"]
@@ -176,6 +189,7 @@ def verificar(cfg, rutas):
 
     # 2. dropout: los datasets como los arma el entrenador, con las mismas imágenes y la misma semilla
     def armar(split, modo, p):
+        """Arma el dataset de `split` con la probabilidad de quitar la RGB `p`."""
         entrenador.p_sin_rgb = p
         return entrenador.build_dataset(entrenador.data[split], mode=modo, batch=ultra["batch"])
 
@@ -278,11 +292,15 @@ def verificar(cfg, rutas):
 # ------------------------------------------------------------------------------------------------------- entrenamiento
 
 def entrenar(cfg, rutas, nombre):
+    """Entrena una corrida de la fase 7: hace las comprobaciones previas, entrena con la receta de C2 y escribe
+    resumen.json, epocas.csv, monitor.csv y la fila de la bitácora."""
     c3 = cfg["c3"]
     comprobaciones = leer_yaml(ruta(c3["comprobaciones"]))
     codigos = comprobaciones["codigos_salida"]
 
     def salir(mensaje, codigo):
+        """Escribe el motivo en la salida de errores y termina con el código dado (`codigos_salida` de las
+        comprobaciones)."""
         print(mensaje, file=sys.stderr, flush=True)
         sys.exit(codigo)
 
@@ -344,6 +362,8 @@ def entrenar(cfg, rutas, nombre):
     lote_final = entrenador.batch_size if entrenador is not None else None
     entra = (error is None and lote_final == ultra["batch"]
              and pico_mib <= comprobaciones["memoria"]["fraccion_maxima"] * total_mib)
+    # Lecturas con la GPU al 50 % o más: las del entrenamiento, sin el arranque ni las pausas entre épocas. De ellas
+    # sale el límite aplicado real (mediana) que se registra en cada corrida (CLAUDE.md, "Potencia").
     bajo_carga = lecturas[lecturas["utilization_gpu"] >= 50]
     resumen = {
         "corrida": nombre, "configuracion": corrida_cfg, "canales": canales, "carpeta": str(carpeta),
@@ -415,6 +435,7 @@ def entrenar(cfg, rutas, nombre):
 
 
 def main():
+    """Corre la verificación (--verificar) o entrena la corrida pedida (--corrida)."""
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--config", required=True)
     ap.add_argument("--rutas", required=True)

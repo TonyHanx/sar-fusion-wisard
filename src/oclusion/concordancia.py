@@ -47,9 +47,9 @@ Partes (por omisión, todas), con salidas en reports/<validacion_auto.carpeta>/:
 No modifica data/ ni el dataset original (lo lee para la medida del fondo, como en la fase 2).
 
 Uso:
-    .venv\Scripts\python.exe scripts\fase4_validacion_auto.py --config configs\fase3.yaml --rutas configs\rutas.yaml
-    .venv\Scripts\python.exe scripts\fase4_validacion_auto.py --config configs\fase3.yaml --rutas configs\rutas.yaml --partes fondo
-    .venv\Scripts\python.exe scripts\fase4_validacion_auto.py --config configs\fase3.yaml --rutas configs\rutas.yaml --partes entre_anotadores --ronda 2
+    .venv\Scripts\python.exe -m src.oclusion.concordancia --config configs\fase3.yaml --rutas configs\rutas.yaml
+    .venv\Scripts\python.exe -m src.oclusion.concordancia --config configs\fase3.yaml --rutas configs\rutas.yaml --partes fondo
+    .venv\Scripts\python.exe -m src.oclusion.concordancia --config configs\fase3.yaml --rutas configs\rutas.yaml --partes entre_anotadores --ronda 2
 """
 import argparse
 import shutil
@@ -83,6 +83,7 @@ def leer_muestra(cfg, rutas):
 
 
 def matriz(x, col_manual, col_auto, niveles, nombres=("manual", "automatico")):
+    """Matriz de confusión entre dos anotaciones, con todos los niveles aunque alguno no aparezca."""
     m = pd.crosstab(pd.Categorical(x[col_manual], niveles), pd.Categorical(x[col_auto], niveles), dropna=False)
     m.index.name, m.columns.name = nombres
     return m
@@ -101,6 +102,8 @@ def kappa(m):
 
 # ---------------------------------------------------------------------------------------------------- comparar
 def comparar(cfg, rutas, carpeta):
+    """Compara el nivel automático con la primera anotación con cajas de la muestra: kappa binario, matriz de confusión,
+    desacuerdos con imágenes y, solo para reportar, el kappa de 3 niveles."""
     o, a, va = cfg["oclusion"], cfg["oclusion_auto"], cfg["validacion_auto"]
     baja, severa = va["niveles"]
     man = leer_muestra(cfg, rutas)
@@ -167,6 +170,8 @@ def comparar(cfg, rutas, carpeta):
 
 # ---------------------------------------------------------------------------------------------------- no es persona
 def no_es_persona(cfg, rutas, carpeta):
+    """Mosaico de las "no es persona" de la muestra, con la RGB, la térmica y la térmica con distintos contrastes, para
+    revisarlas a ojo."""
     from src.oclusion.anotar_oclusion import CAJA_WISARD, OTRAS, crear_anotador
 
     o, a = cfg["oclusion"], cfg["oclusion_auto"]
@@ -249,6 +254,8 @@ def no_es_persona(cfg, rutas, carpeta):
 
 # ---------------------------------------------------------------------------------------------------- fondo
 def fondo(cfg, rutas, carpeta):
+    """Mide el desplazamiento del fondo y la distancia de cada persona a la caja RGB más cercana en el tramo pedido del
+    vuelo de prueba, para ver si hay desfase entre cámaras."""
     from types import SimpleNamespace
 
     from PIL import ImageFont
@@ -597,6 +604,7 @@ def cambios_entre_rondas(cfg, rutas, carpeta, ronda, x):
 
 
 def main():
+    """Corre las partes pedidas de la validación (por omisión, todas)."""
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--config", required=True)
     ap.add_argument("--rutas", required=True)

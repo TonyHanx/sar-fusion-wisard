@@ -1,6 +1,6 @@
 """Fase 7, C0: puntos de control RGB-térmica en FHL 0403, 0564 y 0566, cuya RGB no tiene etiquetas.
 
-Usa la herramienta de la fase 2 (scripts/marcar_puntos.py) sin cambiarla, con tres diferencias:
+Usa la herramienta de la fase 2 (src/alineacion/marcar_puntos.py) sin cambiarla, con tres diferencias:
   - lee todos los pares del vuelo en data/pares.csv (la RGB de estos vuelos no está anotada, así que no son "pares
     utilizables"), dentro del rango de `c0.alineacion.vuelos`;
   - marca 2 fotogramas por vuelo (`c0.marcado.nombres`), no 3;
@@ -9,12 +9,12 @@ La sugerencia (celeste) es la de la fase 2: la franja nominal hasta tener 4 punt
 No usa ninguna de las semejanzas que se están midiendo.
 
 Uso:
-  .venv\\Scripts\\python.exe scripts\\fase7_marcar_puntos.py --config configs\\fase7.yaml --rutas configs\\rutas.yaml --vuelo 210924_FHL_Enterprise_0403
-  .venv\\Scripts\\python.exe scripts\\fase7_marcar_puntos.py --config configs\\fase7.yaml --rutas configs\\rutas.yaml --listar
+  .venv\\Scripts\\python.exe -m src.ampliacion.marcar_puntos_vuelos_nuevos --config configs\\fase7.yaml --rutas configs\\rutas.yaml --vuelo 210924_FHL_Enterprise_0403
+  .venv\\Scripts\\python.exe -m src.ampliacion.marcar_puntos_vuelos_nuevos --config configs\\fase7.yaml --rutas configs\\rutas.yaml --listar
 
 Teclas: las de la fase 2 (u deshacer, s guardar, n/b fotograma, j/l mover el fotograma, h cajas, q salir).
 Los puntos se guardan en `c0.marcado.carpeta_puntos`/<vuelo>.yaml; luego se miden con
-  scripts\\fase7_c0_auditoria.py ... --parte puntos
+  .venv\\Scripts\\python.exe -m src.ampliacion.c0_auditoria_termicas ... --parte puntos
 """
 import argparse
 from pathlib import Path
@@ -35,6 +35,8 @@ def configurar(cfg):
     vuelos = c0["alineacion"]["vuelos"]
 
     def pares_del_rango(ruta_pares):
+        """Todos los pares de los vuelos nuevos dentro de su rango, aunque la RGB no esté anotada. Reemplaza a
+        pares_utilizables de la herramienta de la fase 2."""
         p = pd.read_csv(ruta_pares)
         partes = []
         for v, r in vuelos.items():
@@ -51,6 +53,7 @@ def configurar(cfg):
 
 class MarcadorFase7(marcar_puntos.Marcador):
     def abrir_fotograma(self):
+        """Abre el fotograma como la fase 2 y, en los vuelos de `realce_rgb`, aclara la RGB solo en pantalla."""
         super().abrir_fotograma()
         k = self.m.get("realce_rgb", {}).get(self.vuelo)
         if k:
@@ -59,6 +62,7 @@ class MarcadorFase7(marcar_puntos.Marcador):
                                           interpolation=cv2.INTER_AREA)
 
     def tecla(self, k):
+        """Con n y b recorre los fotogramas de este vuelo (2 y no 3); las demás teclas, como en la fase 2."""
         if k in (ord("n"), ord("b")):
             self.i = (self.i + (1 if k == ord("n") else -1)) % len(marcar_puntos.NOMBRES)
             self.hover, self.mensaje = None, ""
@@ -67,6 +71,8 @@ class MarcadorFase7(marcar_puntos.Marcador):
         return super().tecla(k)
 
     def dibujar(self):
+        """Dibuja como la fase 2 y reescribe la barra de estado con el número real de fotogramas y los puntos que faltan
+        para el mínimo."""
         # la barra de estado de la fase 2 dice "/3": se reescribe la primera línea con el número de fotogramas real
         lienzo = super().dibujar()
         f = self.actual
@@ -86,6 +92,7 @@ class MarcadorFase7(marcar_puntos.Marcador):
 
 
 def main():
+    """Lista los vuelos nuevos con sus puntos (--listar) o abre la herramienta para marcar uno."""
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", required=True)
     ap.add_argument("--rutas", required=True)

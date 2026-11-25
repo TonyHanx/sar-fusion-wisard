@@ -1,6 +1,6 @@
 """Fase 0: escribe reports/entorno.md con el sistema operativo, el hardware y las versiones del software.
 
-Uso: python scripts/fase0_entorno.py --config configs/fase0.yaml --rutas configs/rutas.yaml
+Uso: python -m src.entorno.entorno --config configs/fase0.yaml --rutas configs/rutas.yaml
 """
 import argparse
 import platform
@@ -23,11 +23,15 @@ PAQUETES = ["torch", "torchvision", "ultralytics", "opencv-python", "pycocotools
 
 
 def registro(ruta, nombre):
+    """Lee un valor del registro de Windows (HKEY_LOCAL_MACHINE), por ejemplo la versión del sistema o el nombre de la
+    CPU."""
     with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, ruta) as k:
         return winreg.QueryValueEx(k, nombre)[0]
 
 
 def nvidia_smi(campos):
+    """Consulta campos de la GPU con nvidia-smi (por ejemplo, el límite de potencia) y devuelve sus valores como texto,
+    en el orden pedido."""
     salida = subprocess.run(["nvidia-smi", f"--query-gpu={campos}", "--format=csv,noheader"],
                             capture_output=True, text=True, check=True).stdout
     return [c.strip() for c in salida.strip().split(",")]
@@ -38,6 +42,8 @@ def potencia_bajo_carga(segundos):
 
     Se descarta la primera mitad de las lecturas, mientras Dynamic Boost sube el límite.
     """
+    # Una matriz de 8192 x 8192 en float16 (128 MiB) basta para tener la GPU al máximo sin llenar su memoria, y
+    # 50 productos entre lecturas mantienen la carga seguida mientras se consulta nvidia-smi.
     x = torch.randn(8192, 8192, device="cuda", dtype=torch.float16)
     lecturas = []
     fin = time.time() + segundos
@@ -51,11 +57,14 @@ def potencia_bajo_carga(segundos):
 
 
 def plan_de_energia():
+    """Nombre del plan de energía activo de Windows (powercfg), que tiene que ser Performance al entrenar."""
     salida = subprocess.run(["powercfg", "/getactivescheme"], capture_output=True, text=True, check=True).stdout
     return re.search(r"\(([^)]*)\)\s*$", salida.strip()).group(1)
 
 
 def main():
+    """Reúne el sistema, el hardware, la potencia de la GPU bajo carga y las versiones del software, y los escribe en
+    reports/entorno.md."""
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", required=True)
     ap.add_argument("--rutas", required=True)
@@ -101,7 +110,7 @@ def main():
     lineas = [
         "# Entorno de ejecución",
         "",
-        f"Generado el {date.today().isoformat()} con `scripts/fase0_entorno.py`. "
+        f"Generado el {date.today().isoformat()} con `src/entorno/entorno.py`. "
         "Todos los entrenamientos que se reporten corren en este equipo.",
         "",
         "| Elemento | Valor |",

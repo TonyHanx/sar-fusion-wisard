@@ -3,7 +3,7 @@
 En la RGB se dibuja en amarillo la zona aproximada que ve la térmica, para distinguir personas fuera del encuadre
 térmico de personas sin caja. Una imagen a la vez.
 
-Uso: python scripts/fase1_baker_corte.py --config configs/fase1.yaml --rutas configs/rutas.yaml
+Uso: python -m experimentos.fase1_baker_corte --config configs/fase1.yaml --rutas configs/rutas.yaml
 """
 import argparse
 
@@ -14,6 +14,8 @@ from src.comun import lado_a_lado, leer_rutas, leer_yaml, panel
 
 
 def main():
+    """Guarda imágenes lado a lado (RGB y térmica, con sus cajas) del inicio del tramo excluido de Baker, para revisar a
+    ojo dónde empieza."""
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", required=True)
     ap.add_argument("--rutas", required=True)

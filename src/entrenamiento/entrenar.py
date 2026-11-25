@@ -17,7 +17,7 @@ Guarda en la carpeta de la corrida, además de lo de Ultralytics:
 - resumen.json: potencia, optimizador y tasa de aprendizaje que eligió Ultralytics, primera capa, memoria, tiempos y
   métricas de validación.
 
-Uso: python scripts/entrenar.py --config configs/fase5.yaml --rutas configs/rutas.yaml --corrida fusion_lote16_2ep
+Uso: python -m src.entrenamiento.entrenar --config configs/fase5.yaml --rutas configs/rutas.yaml --corrida fusion_lote16_2ep
 """
 import argparse
 import copy
@@ -51,6 +51,8 @@ class Entrenador(DetectionTrainer):
     inicio_cuarto_canal = "azar"
 
     def get_model(self, cfg=None, weights=None, verbose=True):
+        """Arma el modelo como Ultralytics y, si la corrida lo pide (`promedio`), inicia el cuarto canal de la primera
+        capa con el promedio de los pesos de los 3 canales de color."""
         model = super().get_model(cfg=cfg, weights=weights, verbose=verbose)
         if self.inicio_cuarto_canal == "promedio":
             pesos_capa = model.state_dict()[PRIMERA_CAPA]  # comparte memoria con la capa
@@ -72,6 +74,7 @@ def mezclar(base, cambios):
 
 
 def numero(x):
+    """Convierte un valor de nvidia-smi a número; None si no es un número (por ejemplo, "[N/A]")."""
     try:
         return float(x)
     except ValueError:
@@ -82,10 +85,13 @@ class Monitor(threading.Thread):
     """Lee nvidia-smi y la RAM cada `intervalo` segundos hasta que se le pide parar."""
 
     def __init__(self, intervalo):
+        """Hilo en segundo plano que lee la GPU y la RAM cada `intervalo` segundos."""
         super().__init__(daemon=True)
         self.intervalo, self.parar, self.filas = intervalo, threading.Event(), []
 
     def run(self):
+        """Lee con nvidia-smi la potencia, el límite aplicado, la temperatura y el uso de la GPU, y la RAM, hasta que se
+        le pida parar."""
         t0 = time.time()
         while not self.parar.is_set():
             try:
@@ -100,6 +106,7 @@ class Monitor(threading.Thread):
             self.parar.wait(self.intervalo)
 
     def detener(self, ruta):
+        """Para el hilo, guarda las lecturas en monitor.csv y devuelve la tabla."""
         self.parar.set()
         self.join()
         df = pd.DataFrame(self.filas, columns=["s", *[c.replace(".", "_") for c in CAMPOS_GPU], "ram_usada_mib",
@@ -112,6 +119,8 @@ class Registro:
     """Callbacks de Ultralytics: tiempo y memoria por época, optimizador elegido y primera capa."""
 
     def __init__(self, primera_preentrenada):
+        """Registro de la corrida, que Ultralytics llama en cada evento del entrenamiento. Guarda la primera capa
+        preentrenada para comprobar después cómo se inició."""
         self.pre = primera_preentrenada
         self.epocas, self.info = [], {}
         self.t_inicio = self.t_epoca = self.t_fin_entreno = self.t_fin_ultima = None
@@ -119,10 +128,12 @@ class Registro:
 
     @staticmethod
     def _ahora():
+        """Hora actual después de esperar a que la GPU termine, para que los tiempos sean reales."""
         torch.cuda.synchronize()
         return time.perf_counter()
 
     def inicio(self, tr):
+        """Evento del inicio de la corrida: marca la hora."""
         self.t_inicio = time.perf_counter()
 
     def preparado(self, tr):
@@ -157,14 +168,19 @@ class Registro:
               f"AMP {self.info['amp']}; primera capa: {capa}", flush=True)
 
     def inicio_epoca(self, tr):
+        """Evento del inicio de una época: marca la hora y reinicia el pico de memoria de la GPU."""
         torch.cuda.reset_peak_memory_stats()
         self.t_epoca = self._ahora()
 
     def fin_entreno_epoca(self, tr):
+        """Evento del fin de la parte de entrenamiento de una época: marca la hora y guarda el pico de memoria de la
+        GPU."""
         self.t_fin_entreno = self._ahora()
         self.mem_entreno = (torch.cuda.max_memory_allocated() / MIB, torch.cuda.max_memory_reserved() / MIB)
 
     def fin_epoca(self, tr):
+        """Evento del fin de una época (después de validar): guarda sus tiempos, la memoria, si tenía mosaico y las
+        métricas de validación."""
         if tr.epoch >= tr.epochs:  # final_eval de Ultralytics con best.pt: no es una época
             return
         ahora = self._ahora()
@@ -183,12 +199,15 @@ class Registro:
         self.t_fin_ultima = ahora
 
     def fin(self, tr):
+        """Evento del fin del entrenamiento: guarda el tiempo de la evaluación final y el total."""
         self.info["s_final_eval_y_graficos"] = round(time.perf_counter() - self.t_fin_ultima, 2) \
             if self.t_fin_ultima else None
         self.info["s_total_corrida"] = round(time.perf_counter() - self.t_inicio, 2)
 
 
 def comprobar_potencia(cfg):
+    """Comprobación previa: que la laptop esté enchufada, con el plan de energía pedido, y que el límite aplicado de la
+    GPU bajo carga llegue al mínimo. Devuelve la medida y la lista de problemas."""
     bateria = psutil.sensors_battery()
     enchufada = bateria is None or bateria.power_plugged
     plan = plan_de_energia()
@@ -220,6 +239,8 @@ def procesos_abiertos(nombres):
 
 
 def main():
+    """Entrena una corrida de configs/fase5.yaml: hace las comprobaciones previas, entrena con el monitor y el registro,
+    y escribe resumen.json, epocas.csv, monitor.csv y la fila de la bitácora."""
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", required=True)
     ap.add_argument("--rutas", required=True)
@@ -232,6 +253,7 @@ def main():
     codigos = cfg["codigos_salida"]
 
     def salir(mensaje, codigo):
+        """Escribe el motivo en la salida de errores y termina con el código dado, que lee scripts/noche.ps1."""
         print(mensaje, file=sys.stderr, flush=True)
         sys.exit(codigo)
 
@@ -298,6 +320,8 @@ def main():
     lote_final = entrenador.batch_size if entrenador is not None else None
     entra = (error is None and lote_final == lote_pedido
              and pico_mib <= cfg["memoria"]["fraccion_maxima"] * total_mib)
+    # Lecturas con la GPU al 50 % o más: las del entrenamiento, sin el arranque ni las pausas entre épocas. De ellas
+    # sale el límite aplicado real (mediana) que se registra en cada corrida (CLAUDE.md, "Potencia").
     bajo_carga = lecturas[lecturas["utilization_gpu"] >= 50]
     resumen = {
         "corrida": args.corrida, "configuracion": corrida_cfg, "canales": canales, "carpeta": str(carpeta),

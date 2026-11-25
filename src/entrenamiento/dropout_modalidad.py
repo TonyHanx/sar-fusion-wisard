@@ -23,6 +23,8 @@ class DatasetSinRGB(YOLODataset):
     p_sin_rgb = 0.0
 
     def load_image(self, i, rect_mode=True, resize_short=False):
+        """Carga la imagen como Ultralytics y, con probabilidad `p_sin_rgb`, pone en 0 los 3 canales de color, así el
+        modelo aprende a detectar solo con la térmica."""
         imagen, hw0, hw = super().load_image(i, rect_mode, resize_short)
         if self.p_sin_rgb >= 1 or (self.p_sin_rgb > 0 and random.random() < self.p_sin_rgb):
             imagen = imagen.copy()  # el original puede estar en el búfer del mosaico

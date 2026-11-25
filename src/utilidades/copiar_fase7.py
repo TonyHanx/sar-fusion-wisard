@@ -4,7 +4,7 @@ Copia los globs de `copiar.desde_runs` (configs/fase7.yaml) con la misma estruct
 se guardan como JPEG con la calidad de `copiar.jpeg_calidad`.
 
 Uso:
-  .venv\\Scripts\\python.exe scripts\\fase7_copiar.py --config configs\\fase7.yaml --rutas configs\\rutas.yaml
+  .venv\\Scripts\\python.exe -m src.utilidades.copiar_fase7 --config configs\\fase7.yaml --rutas configs\\rutas.yaml
 """
 import argparse
 import fnmatch
@@ -16,6 +16,8 @@ from src.comun import leer_rutas, leer_yaml
 
 
 def main():
+    """Copia a reports/ las salidas livianas de la fase 7 (tablas y figuras, con los PNG como JPEG), para subirlas a
+    git."""
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", required=True)
     ap.add_argument("--rutas", required=True)

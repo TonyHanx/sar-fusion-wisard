@@ -1,6 +1,7 @@
 r"""Fase 7, C4: evaluación de las cuatro corridas de C3 en validación, con el evaluador propio.
 
-Usa las funciones de scripts/evaluar.py (fase 6) sin cambiar sus reglas: predicciones con el validador de Ultralytics
+Usa las funciones de src/evaluacion/evaluar.py (fase 6) sin cambiar sus reglas: predicciones con el validador de
+Ultralytics
 (confianza >= 0.001, save_json), pycocotools a IoU 0.5, maxDets 100, bootstrap por episodios (10 bloques en la
 validación, 10 000 remuestreos, seed=0) y McNemar exacta. Las reglas propias de C4 están en `c4` de configs/fase7.yaml
 (fijadas por el usuario el 21 de noviembre de 2026, antes de evaluar):
@@ -9,7 +10,8 @@ validación, 10 000 remuestreos, seed=0) y McNemar exacta. Las reglas propias de
 - umbral de confianza por modelo y peso: el de mayor F2 en la validación (rejilla de 0.05 a 0.95, paso 0.05; si hay
   empate, el más alto), con todas las personas de WiSARD; las variantes con la RGB en 0 usan el del mismo peso con la
   RGB real;
-- subconjuntos: todas las personas y los niveles de oclusión de la validación (a mano, scripts/fase7_c4_oclusion.py):
+- subconjuntos: todas las personas y los niveles de oclusión de la validación (a mano,
+src/oclusion/c4_nivel_validacion.py):
   baja (se ve en la RGB) y severa (no se ve). Las "no es persona" no tienen nivel: son cajas dudosas, y se evalúa con y
   sin ellas, como en la prueba;
 - diferencias con IC por bootstrap (los mismos remuestreos para los dos modelos) y McNemar (solo last.pt) para los
@@ -21,8 +23,8 @@ Salidas en <c4.salidas>: umbrales.csv (F2 de cada umbral de la rejilla), resulta
 corridas.csv y recall_por_nivel.png. Una fila por modelo en la bitácora.
 
 Uso:
-  .venv\Scripts\python.exe scripts\fase7_c4_evaluar.py --config configs\fase7.yaml --rutas configs\rutas.yaml --solo-predecir
-  .venv\Scripts\python.exe scripts\fase7_c4_evaluar.py --config configs\fase7.yaml --rutas configs\rutas.yaml
+  .venv\Scripts\python.exe -m src.evaluacion.c4_evaluar_validacion --config configs\fase7.yaml --rutas configs\rutas.yaml --solo-predecir
+  .venv\Scripts\python.exe -m src.evaluacion.c4_evaluar_validacion --config configs\fase7.yaml --rutas configs\rutas.yaml
 """
 import argparse
 import copy
@@ -47,10 +49,12 @@ COLOR = {"fusion": "#2a78d6", "termico": "#1baf7a"}  # los de configs/fase6.yaml
 
 
 def ruta(p):
+    """Ruta absoluta: si es relativa, desde la raíz del repositorio (la misma función de la fase 6)."""
     return evaluar_fase6.ruta(p)
 
 
 def rel(p):
+    """Ruta relativa a la raíz del repositorio para mostrarla (la misma función de la fase 6)."""
     return evaluar_fase6.rel(p)
 
 
@@ -60,6 +64,8 @@ def clave(nombre, peso):
 
 
 def armar_modelos(cfg):
+    """Lista de modelos de C4: cada corrida con last.pt y best.pt y, en las fusiones, también con la RGB en 0. Se
+    detiene si `c4.pares` nombra un modelo que no existe."""
     c4, c3 = cfg["c4"], cfg["c3"]
     modelos = {}
     for peso, archivo in c4["pesos"].items():
@@ -92,7 +98,8 @@ def config_base(cfg, rutas, con_nivel):
     if con_nivel:
         nivel = rutas["data"] / c4["oclusion"]["nivel"]
         if not nivel.exists():
-            raise SystemExit(f"No existe {nivel}: anota la oclusión de la validación (scripts/fase7_c4_oclusion.py "
+            raise SystemExit(f"No existe {nivel}: anota la oclusión de la validación "
+                             f"(src/oclusion/c4_nivel_validacion.py "
                              f"--parte anotar y --parte nivel)")
         part["niveles"] = str(nivel)
     return b
@@ -173,6 +180,8 @@ def grafico(res, modelos, cfg, base, ruta_png, B):
 
 
 def resumen_corridas(cfg, rutas, ultra):
+    """Por corrida, las cifras de validación de Ultralytics (última época, promedio de las últimas y best.pt), para
+    ponerlas junto a las del evaluador propio."""
     filas = []
     for corrida in cfg["c4"]["corridas"]:
         r = json.loads((rutas["runs"] / cfg["c3"]["carpeta"] / corrida / "resumen.json").read_text(encoding="utf-8"))
@@ -188,6 +197,8 @@ def resumen_corridas(cfg, rutas, ultra):
 
 
 def main():
+    """Evalúa en la validación los modelos de C4: predicciones, umbral de mayor F2 por modelo, métricas por nivel con y
+    sin dudosas, intervalos por bootstrap, diferencias y McNemar, y escribe las tablas y la bitácora."""
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--config", required=True)
     ap.add_argument("--rutas", required=True)

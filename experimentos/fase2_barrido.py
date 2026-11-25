@@ -5,7 +5,7 @@ pares utilizables; los excluidos llevan el rótulo en rojo. Cada celda tiene la 
 a la franja que ve la térmica (llevada al tamaño de la térmica) y la térmica, con sus cajas. Si el zoom de la RGB
 cambia o el dron está en el suelo, las dos mitades dejan de coincidir a simple vista.
 
-Uso: python scripts/fase2_barrido.py --config configs/fase2.yaml --rutas configs/rutas.yaml
+Uso: python -m experimentos.fase2_barrido --config configs/fase2.yaml --rutas configs/rutas.yaml
 """
 import argparse
 
@@ -18,6 +18,8 @@ TODA = {"x": [0, 1], "y": [0, 1]}  # la térmica entera
 
 
 def main():
+    """Arma hojas de contacto de cada vuelo, un fotograma cada `paso` posiciones, para encontrar a ojo despegues,
+    aterrizajes y cambios de zoom."""
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", required=True)
     ap.add_argument("--rutas", required=True)

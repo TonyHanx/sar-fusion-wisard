@@ -18,6 +18,7 @@ VERDE = (0, 230, 0)
 
 
 def leer_yaml(ruta):
+    """Lee un archivo yaml y devuelve su contenido (diccionario o lista)."""
     with open(ruta, encoding="utf-8") as f:
         return yaml.safe_load(f)
 
@@ -36,6 +37,8 @@ def ruta_del_dataset(datos):
 
 
 def fijar_semilla(seed):
+    """Fija la semilla de random, NumPy y PyTorch (CPU y GPU), para que lo aleatorio salga igual en cada corrida (seed=0
+    en todo el proyecto)."""
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -43,6 +46,8 @@ def fijar_semilla(seed):
 
 
 def agregar_a_bitacora(ruta, fase, modelo, configuracion, resultado):
+    """Agrega una fila a la bitácora (reports/bitacora.csv): fecha, fase, modelo, configuración y resultado. Si el
+    archivo no existe, lo crea con el encabezado. La llaman todos los entrenamientos y evaluaciones al terminar."""
     ruta = Path(ruta)
     nueva = not ruta.exists()
     ruta.parent.mkdir(parents=True, exist_ok=True)
@@ -139,6 +144,8 @@ def lado_a_lado(paneles, rotulos, fuente, banda=30, separacion=10):
 
 
 def apilar(filas, sep=8):
+    """Pega las imágenes una debajo de otra, sobre fondo blanco y con `sep` px entre ellas. Arma las hojas de ejemplos
+    de los reportes."""
     lienzo = Image.new("RGB", (max(f.width for f in filas), sum(f.height for f in filas) + sep * (len(filas) - 1)),
                        (255, 255, 255))
     y = 0

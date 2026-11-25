@@ -10,7 +10,7 @@ Por cada vuelo con puntos (configs/puntos_control/<vuelo>.yaml):
   3. Si el error cruzado medio no supera el umbral, una sola homografía con los puntos de los tres fotogramas, que se
      guarda en configs/homografias.yaml. Si lo supera, no se guarda y se avisa.
 
-Uso: python scripts/fase2_homografias.py --config configs/fase2.yaml --rutas configs/rutas.yaml
+Uso: python -m experimentos.fase2_homografias --config configs/fase2.yaml --rutas configs/rutas.yaml
 """
 import argparse
 import itertools
@@ -26,6 +26,8 @@ NOMBRES = ["inicio", "mitad", "final"]
 
 
 def ajustar(puntos, umbral):
+    """Ajusta una homografía con RANSAC a los puntos de control y mide el error de cada punto. None si no se puede
+    ajustar."""
     a = np.array(puntos, dtype=np.float64)
     H, mascara = cv2.findHomography(a[:, :2], a[:, 2:], cv2.RANSAC, umbral)
     if H is None:
@@ -52,6 +54,8 @@ def diferencia_rejilla(Ha, Hb, puntos, n):
 
 
 def main():
+    """Ajusta, por vuelo, la homografía de los puntos marcados a mano y escribe las homografías y sus errores. La
+    homografía se descartó después a favor de la semejanza."""
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", required=True)
     ap.add_argument("--rutas", required=True)
@@ -116,7 +120,8 @@ def main():
             "calculada": datetime.now().isoformat(timespec="seconds"),
         }
 
-    salida.write_text("# Generado por scripts/fase2_homografias.py. H lleva píxeles RGB originales a píxeles térmicos.\n"
+    salida.write_text("# Generado por experimentos/fase2_homografias.py. H lleva píxeles RGB originales a "
+                      "píxeles térmicos.\n"
                       + yaml.safe_dump(homografias, allow_unicode=True, sort_keys=False), encoding="utf-8")
     print(f"\n{len(homografias)} vuelos con homografía en {salida}")
 

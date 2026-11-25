@@ -4,7 +4,7 @@ Copia los de `resumen_5b.archivos_corrida` (configs/fase5.yaml) desde runs/<base
 bitacora_<corrida>.csv con la cabecera y la última fila de la bitácora de esa corrida. No copia pesos ni imágenes.
 Sale con 1 si falta resumen.json (la corrida no terminó) o no hay fila en la bitácora.
 
-Uso: python scripts/fase5b_copiar.py --config configs/fase5.yaml --rutas configs/rutas.yaml --corrida rgb_100ep
+Uso: python -m src.utilidades.copiar_fase5b --config configs/fase5.yaml --rutas configs/rutas.yaml --corrida rgb_100ep
 """
 import argparse
 import csv
@@ -15,6 +15,8 @@ from src.comun import leer_rutas, leer_yaml
 
 
 def main():
+    """Copia a reports/ los archivos livianos de una corrida y su fila de la bitácora, para subirlos a git. Sale con 1
+    si la corrida no terminó."""
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", required=True)
     ap.add_argument("--rutas", required=True)

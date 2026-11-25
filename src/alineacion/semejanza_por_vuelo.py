@@ -30,7 +30,7 @@ desfasados seguidos (un par sin personas que cuenten corta el tramo). Se propone
 y los pares "solo térmica" dentro de ellos o a `vecindad_solo_termica` posiciones o menos. Para comparar se calcula
 también la regla anterior (alguna persona a más de `umbral_desfase_px` con el emparejamiento húngaro) y la regla nueva
 con otros radios. El script solo propone (exclusion_desfase_propuesta.csv) y hace una hoja de ejemplos. Los tramos se
-revisan y se excluyen con scripts/fase2_revision_desfases.py, que escribe configs/exclusiones_desfase.yaml (lo lee
+revisan y se excluyen con src/alineacion/revision_desfases.py, que escribe configs/exclusiones_desfase.yaml (lo lee
 configs/fase1.yaml).
 
 Salidas: configs/homografias_cajas.yaml (si no está congelada) y, en reports/alineacion/homografias_cajas/: resumen.csv,
@@ -38,7 +38,7 @@ comparacion_modelos.csv, distancias.csv, distancia_por_par.csv, personas_desfase
 exclusion_desfase_propuesta.csv, sensibilidad_radio.csv, validacion_manual.csv y las imágenes (superposiciones, peores
 pares, ejemplos de desfase y puntos manuales). Agrega una fila a la bitácora.
 
-Uso: python scripts/fase2_homografias_cajas.py --config configs/fase2.yaml --rutas configs/rutas.yaml
+Uso: python -m src.alineacion.semejanza_por_vuelo --config configs/fase2.yaml --rutas configs/rutas.yaml
 """
 import argparse
 from datetime import datetime
@@ -154,6 +154,8 @@ def mediana_relativa(personas, radio):
 
 
 def tramos(posiciones, hueco_max):
+    """Junta posiciones ordenadas en tramos [inicio, fin] seguidos, admitiendo huecos de hasta `hueco_max` posiciones.
+    Sirve para encontrar los tramos de pares desfasados."""
     t = []
     for p in posiciones:
         if t and p - t[-1][1] <= hueco_max + 1:
@@ -172,6 +174,8 @@ def regla_desfase(valor, umbral, min_pares, solo_ter, vecindad):
 
 
 def pares_que_salen(tramos_regla):
+    """De los tramos de desfase (inicio, fin, posiciones solo térmica cercanas), devuelve las posiciones desfasadas y,
+    aparte, las solo térmica que salen con ellas."""
     desfase = {p for a, b, _ in tramos_regla for p in range(a, b + 1)}
     return desfase, {p for *_, v in tramos_regla for p in v} - desfase
 
@@ -184,6 +188,8 @@ def superposicion(dataset, par, H, tam_rgb, tam_ter, alto, fuente, titulo):
 
 
 def paneles_superposicion(dataset, par, H, tam_rgb, tam_ter, alto):
+    """Paneles de un par para revisar la alineación a ojo: la RGB llevada a la térmica, la térmica y la mezcla de las
+    dos, con las cajas térmicas en rojo y las RGB llevadas en verde."""
     rgb = cv2.imread(str(dataset / par.ruta_rgb))
     al = Image.fromarray(cv2.cvtColor(cv2.warpPerspective(rgb, H, tuple(tam_ter)), cv2.COLOR_BGR2RGB))
     ter = Image.open(dataset / par.ruta_termica).convert("RGB")
@@ -257,6 +263,8 @@ def figura_puntos(dataset, fotogramas, H, alto, fuente):
 
 # --------------------------------------------------------------------------------------------------------- main
 def main():
+    """Estima (o lee, si está congelada) la semejanza de cada vuelo, la compara con los otros modelos, mide las
+    distancias entre centros, aplica la regla de desfase y escribe las tablas y las imágenes de revisión."""
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", required=True)
     ap.add_argument("--rutas", required=True)
@@ -474,7 +482,7 @@ def main():
             print(f"  REVISAR: {fila['revisar_a_mano']}")
 
     if not congelada:
-        cabecera = ("# Generado por scripts/fase2_homografias_cajas.py. Para congelarla (no volver a estimarla), "
+        cabecera = ("# Generado por src/alineacion/semejanza_por_vuelo.py. Para congelarla (no volver a estimarla), "
                     "transformacion_congelada: true en configs/fase2.yaml.\n")
         (RAIZ / c["salida"]).write_text(cabecera + yaml.safe_dump(salida_h, allow_unicode=True, sort_keys=False),
                                         encoding="utf-8")

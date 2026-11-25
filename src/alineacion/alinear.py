@@ -20,7 +20,7 @@ Después:
 - agrega una fila a la bitácora con el espacio en disco y el tiempo.
 
 Uso:
-    .venv\Scripts\python.exe scripts\alinear.py --config configs\fase2.yaml --rutas configs\rutas.yaml
+    .venv\Scripts\python.exe -m src.alineacion.alinear --config configs\fase2.yaml --rutas configs\rutas.yaml
 """
 # Solo importaciones livianas arriba: en Windows cada proceso hijo vuelve a importar este módulo (comun importa torch).
 import argparse
@@ -161,6 +161,8 @@ def verificar(indice, salida, dataset, n, seed, tam_ter):
 
 
 def main():
+    """Escribe las imágenes alineadas de todos los pares finales (RGB, térmica y fusión de 4 canales) y su índice, por
+    partes para no llenar la memoria."""
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--config", required=True)
     ap.add_argument("--rutas", required=True)

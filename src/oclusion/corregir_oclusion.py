@@ -12,7 +12,7 @@ de personas para ajustar la visible RGB.
    --rehacer-lista se vuelve a armar con el estado actual.
 
 Uso:
-    .venv\Scripts\python.exe scripts\corregir_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml
+    .venv\Scripts\python.exe -m src.oclusion.corregir_oclusion --config configs\fase3.yaml --rutas configs\rutas.yaml
 """
 import argparse
 import shutil
@@ -22,8 +22,8 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 
-from src.oclusion.anotar_oclusion import (COLUMNAS, a_fila, area, centro, con_centro, desde_fila, interseccion, normalizar,
-                             terminada, vacia)
+from src.oclusion.anotar_oclusion import (COLUMNAS, a_fila, area, centro, con_centro, desde_fila, interseccion,
+                                         normalizar, terminada, vacia)
 from src.comun import RAIZ, leer_rutas, leer_yaml
 
 
@@ -63,6 +63,8 @@ def fuera_de_completa(f):
 
 
 def main():
+    """Aplica las correcciones de la muestra a las anotaciones de oclusión, después de guardar un respaldo, y arma la
+    lista de personas para ajustar la visible RGB."""
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--config", required=True)
     ap.add_argument("--rutas", required=True)
