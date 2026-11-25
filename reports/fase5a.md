@@ -37,12 +37,12 @@ Las dos primeras corridas se hicieron con Roblox, ChatGPT y Chrome abiertos. Las
 y 4 procesos de lectura, que son las condiciones fijadas para todas las corridas.
 
 ```
-.venv\Scripts\python.exe scripts\entrenar.py --config configs\fase5.yaml --rutas configs\rutas.yaml --corrida fusion_promedio_10ep
+.venv\Scripts\python.exe -m src.entrenamiento.entrenar --config configs\fase5.yaml --rutas configs\rutas.yaml --corrida fusion_promedio_10ep
 ```
 
 ## Script y configuración
 
-- **`scripts/entrenar.py`, antes de entrenar:**
+- **`src/entrenamiento/entrenar.py`, antes de entrenar:**
   - comprueba que Roblox, ChatGPT y Chrome estén cerrados (`cerrar_antes`);
   - comprueba que la laptop esté enchufada y con el plan Performance;
   - hace la **comprobación previa de potencia**: 30 s con solo la GPU cargada, y la mediana del límite aplicado
@@ -222,7 +222,7 @@ el mAP@0.5 de la época 2 de 0.307 a 0.293. Por eso se cambió la regla del cuar
 
 ## Cambios en el código
 
-- **`scripts/entrenar.py` (nuevo):**
+- **`src/entrenamiento/entrenar.py` (nuevo):**
   - antes de entrenar, comprueba las aplicaciones cerradas y la potencia;
   - entrena con el `DetectionTrainer` de Ultralytics, con el inicio del cuarto canal como opción;
   - registra la memoria, el tiempo, el optimizador, la primera capa y la potencia real;

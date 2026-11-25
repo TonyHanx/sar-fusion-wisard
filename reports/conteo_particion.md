@@ -6,7 +6,7 @@ creó**. Se cuentan los 4 617 pares finales (anotados y no excluidos).
 Para regenerar:
 
 ```
-.venv\Scripts\python.exe scripts\conteo_particion.py --config configs\conteo_particion.yaml --rutas configs\rutas.yaml
+.venv\Scripts\python.exe -m experimentos.conteo_particion --config configs\conteo_particion.yaml --rutas configs\rutas.yaml
 ```
 
 Tablas: `reports/conteo_particion_vuelos.csv` y `reports/conteo_particion_prueba.csv`.

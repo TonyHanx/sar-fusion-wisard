@@ -21,9 +21,9 @@ Partes: C0 auditoría, C1 datasets, C2 receta, C3 corridas y C4 evaluación en v
 
 Scripts:
 
-- `scripts/fase7_c0_auditoria.py`, con las partes `auditar`, `ampliar`, `alineacion`, `clasificar` y `puntos`;
-- `scripts/fase7_marcar_puntos.py`, para los puntos a mano;
-- `scripts/fase7_copiar.py`, que copia las salidas a `reports/fase7/`.
+- `src/ampliacion/c0_auditoria_termicas.py`, con las partes `auditar`, `ampliar`, `alineacion`, `clasificar` y `puntos`;
+- `src/ampliacion/marcar_puntos_vuelos_nuevos.py`, para los puntos a mano;
+- `src/utilidades/copiar_fase7.py`, que copia las salidas a `reports/fase7/`.
 
 La configuración está en la sección `c0` de `configs/fase7.yaml`. Las salidas completas quedan en `runs/fase7/c0/` y
 una copia liviana en `reports/fase7/c0/` (los PNG como JPEG).
@@ -215,7 +215,7 @@ alinea su RGB con la térmica.
   vegetación lo llenan todo y no permiten juzgar a ojo. Quedan como referencia, pero no deciden.
 - **Puntos a mano.** Los marcó el usuario el 18 de noviembre de 2026, 2 fotogramas por vuelo y 6 puntos o más por
   fotograma (`configs/fase7_puntos_control/`).
-  - Usó la herramienta de la fase 2, sin cambiarla, con `scripts/fase7_marcar_puntos.py`.
+  - Usó la herramienta de la fase 2, sin cambiarla, con `src/ampliacion/marcar_puntos_vuelos_nuevos.py`.
   - Fotogramas: los más nítidos cerca de 1/3 y 2/3 del rango (`c0.marcado.fotogramas`).
     - 0403: 63 y 156 (7 y 6 puntos).
     - 0564: 345 y 663 (6 y 6 puntos).
@@ -272,7 +272,7 @@ Están en los comentarios de la sección `c1` de `configs/fase7.yaml`.
 
 ## C1. Datasets nuevos
 
-`scripts/fase7_c1_datasets.py`, sección `c1` de `configs/fase7.yaml`. Salidas en `runs/fase7/c1/`.
+`src/ampliacion/c1_datasets_ampliados.py`, sección `c1` de `configs/fase7.yaml`. Salidas en `runs/fase7/c1/`.
 
 ### Composición (`--parte componer`)
 
@@ -372,12 +372,12 @@ con enlaces duros.
 
 ## C2. Receta para objetos pequeños
 
-Va en `scripts/fase7_entrenar.py`, con las secciones `c2` y `c3` de `configs/fase7.yaml`. El dropout está en
-`scripts/modalidad.py`.
+Va en `src/entrenamiento/entrenar_fase7.py`, con las secciones `c2` y `c3` de `configs/fase7.yaml`. El dropout está en
+`src/entrenamiento/dropout_modalidad.py`.
 
 ### Qué cambia frente a la fase 5
 
-`scripts/entrenar.py` no cambia: se reutilizan sus comprobaciones previas (aplicaciones cerradas, enchufe, plan de
+`src/entrenamiento/entrenar.py` no cambia: se reutilizan sus comprobaciones previas (aplicaciones cerradas, enchufe, plan de
 energía y potencia, con los valores de `configs/fase5.yaml`), el monitor, el registro por época y el inicio del cuarto
 canal.
 
@@ -439,10 +439,10 @@ Se corrió con 8 imágenes del entrenamiento base de la fusión, que tienen RGB 
 
 ### Evaluador: la prueba con la RGB en 0
 
-Se agregó a `scripts/evaluar.py` la opción `--rgb-cero`.
+Se agregó a `src/evaluacion/evaluar.py` la opción `--rgb-cero`.
 
 - Los modelos de 4 canales (la fusión) reciben la RGB en 0: los 3 canales de color de cada imagen van en 0 al leerla,
-  con el mismo `scripts/modalidad.py` y p = 1. La térmica queda igual. Los modelos de 3 canales no cambian.
+  con el mismo `src/entrenamiento/dropout_modalidad.py` y p = 1. La térmica queda igual. Los modelos de 3 canales no cambian.
 - Las predicciones van a `<modelo>_rgb0/` y las salidas llevan el sufijo `_rgb0`. Así no se mezclan con las de
   siempre ni cuentan para "una sola vez".
 - Sin la opción, el evaluador hace exactamente lo mismo que antes.
@@ -454,7 +454,7 @@ Se agregó a `scripts/evaluar.py` la opción `--rgb-cero`.
 
 ## C3. Corridas
 
-Se corren con `scripts/fase7_entrenar.py --corrida NOMBRE`, en este orden: `termico_base`, `termico_ampliado`,
+Se corren con `src/entrenamiento/entrenar_fase7.py --corrida NOMBRE`, en este orden: `termico_base`, `termico_ampliado`,
 `fusion_base` y `fusion_ampliado`.
 
 - **Receta común**, comprobada al mezclar `c3.base` con cada corrida:
@@ -560,7 +560,7 @@ la deja como evidencia de que `patience: 20` cortó el calendario. Se lanzó des
 **Dónde se corre.** El usuario la corre en su propia ventana de PowerShell, fuera de Claude Code. Así no la corta la
 protección de memoria de Claude Code. Las comprobaciones del script son las mismas.
 
-**Guardado por época** (`scripts/fase7_entrenar.py`):
+**Guardado por época** (`src/entrenamiento/entrenar_fase7.py`):
 - `epocas.csv` y `monitor.csv` se escriben al final de cada época, en la carpeta de la corrida. Al terminar se
   escriben completos, como antes.
 - Se escriben en un temporal que luego se renombra, así que un corte no deja un archivo a medias.
@@ -825,7 +825,7 @@ Es la corrida de `termico_base` que se usa en C4. `termico_base_cortada` y `term
 ### Antes de `fusion_base` (19 de noviembre de 2026)
 
 **De qué vuelo viene cada imagen de los datasets ampliados**, comprobado con los archivos y no con `composicion.csv`
-(`scripts/fase7_origen.py`, sección `origen` de `configs/fase7.yaml`):
+(`src/ampliacion/origen_imagenes.py`, sección `origen` de `configs/fase7.yaml`):
 - **Enlace duro:** el identificador de archivo de cada imagen se busca entre los de `data/alineados/` (la base de la
   fase 2) y los de `data/fase7/{termica,fusion}/` (las nuevas de C1). Solo se miran metadatos.
 - **Contenido:** los píxeles de la térmica de cada imagen (el PNG o la cuarta muestra del TIFF) se comparan con los de
@@ -868,7 +868,7 @@ Es la corrida de `termico_base` que se usa en C4. `termico_base_cortada` y `term
   `fusion_ampliado` llevan la RGB en 0;
 - son el 0.1 % de las 14 110 imágenes de entrenamiento, y `termico_ampliado` ya se entrenó con ellas.
 
-`scripts/fase7_origen.py` sigue saliendo con código 1 por esa comprobación; está anotado en `configs/fase7.yaml`.
+`src/ampliacion/origen_imagenes.py` sigue saliendo con código 1 por esa comprobación; está anotado en `configs/fase7.yaml`.
 
 **Sus etiquetas son las de la térmica**, comprobado con los archivos para todas las imágenes nuevas:
 - En los dos datasets, la etiqueta de cada imagen nueva es un enlace duro a `data/fase7/etiquetas/` y tiene las mismas
@@ -1313,7 +1313,7 @@ Cuatro cosas no se podían hacer tal como estaban pedidas. Las decidió el usuar
 
 ### Herramienta de anotación y lista de personas
 
-**`scripts/fase7_c4_oclusion.py`** usa el modo simple de `scripts/anotar_oclusion.py` sin cambiarlo. Tiene dos ajustes,
+**`src/oclusion/c4_nivel_validacion.py`** usa el modo simple de `src/oclusion/anotar_oclusion.py` sin cambiarlo. Tiene dos ajustes,
 porque la herramienta suponía un solo vuelo y la validación tiene dos:
 - **la imagen cargada se reconoce por vuelo y fotograma.** La herramienta la reconocía solo por fotograma, y hay 77
   números de fotograma que están en los dos vuelos;
@@ -1334,7 +1334,7 @@ el evaluador, comprobadas contra `data/etiquetas/termica`, en orden de vuelo y f
 
 El alto de la caja térmica tiene una mediana de 28.5 px (de 9.0 a 59.1 entre los percentiles 10 y 90).
 
-### Corrección en `scripts/evaluar.py`: la opción `--rgb-cero` (C2)
+### Corrección en `src/evaluacion/evaluar.py`: la opción `--rgb-cero` (C2)
 
 - **El error:** la carpeta de las predicciones con la RGB en 0 llevaba el sufijo `_rgb0`, pero a Ultralytics se le pasaba
   el nombre sin el sufijo. Así, sus predicciones se habrían escrito en la carpeta de las de RGB real, y la de `_rgb0`
@@ -1344,7 +1344,7 @@ El alto de la caja térmica tiene una mediana de 28.5 px (de 9.0 a 59.1 entre lo
 - **La corrección:** se pasa el nombre de la carpeta (`name=carpeta.name`). Sin `--rgb-cero` es el mismo nombre de
   antes.
 
-### Predicciones (`scripts/fase7_c4_evaluar.py --solo-predecir`)
+### Predicciones (`src/evaluacion/c4_evaluar_validacion.py --solo-predecir`)
 
 - **12 modelos** en `runs/fase7/c4/validacion/`: las 4 corridas con `last.pt` y con `best.pt`, y las 2 fusiones con la
   RGB en 0 con los dos pesos.
@@ -1459,7 +1459,7 @@ están en `c4.oclusion.consistencia` de `configs/fase7.yaml`.
 
 ### Salidas
 
-`scripts/fase7_c4_evaluar.py` (2 min) escribe en `reports/fase7/c4/`:
+`src/evaluacion/c4_evaluar_validacion.py` (2 min) escribe en `reports/fase7/c4/`:
 - `umbrales.csv`: el F2, el recall y la precisión de cada umbral de la rejilla, por modelo;
 - `resultados.csv`: las métricas con IC de los 12 modelos y las diferencias de los pares, por subconjunto, con y sin
   las dudosas;
@@ -1467,7 +1467,7 @@ están en `c4.oclusion.consistencia` de `configs/fase7.yaml`.
 - `corridas.csv`: la cifra de `results.csv`;
 - `recall_por_nivel.png`.
 
-**`scripts/fase7_c4_desglose.py`** (nuevo y solo descriptivo, sin pruebas nuevas) escribe `bloques.csv`,
+**`src/evaluacion/c4_desglose_validacion.py`** (nuevo y solo descriptivo, sin pruebas nuevas) escribe `bloques.csv`,
 `remuestreos.csv`, `alto_por_nivel.csv`, `recall_por_vuelo.csv` y `discordantes_por_bloque.csv`.
 - Lo agregué después de ver los resultados, para explicar por qué McNemar y el bootstrap no coinciden (ver "Fusión
   contra térmica").
@@ -1857,28 +1857,28 @@ combinada con la térmica, aunque sola dé 0.03.
 ## Comandos
 
 ```
-.venv\Scripts\python.exe scripts\fase7_c0_auditoria.py --config configs\fase7.yaml --rutas configs\rutas.yaml --parte auditar
-.venv\Scripts\python.exe scripts\fase7_c0_auditoria.py --config configs\fase7.yaml --rutas configs\rutas.yaml --parte ampliar
-.venv\Scripts\python.exe scripts\fase7_c0_auditoria.py --config configs\fase7.yaml --rutas configs\rutas.yaml --parte alineacion
-.venv\Scripts\python.exe scripts\fase7_c0_auditoria.py --config configs\fase7.yaml --rutas configs\rutas.yaml --parte clasificar
-.venv\Scripts\python.exe scripts\fase7_marcar_puntos.py --config configs\fase7.yaml --rutas configs\rutas.yaml --vuelo 210924_FHL_Enterprise_0403
-.venv\Scripts\python.exe scripts\fase7_c0_auditoria.py --config configs\fase7.yaml --rutas configs\rutas.yaml --parte puntos
-.venv\Scripts\python.exe scripts\fase7_c1_datasets.py --config configs\fase7.yaml --rutas configs\rutas.yaml --parte componer
-.venv\Scripts\python.exe scripts\fase7_c1_datasets.py --config configs\fase7.yaml --rutas configs\rutas.yaml --parte construir
-.venv\Scripts\python.exe scripts\fase7_entrenar.py --config configs\fase7.yaml --rutas configs\rutas.yaml --verificar
-$env:PYTHONIOENCODING = "utf-8"; cmd /c ".venv\Scripts\python.exe -u scripts\fase7_entrenar.py --config configs\fase7.yaml --rutas configs\rutas.yaml --corrida termico_base > runs\fase7\termico_base.log 2>&1"
-$env:PYTHONIOENCODING = "utf-8"; cmd /c ".venv\Scripts\python.exe -u scripts\fase7_entrenar.py --config configs\fase7.yaml --rutas configs\rutas.yaml --corrida termico_ampliado > runs\fase7\termico_ampliado.log 2>&1"
-$env:PYTHONIOENCODING = "utf-8"; cmd /c ".venv\Scripts\python.exe -u scripts\fase7_entrenar.py --config configs\fase7.yaml --rutas configs\rutas.yaml --corrida fusion_base > runs\fase7\fusion_base.log 2>&1"
-$env:PYTHONIOENCODING = "utf-8"; cmd /c ".venv\Scripts\python.exe -u scripts\fase7_entrenar.py --config configs\fase7.yaml --rutas configs\rutas.yaml --corrida fusion_ampliado > runs\fase7\fusion_ampliado.log 2>&1"
-$env:PYTHONIOENCODING = "utf-8"; cmd /c ".venv\Scripts\python.exe -u scripts\fase7_entrenar.py --config configs\fase7.yaml --rutas configs\rutas.yaml --corrida rgb_base > runs\fase7\rgb_base.log 2>&1"
-.venv\Scripts\python.exe scripts\evaluar.py --config configs\fase6.yaml --rutas configs\rutas.yaml --particion validacion --modelos fusion termico --rgb-cero --solo-verificar
-.venv\Scripts\python.exe scripts\fase7_origen.py --config configs\fase7.yaml --rutas configs\rutas.yaml
-.venv\Scripts\python.exe scripts\fase7_copiar.py --config configs\fase7.yaml --rutas configs\rutas.yaml
-.venv\Scripts\python.exe scripts\fase7_c4_oclusion.py --config configs\fase7.yaml --rutas configs\rutas.yaml --parte preparar
-$env:PYTHONIOENCODING = "utf-8"; cmd /c ".venv\Scripts\python.exe -u scripts\fase7_c4_evaluar.py --config configs\fase7.yaml --rutas configs\rutas.yaml --solo-predecir > runs\fase7\c4_predecir.log 2>&1"
-.venv\Scripts\python.exe scripts\fase7_c4_oclusion.py --config configs\fase7.yaml --rutas configs\rutas.yaml --parte anotar
-.venv\Scripts\python.exe scripts\fase7_c4_oclusion.py --config configs\fase7.yaml --rutas configs\rutas.yaml --parte nivel
-.venv\Scripts\python.exe scripts\fase7_c4_oclusion.py --config configs\fase7.yaml --rutas configs\rutas.yaml --parte consistencia
-.venv\Scripts\python.exe scripts\fase7_c4_evaluar.py --config configs\fase7.yaml --rutas configs\rutas.yaml
-.venv\Scripts\python.exe scripts\fase7_c4_desglose.py --config configs\fase7.yaml --rutas configs\rutas.yaml
+.venv\Scripts\python.exe -m src.ampliacion.c0_auditoria_termicas --config configs\fase7.yaml --rutas configs\rutas.yaml --parte auditar
+.venv\Scripts\python.exe -m src.ampliacion.c0_auditoria_termicas --config configs\fase7.yaml --rutas configs\rutas.yaml --parte ampliar
+.venv\Scripts\python.exe -m src.ampliacion.c0_auditoria_termicas --config configs\fase7.yaml --rutas configs\rutas.yaml --parte alineacion
+.venv\Scripts\python.exe -m src.ampliacion.c0_auditoria_termicas --config configs\fase7.yaml --rutas configs\rutas.yaml --parte clasificar
+.venv\Scripts\python.exe -m src.ampliacion.marcar_puntos_vuelos_nuevos --config configs\fase7.yaml --rutas configs\rutas.yaml --vuelo 210924_FHL_Enterprise_0403
+.venv\Scripts\python.exe -m src.ampliacion.c0_auditoria_termicas --config configs\fase7.yaml --rutas configs\rutas.yaml --parte puntos
+.venv\Scripts\python.exe -m src.ampliacion.c1_datasets_ampliados --config configs\fase7.yaml --rutas configs\rutas.yaml --parte componer
+.venv\Scripts\python.exe -m src.ampliacion.c1_datasets_ampliados --config configs\fase7.yaml --rutas configs\rutas.yaml --parte construir
+.venv\Scripts\python.exe -m src.entrenamiento.entrenar_fase7 --config configs\fase7.yaml --rutas configs\rutas.yaml --verificar
+$env:PYTHONIOENCODING = "utf-8"; cmd /c ".venv\Scripts\python.exe -u -m src.entrenamiento.entrenar_fase7 --config configs\fase7.yaml --rutas configs\rutas.yaml --corrida termico_base > runs\fase7\termico_base.log 2>&1"
+$env:PYTHONIOENCODING = "utf-8"; cmd /c ".venv\Scripts\python.exe -u -m src.entrenamiento.entrenar_fase7 --config configs\fase7.yaml --rutas configs\rutas.yaml --corrida termico_ampliado > runs\fase7\termico_ampliado.log 2>&1"
+$env:PYTHONIOENCODING = "utf-8"; cmd /c ".venv\Scripts\python.exe -u -m src.entrenamiento.entrenar_fase7 --config configs\fase7.yaml --rutas configs\rutas.yaml --corrida fusion_base > runs\fase7\fusion_base.log 2>&1"
+$env:PYTHONIOENCODING = "utf-8"; cmd /c ".venv\Scripts\python.exe -u -m src.entrenamiento.entrenar_fase7 --config configs\fase7.yaml --rutas configs\rutas.yaml --corrida fusion_ampliado > runs\fase7\fusion_ampliado.log 2>&1"
+$env:PYTHONIOENCODING = "utf-8"; cmd /c ".venv\Scripts\python.exe -u -m src.entrenamiento.entrenar_fase7 --config configs\fase7.yaml --rutas configs\rutas.yaml --corrida rgb_base > runs\fase7\rgb_base.log 2>&1"
+.venv\Scripts\python.exe -m src.evaluacion.evaluar --config configs\fase6.yaml --rutas configs\rutas.yaml --particion validacion --modelos fusion termico --rgb-cero --solo-verificar
+.venv\Scripts\python.exe -m src.ampliacion.origen_imagenes --config configs\fase7.yaml --rutas configs\rutas.yaml
+.venv\Scripts\python.exe -m src.utilidades.copiar_fase7 --config configs\fase7.yaml --rutas configs\rutas.yaml
+.venv\Scripts\python.exe -m src.oclusion.c4_nivel_validacion --config configs\fase7.yaml --rutas configs\rutas.yaml --parte preparar
+$env:PYTHONIOENCODING = "utf-8"; cmd /c ".venv\Scripts\python.exe -u -m src.evaluacion.c4_evaluar_validacion --config configs\fase7.yaml --rutas configs\rutas.yaml --solo-predecir > runs\fase7\c4_predecir.log 2>&1"
+.venv\Scripts\python.exe -m src.oclusion.c4_nivel_validacion --config configs\fase7.yaml --rutas configs\rutas.yaml --parte anotar
+.venv\Scripts\python.exe -m src.oclusion.c4_nivel_validacion --config configs\fase7.yaml --rutas configs\rutas.yaml --parte nivel
+.venv\Scripts\python.exe -m src.oclusion.c4_nivel_validacion --config configs\fase7.yaml --rutas configs\rutas.yaml --parte consistencia
+.venv\Scripts\python.exe -m src.evaluacion.c4_evaluar_validacion --config configs\fase7.yaml --rutas configs\rutas.yaml
+.venv\Scripts\python.exe -m src.evaluacion.c4_desglose_validacion --config configs\fase7.yaml --rutas configs\rutas.yaml
 ```

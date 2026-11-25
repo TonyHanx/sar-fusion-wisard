@@ -53,13 +53,13 @@ Las fases siguen el flujo de trabajo de la Figura 1 (pasos 1 a 7).
 
 > Fase 2. Alinea la imagen RGB con la térmica en cada vuelo.
 >
-> 1. Haz una herramienta con OpenCV, `scripts/marcar_puntos.py`, que me muestre lado a lado una RGB y su térmica de un
+> 1. Haz una herramienta con OpenCV, `src/alineacion/marcar_puntos.py`, que me muestre lado a lado una RGB y su térmica de un
 >    vuelo, y me deje marcar al menos 6 puntos correspondientes (una roca, un tronco, una esquina) con clics.
 >    Que pueda deshacer el último punto y guardar.
 > 2. Con esos puntos, calcula una homografía por vuelo (`cv2.findHomography` con RANSAC) y guárdala en `configs/`.
 >    Usa como punto de partida la franja de CLAUDE.md (x de 0.18 a 0.84, y de 0.06 a 0.98). Carnation 0023/0024 es
 >    al revés: avísame qué ves ahí.
-> 3. Escribe `scripts/alinear.py`, que lleve cada RGB a 640 × 512 en la geometría de la térmica y guarde, por cada par:
+> 3. Escribe `src/alineacion/alinear.py`, que lleve cada RGB a 640 × 512 en la geometría de la térmica y guarde, por cada par:
 >    la RGB alineada (PNG), la térmica (PNG) y la imagen de 4 canales (TIFF, uint8). Procesa por partes.
 > 4. Para verificar, guarda en `reports/alineacion/` 10 superposiciones por vuelo y calcula la distancia promedio en
 >    píxeles entre los centros de las cajas RGB transformadas y las térmicas.
@@ -103,7 +103,7 @@ fotogramas y 498 personas, que cubren los 18 episodios. Los conteos están en `r
 >    - "Fuera de cuadro" si el cuerpo está cortado por el borde; no cuenta como oclusión.
 >    - "No es persona" si la caja térmica de WiSARD está mal; se reporta aparte.
 >    - Las sombras no son parte de la persona.
-> 2. Haz `scripts/anotar_oclusion.py`:
+> 2. Haz `src/oclusion/anotar_oclusion.py`:
 >    - Muestra cada persona con la RGB alineada y la térmica lado a lado, ampliadas alrededor de la caja térmica.
 >    - Precarga la caja visible térmica con la etiqueta de WiSARD, y la visible RGB con la caja RGB más cercana a 3
 >      alturas o menos, si hay.
@@ -119,8 +119,8 @@ fotogramas y 498 personas, que cubren los 18 episodios. Los conteos están en `r
 **Cómo se usa:**
 
 ```
-.venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml
-.venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --segundo
+.venv\Scripts\python.exe -m src.oclusion.anotar_oclusion --config configs\fase3.yaml --rutas configs\rutas.yaml
+.venv\Scripts\python.exe -m src.oclusion.anotar_oclusion --config configs\fase3.yaml --rutas configs\rutas.yaml --segundo
 ```
 
 El primer comando es para ti; el segundo, para el segundo anotador.
@@ -137,16 +137,16 @@ El primer comando es para ti; el segundo, para el segundo anotador.
 > Actualiza CLAUDE.md con este plan y haz commit y push.
 
 ```
-.venv\Scripts\python.exe scripts\oclusion_auto.py --config configs\fase3.yaml --rutas configs\rutas.yaml
-.venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --muestra
-.venv\Scripts\python.exe scripts\fase4_validacion_auto.py --config configs\fase3.yaml --rutas configs\rutas.yaml
-.venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --segundo-simple
+.venv\Scripts\python.exe -m src.oclusion.oclusion_auto --config configs\fase3.yaml --rutas configs\rutas.yaml
+.venv\Scripts\python.exe -m src.oclusion.anotar_oclusion --config configs\fase3.yaml --rutas configs\rutas.yaml --muestra
+.venv\Scripts\python.exe -m src.oclusion.concordancia --config configs\fase3.yaml --rutas configs\rutas.yaml
+.venv\Scripts\python.exe -m src.oclusion.anotar_oclusion --config configs\fase3.yaml --rutas configs\rutas.yaml --segundo-simple
 ```
 
 **Revisa:**
 - Anota las 75 personas de la muestra con `--muestra`: avanzas con espacio y la herramienta guarda sola.
 - La comparación (antes `--comparar`) ahora es de dos niveles, "se ve o no en la RGB", con
-  `scripts/fase4_validacion_auto.py` (decidido el 1 de noviembre de 2026). Con tu anotación con cajas dio 0.940.
+  `src/oclusion/concordancia.py` (decidido el 1 de noviembre de 2026). Con tu anotación con cajas dio 0.940.
   Desde el 1 de noviembre de 2026 decide el kappa del automático contra tu modo simple de la ronda 2 (regla aclarada):
   con 0.61 o más se usa el automático; si no, el nivel binario de las 498 se anota a mano en modo simple. El 0.940
   queda como resultado de la primera anotación (`reports/fase4_validacion_auto.md`).
@@ -155,7 +155,7 @@ El primer comando es para ti; el segundo, para el segundo anotador.
   - Ronda 2 (regla aclarada: "se ve" con el brillo normal, sin realce; si dudas, "no se ve"): los dos anotadores
     responden las 75 completas en modo simple (`--primero-simple` y `--segundo-simple`), en
     `data/oclusion_primero_simple_ronda2.csv` y `data/oclusion_segundo_simple_ronda2.csv`. Cuando estén las dos,
-    `fase4_validacion_auto.py --partes entre_anotadores --ronda 2`: el primero contra el segundo (decide), el
+    `src/oclusion/concordancia.py --partes entre_anotadores --ronda 2`: el primero contra el segundo (decide), el
     automático contra el primero en modo simple y los cambios del primero respecto de sus cajas.
   - Resultado de la ronda 2: concordancia 0.623 (se acepta; el IC va como limitación) y automático contra el primero
     0.427, así que no se usa el automático.
@@ -163,7 +163,7 @@ El primer comando es para ti; el segundo, para el segundo anotador.
   `data/oclusion_primero_simple_resto.csv` y retoma si cierras). Las 10 "no es persona" de los dos están en
   `configs/cajas_dudosas.yaml`: no se tocan las etiquetas y quedan sin nivel.
 - Después del cierre (1 de noviembre de 2026):
-  - las 66 "no es persona" van todas a `configs/cajas_dudosas.yaml`, que genera `scripts/fase4_cajas_dudosas.py`
+  - las 66 "no es persona" van todas a `configs/cajas_dudosas.yaml`, que genera `src/oclusion/cajas_dudosas.py`
     siguiendo cada caja por los fotogramas no anotados;
   - la escena en sombra (468 a 588) se reanota entera con `--primero-simple-reanotar escena_sombra`.
 
@@ -191,8 +191,8 @@ Resultados:
 - Detalle en `reports/fase4_validacion_auto.md`.
 
 ```
-.venv\Scripts\python.exe scripts\fase4_nivel.py --config configs\fase3.yaml --rutas configs\rutas.yaml
-.venv\Scripts\python.exe scripts\fase4_cajas_dudosas.py --config configs\fase3.yaml --rutas configs\rutas.yaml
+.venv\Scripts\python.exe -m src.oclusion.nivel_final --config configs\fase3.yaml --rutas configs\rutas.yaml
+.venv\Scripts\python.exe -m src.oclusion.cajas_dudosas --config configs\fase3.yaml --rutas configs\rutas.yaml
 ```
 
 **Revisa:**
@@ -206,7 +206,7 @@ Resultados:
 
 > Fase 5a. Antes de entrenar, verifica con nvidia-smi que el límite bajo carga sea de al menos 90 W.
 >
-> 1. Escribe `scripts/entrenar.py`: lee un yaml de `configs/`, entrena YOLO26s desde `yolo26s.pt` con seed=0, imagen
+> 1. Escribe `src/entrenamiento/entrenar.py`: lee un yaml de `configs/`, entrena YOLO26s desde `yolo26s.pt` con seed=0, imagen
 >    de 640, `hsv_h=hsv_s=hsv_v=0`, y registra cada corrida en la bitácora.
 > 2. Con el modelo de fusión, entrena 2 épocas con lote 16 y mide la memoria máxima de la GPU y el tiempo por época.
 >    Si no entra, prueba lote 8. El lote que entre se usa para los tres modelos.
@@ -220,7 +220,7 @@ Resultados:
 > 5. Escribe `reports/fase5a.md` con todo, haz commit y push, y detente. No entrenes las 100 épocas todavía.
 
 ```
-.venv\Scripts\python.exe scripts\entrenar.py --config configs\fase5.yaml --rutas configs\rutas.yaml --corrida fusion_lote16_2ep
+.venv\Scripts\python.exe -m src.entrenamiento.entrenar --config configs\fase5.yaml --rutas configs\rutas.yaml --corrida fusion_lote16_2ep
 ```
 
 **Mensaje 5a, segunda parte (usado, 1 de noviembre de 2026),** tras ver que la potencia baja a unos 70 W al
@@ -255,7 +255,7 @@ Las corridas están en `configs/fase5.yaml` (`corridas`), y el resultado en `rep
 
 > Fase 6.
 >
-> 1. Escribe `scripts/evaluar.py`: para cada modelo, predice sobre la partición de prueba y calcula recall, precisión
+> 1. Escribe `src/evaluacion/evaluar.py`: para cada modelo, predice sobre la partición de prueba y calcula recall, precisión
 >    (umbral de confianza 0.5), F2 y mAP@0.5 con pycocotools.
 >    - Métricas globales sobre los 928 fotogramas de prueba y también sobre los 310 anotados.
 >    - Métricas por nivel de oclusión sobre los 310 anotados. Al evaluar un nivel, las personas de los otros niveles van

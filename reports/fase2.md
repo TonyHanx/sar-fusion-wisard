@@ -161,7 +161,7 @@ Primero se probaron tres métodos automáticos:
 | Zoom relativo entre fotogramas consecutivos (ORB en cada cámara) | `fase2_zoom_temporal.py` | El acumulado deriva. Revisé a ojo los 6 saltos más grandes (MtErie 0005 en 96 y 198, FHL 0405 en 222 y 916, Baker en 50 y 68): todos son falsas alarmas, porque la RGB y la térmica coinciden antes y después |
 | Separación entre cajas de personas / residuo con la franja nominal | (análisis aparte) | Necesita 2 personas o más; encuentra pocos tramos y con mucho ruido |
 
-Ninguno sirve por sí solo. Los límites salen del **barrido visual** (`scripts/fase2_barrido.py`): un fotograma cada
+Ninguno sirve por sí solo. Los límites salen del **barrido visual** (`experimentos/fase2_barrido.py`): un fotograma cada
 10 posiciones en todos los pares anotados de los 7 vuelos. Son 504 fotogramas en 25 hojas
 (`reports/alineacion/barrido/`, 8.4 MB), y los excluidos llevan el rótulo en rojo. Cada celda muestra la RGB recortada
 a la franja que ve la térmica, al mismo tamaño que la térmica, junto a la térmica. Si el zoom cambia o el dron está en
@@ -201,7 +201,7 @@ vuelo está en `reports/tabla_pares_por_vuelo.csv` y en `reports/fase1.md`.
 
 ## Alineación con los centros de las cajas
 
-Script: `scripts/fase2_homografias_cajas.py`, con la configuración en `homografias_cajas` de `configs/fase2.yaml`.
+Script: `src/alineacion/semejanza_por_vuelo.py`, con la configuración en `homografias_cajas` de `configs/fase2.yaml`.
 Las transformaciones se guardan en `configs/homografias_cajas.yaml` (una matriz 3 × 3 por vuelo, de píxeles de la
 RGB original a píxeles de la térmica) y los informes en `reports/alineacion/homografias_cajas/`.
 
@@ -366,7 +366,7 @@ hoja de ejemplos, 2 de los 4 tramos nuevos no eran desfases (ver "Antes de aplic
 
 ### Cómo se aplicó: opción 2 acotada
 
-Script: `scripts/fase2_revision_desfases.py`, con la configuración en `revision_desfases` de `configs/fase2.yaml`.
+Script: `src/alineacion/revision_desfases.py`, con la configuración en `revision_desfases` de `configs/fase2.yaml`.
 Primero clasifica los 45 tramos:
 
 | Tipo | Qué es | Tramos | Pares | Qué se hace |
@@ -503,7 +503,7 @@ Solo se extienden tramos ya detectados; no hay búsquedas nuevas. La extensión 
 - en un par sin anotar, en una exclusión puesta a mano o en otro tramo excluido.
 
 Las extensiones de FHL 0405, MtErie 0005 y MtErie 0007 se revisaron a ojo (imágenes `ext_*.jpg`); las demás salen sin
-revisión. Lo hace `scripts/fase2_revision_desfases.py --aplicar`. Las medidas están en `fondo_extensiones.csv`
+revisión. Lo hace `src/alineacion/revision_desfases.py --aplicar`. Las medidas están en `fondo_extensiones.csv`
 (también el par donde se corta cada extensión) y el resultado en `extensiones.csv`.
 
 | Vuelo | Desfase que se extiende | Pares que se agregan | Fondo (dx, dy) en px | Revisión |
@@ -624,7 +624,7 @@ De ahí salió la opción 2 acotada: revisar a ojo lo que la regla no resuelve s
 
 ## Herramienta de marcado de puntos
 
-`scripts/marcar_puntos.py` sirve para marcar puntos a mano en tres fotogramas por vuelo. Los fotogramas están
+`src/alineacion/marcar_puntos.py` sirve para marcar puntos a mano en tres fotogramas por vuelo. Los fotogramas están
 preconfigurados en `marcado.fotogramas` de `configs/fase2.yaml`, en la parte estable de cada vuelo. Hoy se usa solo
 para validar.
 
@@ -646,7 +646,7 @@ caben completas.
 
 ## Imágenes finales (2026-11-01)
 
-Script: `scripts/alinear.py`, con la configuración en `alinear` de `configs/fase2.yaml`. Los datos están en
+Script: `src/alineacion/alinear.py`, con la configuración en `alinear` de `configs/fase2.yaml`. Los datos están en
 `data/alineados/`, fuera de git. Cada par usa el mismo nombre en las tres carpetas:
 `<vuelo>_<posición con 4 dígitos>`, por ejemplo `210924_FHL_Enterprise_0405_0930`.
 

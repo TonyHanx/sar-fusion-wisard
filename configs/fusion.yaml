@@ -1,4 +1,4 @@
-# Dataset de Ultralytics del modelo 'fusion'. Generado por scripts/fase3_particion.py con configs/fase3.yaml: no editar a mano.
+# Dataset de Ultralytics del modelo 'fusion'. Generado por src/particion/particion.py con configs/fase3.yaml: no editar a mano.
 # Imágenes: data/alineados/fusion (enlaces duros). Etiquetas: las térmicas sin cajas repetidas.
 path: data/datasets/fusion
 train: images/train

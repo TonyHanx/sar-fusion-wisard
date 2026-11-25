@@ -52,7 +52,7 @@ exclusiones:
     motivo: desfase entre cámaras (fondo corrido (+4, +99) px con respuesta 0.02, no fiable), pegado a la extensión 208 (+103 px) y al tramo 209-211; excluido a mano el 2026-10-31
 
 # Exclusiones generadas por otros scripts (mismo formato). Desfases de la regla relativa revisados a ojo (fase 2,
-# 31 de octubre de 2026): los escribe scripts/fase2_revision_desfases.py --aplicar desde configs/revision_desfases.yaml.
+# 31 de octubre de 2026): los escribe src/alineacion/revision_desfases.py --aplicar desde configs/revision_desfases.yaml.
 exclusiones_adicionales:
   - configs/exclusiones_desfase.yaml
 
@@ -66,7 +66,7 @@ esperado:
 pares: pares.csv                              # dentro de data/
 tabla_por_vuelo: tabla_pares_por_vuelo.csv    # dentro de reports/
 
-# Revisión visual del inicio del tramo excluido de Baker (scripts/fase1_baker_corte.py).
+# Revisión visual del inicio del tramo excluido de Baker (experimentos/fase1_baker_corte.py).
 revision_baker:
   vuelo: 220109_Baker_Enterprise_1
   desde: 2030

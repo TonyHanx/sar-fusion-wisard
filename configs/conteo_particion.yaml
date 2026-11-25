@@ -1,4 +1,4 @@
-# Conteos para planear la partición y la anotación de oclusión (scripts/conteo_particion.py), antes de la Fase 3.
+# Conteos para planear la partición y la anotación de oclusión (experimentos/conteo_particion.py), antes de la Fase 3.
 # No crea la partición: solo cuenta sobre los pares finales (anotados y no excluidos).
 pares: pares.csv                                   # dentro de data/
 transformaciones: configs/homografias_cajas.yaml   # semejanza congelada (relativo a la raíz del repositorio)

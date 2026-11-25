@@ -5,9 +5,9 @@ particion: configs/particion.yaml
 transformaciones: configs/homografias_cajas.yaml   # semejanza congelada de la fase 2
 tam_termica: [640, 512]
 
-# Fase 3a (scripts/fase3_particion.py): etiquetas térmicas sin cajas repetidas y un dataset por modelo.
+# Fase 3a (src/particion/particion.py): etiquetas térmicas sin cajas repetidas y un dataset por modelo.
 datasets:
-  alineados: alineados               # dentro de data/: imágenes e indice.csv de scripts/alinear.py
+  alineados: alineados               # dentro de data/: imágenes e indice.csv de src/alineacion/alinear.py
   etiquetas: etiquetas               # dentro de data/: rgb/ y termica/ con las etiquetas sin cajas repetidas
   carpeta: datasets                  # dentro de data/: <modelo>/images/<división>/ y <modelo>/labels/<división>/
   enlace: duro                       # duro (enlace duro a data/alineados, sin ocupar más disco) o copia
@@ -23,7 +23,7 @@ datasets:
   verificacion: fase3_verificacion_datasets.csv   # dentro de reports/: lo que lee Ultralytics de cada dataset
   muestras_verificacion: 3                # imágenes al azar (seed) por modelo para comparar el tensor con los PNG
 
-# Fase 3b (scripts/anotar_oclusion.py): anotación de oclusión de la prueba.
+# Fase 3b (src/oclusion/anotar_oclusion.py): anotación de oclusión de la prueba.
 oclusion:
   vuelo: 210924_FHL_Enterprise_0405
   paso: 3                                  # fotogramas con posición múltiplo de 3
@@ -53,19 +53,19 @@ oclusion:
     # Reanotaciones (--primero-simple-reanotar NOMBRE), decididas el 2026-11-01 tras el cierre: el primero vuelve a
     # responder de una vez, en modo simple, todas las personas (muestra y resto) con fotograma entre `desde` y `hasta`,
     # en orden de fotograma, con la pantalla y la regla de la ronda `ronda`. Sus respuestas reemplazan las anteriores en
-    # el nivel final (scripts/fase4_nivel.py); las anteriores quedan en sus archivos y los kappas de la ronda 2 no
+    # el nivel final (src/oclusion/nivel_final.py); las anteriores quedan en sus archivos y los kappas de la ronda 2 no
     # cambian. Escena en sombra: en la muestra había 8 "se ve" de 13 comparables y en el resto 1 de 56.
     reanotaciones:
       escena_sombra: {desde: 468, hasta: 588, ronda: 2, archivo: oclusion_primero_simple_escena_sombra.csv}
   # Cajas térmicas de WiSARD dudosas de la prueba ("no es persona" para los dos anotadores en la ronda 2): no se tocan
   # las etiquetas; quedan sin nivel y en la fase 6 las métricas se calculan con y sin ellas.
   cajas_dudosas: configs/cajas_dudosas.yaml
-  correcciones: configs/correcciones_oclusion.yaml   # correcciones a ojo de la muestra (scripts/corregir_oclusion.py)
+  correcciones: configs/correcciones_oclusion.yaml   # correcciones a ojo de la muestra (src/oclusion/corregir_oclusion.py)
   respaldos: respaldos                     # dentro de data/: copia de las anotaciones antes de cada corrección
   lista_ajuste: oclusion_ajuste_visibles.csv      # dentro de data/: personas para ajustar la visible RGB (--ajuste)
   # Ventana, en px físicos de pantalla: la herramienta es consciente del DPI (la escala de Windows al 125 % no la
   # agranda) y se recorta al área de trabajo (sin la barra de tareas). En 1920 x 1140 queda de 1800 x 1085.
-  ancho_max: 1800                          # el mismo ancho que entró en pantalla con scripts/marcar_puntos.py
+  ancho_max: 1800                          # el mismo ancho que entró en pantalla con src/alineacion/marcar_puntos.py
   alto_max: 1100
   margen_pantalla_px: 10                   # margen a la derecha y abajo
   # Borde izquierdo del marco visible respecto del área de trabajo. OpenCV pega la ventana al borde del monitor si
@@ -86,7 +86,7 @@ oclusion:
   aviso_visible_fuera: 0.10                # avisa si más de esta fracción de una visible queda fuera de la completa
   clahe: {limite: 2.0, rejilla: 8}         # realce de contraste opcional (tecla e)
 
-# λ RGB automático (scripts/oclusion_auto.py), decidido el 2026-11-01: para cada persona térmica del vuelo de prueba,
+# λ RGB automático (src/oclusion/oclusion_auto.py), decidido el 2026-11-01: para cada persona térmica del vuelo de prueba,
 # λ = 1 − área(caja RGB más cercana a `radio_alturas` alturas o menos, llevada a la térmica) / área(caja térmica),
 # recortado a [0, 1]; sin caja RGB cerca, λ = 1. Se valida contra la anotación manual de la muestra de 75 personas.
 oclusion_auto:
@@ -107,7 +107,7 @@ oclusion_auto:
     # alrededor de sus cajas, ampliada `escala` veces, en `columnas` columnas.
     secuencia: {posiciones: 16, lado_px: 90, escala: 2.5, columnas: 11}
 
-# Validación del nivel automático (scripts/fase4_validacion_auto.py), decidida el 2026-11-01. Como en la muestra no hay
+# Validación del nivel automático (src/oclusion/concordancia.py), decidida el 2026-11-01. Como en la muestra no hay
 # ninguna persona moderada (0 de 68), el nivel pasa a dos clases: severa = la persona no se ve en la RGB; baja = se ve.
 # - Manual (primer anotador, muestra): severa si su visible RGB es "no visible"; baja si tiene caja.
 # - Automático: severa si no hay caja RGB de WiSARD a `oclusion_auto.radio_alturas` alturas o menos; baja si la hay.
@@ -142,7 +142,7 @@ validacion_auto:
     # cada cámara (misma medida, RGB con RGB y térmica con térmica): un desfase solo en p da un salto en p y otro al revés
     # en p + 1.
 
-# Nivel final (scripts/fase4_nivel.py), cierre de la fase 4 (2026-11-01). Como el automático no pasó la validación de
+# Nivel final (src/oclusion/nivel_final.py), cierre de la fase 4 (2026-11-01). Como el automático no pasó la validación de
 # la ronda 2, el nivel es el del primer anotador en modo simple, con la regla aclarada, de las 498 personas de los 310
 # fotogramas anotados: las de la muestra, de su ronda `oclusion.modo_simple.resto.ronda`; las demás, de
 # `oclusion.modo_simple.resto.archivo`. Se ve en la RGB = baja; no se ve = severa (`validacion_auto.niveles`); "no es
@@ -154,7 +154,7 @@ nivel_final:
   # el resto por separado. La escena en sombra es la de la ronda 2 (8 "se ve" del primero en la muestra).
   tramos: {escena_sombra: [468, 588]}
 
-# Cajas dudosas (scripts/fase4_cajas_dudosas.py), decidido el 2026-11-01: todas las personas sin nivel del nivel final
+# Cajas dudosas (src/oclusion/cajas_dudosas.py), decidido el 2026-11-01: todas las personas sin nivel del nivel final
 # (las "no es persona" del primero y las 10 de los dos en la ronda 2) van a `oclusion.cajas_dudosas`, que el script
 # genera. No se tocan las etiquetas de prueba. Para el cálculo "sin ellas" de la fase 6, cada caja se sigue también por
 # los fotogramas no anotados: desde cada caja anotada, hacia adelante y hacia atrás, fotograma a fotograma, hasta el

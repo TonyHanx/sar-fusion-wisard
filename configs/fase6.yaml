@@ -1,7 +1,7 @@
-# Fase 6: evaluación por nivel de oclusión (scripts/evaluar.py). Reglas en CLAUDE.md, "Métricas", "Prueba estadística"
+# Fase 6: evaluación por nivel de oclusión (src/evaluacion/evaluar.py). Reglas en CLAUDE.md, "Métricas", "Prueba estadística"
 # y "Bootstrap por episodio" (fijadas el 3 de noviembre de 2026, antes de evaluar la prueba).
 # Uso:
-#   .venv\Scripts\python.exe scripts\evaluar.py --config configs\fase6.yaml --rutas configs\rutas.yaml --particion prueba
+#   .venv\Scripts\python.exe -m src.evaluacion.evaluar --config configs\fase6.yaml --rutas configs\rutas.yaml --particion prueba
 #   ... --particion prueba --solo-verificar      (etiquetas, niveles, cajas dudosas y bloques; sin predecir)
 #   ... --particion validacion --modelos fusion fusion_last      (prueba del script, sin tocar la prueba)
 

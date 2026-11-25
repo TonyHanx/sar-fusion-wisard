@@ -21,7 +21,7 @@ completa; solo RGB quedó en la época 7 de 100 y solo térmica no empezó. Este
   curvas PR y F1, las matrices de confusión, `args.yaml`, `resumen.json` y su fila de la bitácora). Las curvas y las
   matrices son de la validación final con `best.pt`.
 
-- El mensaje de `scripts/entrenar.py` fue: "No se entrena: cierra antes chatgpt, chrome, robloxplayerbeta
+- El mensaje de `src/entrenamiento/entrenar.py` fue: "No se entrena: cierra antes chatgpt, chrome, robloxplayerbeta
   (cerrar_antes en configs/fase5.yaml)".
 - Las tres aplicaciones estaban abiertas. No las cerré yo, porque podían tener trabajo sin guardar.
 - La comprobación de aplicaciones va antes de la de potencia, así que la de potencia no llegó a hacerse.
@@ -47,7 +47,7 @@ completa; solo RGB quedó en la época 7 de 100 y solo térmica no empezó. Este
     que después evalúa la prueba (fase 6). El registro está en `reports/noche_log.txt`.
 
   ```
-  .venv\Scripts\python.exe scripts\entrenar.py --config configs\fase5.yaml --rutas configs\rutas.yaml --corrida fusion_100ep
-  .venv\Scripts\python.exe scripts\entrenar.py --config configs\fase5.yaml --rutas configs\rutas.yaml --corrida rgb_100ep
-  .venv\Scripts\python.exe scripts\entrenar.py --config configs\fase5.yaml --rutas configs\rutas.yaml --corrida termico_100ep
+  .venv\Scripts\python.exe -m src.entrenamiento.entrenar --config configs\fase5.yaml --rutas configs\rutas.yaml --corrida fusion_100ep
+  .venv\Scripts\python.exe -m src.entrenamiento.entrenar --config configs\fase5.yaml --rutas configs\rutas.yaml --corrida rgb_100ep
+  .venv\Scripts\python.exe -m src.entrenamiento.entrenar --config configs\fase5.yaml --rutas configs\rutas.yaml --corrida termico_100ep
   ```

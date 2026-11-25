@@ -75,7 +75,7 @@ pesos:
   archivos: {last: weights/last.pt, best: weights/best.pt}
   principal: {"7": last, "6": best}
 
-# Las fusiones de la fase 7 también se evalúan con la RGB en 0 (scripts/modalidad.py, p = 1), con los dos pesos, como en
+# Las fusiones de la fase 7 también se evalúan con la RGB en 0 (src/entrenamiento/dropout_modalidad.py, p = 1), con los dos pesos, como en
 # C4. Es descriptivo: en la severa la persona no se ve en la RGB, y la prueba muestra si la RGB ayuda, estorba o da igual.
 rgb_cero: [fusion_base, fusion_ampliado]
 

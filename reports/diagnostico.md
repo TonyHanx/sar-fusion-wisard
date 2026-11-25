@@ -11,17 +11,17 @@ térmica con YOLOv5? ¿Hay algo mal en el código o en los datos?
 - **La prueba (FHL 0405) no se usa.** Solo se cuenta en el inventario (A1) y en la comprobación de que no comparte
   archivos con entrenamiento ni validación (A6).
 - **Dónde está cada cosa:**
-  - código: `scripts/diagnostico.py`;
+  - código: `experimentos/diagnostico.py`;
   - configuración: `configs/diagnostico.yaml` (las rutas y los parámetros van en configs, como pide CLAUDE.md);
   - salidas: `runs/diagnostico/` (`a1` … `a6`, `datasets`, y una carpeta por corrida de B);
   - copia para git: `reports/diagnostico/` (ver "Archivos de apoyo" al final).
 - **Bitácora:** las evaluaciones de A4 y las corridas de B tienen su fila en `reports/bitacora.csv`.
 
 ```
-.venv\Scripts\python.exe scripts\diagnostico.py --config configs\diagnostico.yaml --rutas configs\rutas.yaml --parte inventario
+.venv\Scripts\python.exe -m experimentos.diagnostico --config configs\diagnostico.yaml --rutas configs\rutas.yaml --parte inventario
    (y estado, tamanos, integridad, validar, hoja, b1_datos)
-.venv\Scripts\python.exe scripts\entrenar.py --config configs\diagnostico.yaml --rutas configs\rutas.yaml --corrida b1_termico_aleatoria_30ep
-.venv\Scripts\python.exe scripts\diagnostico.py --config configs\diagnostico.yaml --rutas configs\rutas.yaml --parte b_evaluar --corrida b1_termico_aleatoria_30ep
+.venv\Scripts\python.exe -m src.entrenamiento.entrenar --config configs\diagnostico.yaml --rutas configs\rutas.yaml --corrida b1_termico_aleatoria_30ep
+.venv\Scripts\python.exe -m experimentos.diagnostico --config configs\diagnostico.yaml --rutas configs\rutas.yaml --parte b_evaluar --corrida b1_termico_aleatoria_30ep
    (y --parte b_por_vuelo con la misma corrida; lo mismo con b2_termico_vuelo_30ep)
 ```
 
@@ -453,7 +453,7 @@ terminado y no se usa.
 - lo demás, igual que la Tabla 8: imgsz 640, `hsv_h=hsv_s=hsv_v=0`, 4 procesos de lectura y
   `optimizer=auto` (AdamW, lr0 0.002);
 - con `close_mosaic=10` por omisión, las últimas 10 épocas van sin mosaico.
-- Corren con `scripts/entrenar.py` y `configs/diagnostico.yaml`, con las mismas comprobaciones de aplicaciones, potencia
+- Corren con `src/entrenamiento/entrenar.py` y `configs/diagnostico.yaml`, con las mismas comprobaciones de aplicaciones, potencia
   y plan de energía.
 
 **B1: los vuelos.** Son **6, no 7.** De los 7 vuelos que usamos, los que no son FHL 0405 son Baker, MtErie 0003, 0005 y
@@ -615,7 +615,7 @@ imágenes):
 
 **Qué es esta carpeta:**
 - `reports/diagnostico/` es una copia de las salidas livianas de `runs/diagnostico/`, porque `runs/` no va a git.
-- La genera `scripts/diagnostico.py --parte copiar`, con la sección `copiar` de `configs/diagnostico.yaml`.
+- La genera `experimentos/diagnostico.py --parte copiar`, con la sección `copiar` de `configs/diagnostico.yaml`.
 - No se suben los pesos (`*.pt`), los datasets de enlaces duros ni las imágenes de `data/`, que por la regla del
   proyecto no va a GitHub.
 - Las corridas de la fase 5b (fusión) están en `reports/fase5b/fusion_100ep/`.

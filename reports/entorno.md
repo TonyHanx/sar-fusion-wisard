@@ -1,6 +1,6 @@
 # Entorno de ejecución
 
-Generado el 2026-10-30 con `scripts/fase0_entorno.py`. Todos los entrenamientos que se reporten corren en este equipo.
+Generado el 2026-10-30 con `src/entorno/entorno.py`. Todos los entrenamientos que se reporten corren en este equipo.
 
 | Elemento | Valor |
 |---|---|

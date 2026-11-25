@@ -2,7 +2,7 @@
 # Escrito a mano tras mirar las imágenes de reports/alineacion/revision_desfases/ (una por tramo) con la medida de cada
 # persona (personas_tramos.csv) y el desplazamiento del fondo (fondo_tramos.csv). Los px son de la térmica (640 × 512).
 # Los tramos "todas corridas" (2 o más personas, todas a más de 1 altura) no están aquí: se excluyen sin revisión.
-# Lo lee scripts/fase2_revision_desfases.py --aplicar, que escribe configs/exclusiones_desfase.yaml.
+# Lo lee src/alineacion/revision_desfases.py --aplicar, que escribe configs/exclusiones_desfase.yaml.
 
 # Tramos decididos después de la revisión (no están en tramos.csv).
 tramos_adicionales:

@@ -1,5 +1,5 @@
-# Fase 5: entrenamiento de YOLO26s con scripts/entrenar.py.
-# Uso: .venv\Scripts\python.exe scripts\entrenar.py --config configs\fase5.yaml --rutas configs\rutas.yaml --corrida NOMBRE
+# Fase 5: entrenamiento de YOLO26s con src/entrenamiento/entrenar.py.
+# Uso: .venv\Scripts\python.exe -m src.entrenamiento.entrenar --config configs\fase5.yaml --rutas configs\rutas.yaml --corrida NOMBRE
 # Cada corrida toma `base` y cambia solo lo que dice. Las claves de `ultralytics` van tal cual a model.train(); lo que no
 # está aquí queda con el valor por omisión de Ultralytics 8.4.194 (optimizer=auto, close_mosaic=10, mosaic=1.0, etc.).
 
@@ -35,7 +35,7 @@ cerrar_antes:                        # no se entrena si alguno está abierto (CL
   - ChatGPT
   - chrome
 
-codigos_salida:                      # de scripts/entrenar.py cuando no entrena; scripts/noche.ps1 reintenta solo `potencia`
+codigos_salida:                      # de src/entrenamiento/entrenar.py cuando no entrena; scripts/noche.ps1 reintenta solo `potencia`
   otro: 1                            # corrida inexistente, configuración, o un error al entrenar (Python sale con 1)
   aplicaciones: 3                    # alguna de cerrar_antes está abierta
   potencia: 4                        # sin enchufe, otro plan de energía o límite aplicado bajo el mínimo
@@ -90,14 +90,14 @@ corridas:
     fase: 5b
     datos: configs/termico.yaml
 
-# Resumen de la fase 5b (scripts/fase5b_resumen.py). Solo lee las corridas: no evalúa nada en la prueba.
+# Resumen de la fase 5b (src/entrenamiento/resumen_fase5b.py). Solo lee las corridas: no evalúa nada en la prueba.
 resumen_5b:
   carpeta: fase5b                    # dentro de reports/
   corridas:                          # en este orden; color = slots 1 a 3 de la paleta de referencia (modo claro)
     fusion_100ep: {nombre: Fusión temprana, color: "#2a78d6"}
     rgb_100ep: {nombre: Solo RGB, color: "#eb6834"}
     termico_100ep: {nombre: Solo térmica, color: "#1baf7a"}
-  # scripts/fase5b_copiar.py: archivos de cada corrida que se copian a reports/<carpeta>/<corrida>/ (más su fila de la
+  # src/utilidades/copiar_fase5b.py: archivos de cada corrida que se copian a reports/<carpeta>/<corrida>/ (más su fila de la
   # bitácora). Ultralytics hace las curvas y las matrices con best.pt en la validación final.
   archivos_corrida: [results.csv, results.png, BoxPR_curve.png, BoxF1_curve.png, confusion_matrix.png,
                      confusion_matrix_normalized.png, args.yaml, resumen.json]

@@ -149,7 +149,7 @@ Los pasos 2 a 4 se hicieron seguidos el 21 de noviembre de 2026, a pedido del us
 
 ## Paso 2: umbrales en la validación (21 de noviembre de 2026)
 
-Fijados con `scripts/fase8_evaluar.py --parte umbrales` y subidos a GitHub antes de predecir la prueba.
+Fijados con `src/evaluacion/evaluar_prueba.py --parte umbrales` y subidos a GitHub antes de predecir la prueba.
 - Salen de las 500 personas de WiSARD en los 442 fotogramas de la validación, con la rejilla ampliada (26 umbrales).
 - Están en `reports/fase8/umbrales.csv`, con el sha256 de los pesos y de las predicciones. El F2 de cada umbral está
   en `umbrales_rejilla.csv`.
@@ -296,8 +296,8 @@ El orden no cambia con ningún umbral: la térmica queda por encima de la fusió
 ## Comandos
 
 ```
-$env:PYTHONIOENCODING = "utf-8"; cmd /c ".venv\Scripts\python.exe -u scripts\fase7_entrenar.py --config configs\fase7.yaml --rutas configs\rutas.yaml --corrida rgb_base > runs\fase7\rgb_base.log 2>&1"
-.venv\Scripts\python.exe scripts\fase8_evaluar.py --config configs\fase8.yaml --rutas configs\rutas.yaml --parte umbrales
-.venv\Scripts\python.exe scripts\fase8_evaluar.py --config configs\fase8.yaml --rutas configs\rutas.yaml --parte verificar
-.venv\Scripts\python.exe scripts\fase8_evaluar.py --config configs\fase8.yaml --rutas configs\rutas.yaml --parte prueba
+$env:PYTHONIOENCODING = "utf-8"; cmd /c ".venv\Scripts\python.exe -u -m src.entrenamiento.entrenar_fase7 --config configs\fase7.yaml --rutas configs\rutas.yaml --corrida rgb_base > runs\fase7\rgb_base.log 2>&1"
+.venv\Scripts\python.exe -m src.evaluacion.evaluar_prueba --config configs\fase8.yaml --rutas configs\rutas.yaml --parte umbrales
+.venv\Scripts\python.exe -m src.evaluacion.evaluar_prueba --config configs\fase8.yaml --rutas configs\rutas.yaml --parte verificar
+.venv\Scripts\python.exe -m src.evaluacion.evaluar_prueba --config configs\fase8.yaml --rutas configs\rutas.yaml --parte prueba
 ```

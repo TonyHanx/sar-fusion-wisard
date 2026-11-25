@@ -12,7 +12,7 @@ Fase 3b, 1 de noviembre de 2026. Estas reglas valen para los dos anotadores.
 - **Segundo anotador:** anota una muestra al azar del 15 % (75 personas, seed=0), listada en
   `data/oclusion_muestra_segundo.csv`.
 - **Plan del 1 de noviembre de 2026:**
-  - El nivel sale de un λ RGB automático (`scripts/oclusion_auto.py`).
+  - El nivel sale de un λ RGB automático (`src/oclusion/oclusion_auto.py`).
   - Para validarlo, el primer anotador anota a mano solo esas mismas 75 personas, con la herramienta en modo
     `--muestra`.
   - Primera anotación, con cajas: el kappa de Cohen entre el nivel automático y el manual (dos clases) dio 0.940.
@@ -51,7 +51,7 @@ si se ve (en la muestra no hubo ninguna moderada). La tabla de arriba solo se us
 
 ## Modo simple (los dos anotadores)
 
-Herramienta: `scripts/anotar_oclusion.py --segundo-simple` (segundo anotador, decidido el 1 de noviembre de 2026) y
+Herramienta: `src/oclusion/anotar_oclusion.py --segundo-simple` (segundo anotador, decidido el 1 de noviembre de 2026) y
 `--primero-simple` (primer anotador, desde la ronda 2, también decidido el 1 de noviembre de 2026, para que los dos
 usen el mismo criterio). Los dos modos muestran la misma pantalla y la misma regla.
 
@@ -117,7 +117,7 @@ El nivel automático no pasó la validación de la ronda 2 (kappa 0.427 contra e
 
 ## Cómo se aplican en la herramienta
 
-La herramienta es `scripts/anotar_oclusion.py`.
+La herramienta es `src/oclusion/anotar_oclusion.py`.
 
 - **Las dos imágenes comparten geometría.** La RGB está alineada con la térmica (640 × 512, semejanza congelada de la
   fase 2), así que una caja ocupa el mismo lugar en las dos.
@@ -191,19 +191,19 @@ La herramienta es `scripts/anotar_oclusion.py`.
 ### Comandos
 
 ```
-.venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml
-.venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --persona 1
-.venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --muestra
-.venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --segundo
-.venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --segundo-simple
-.venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --primero-simple
-.venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --primero-simple-resto
-.venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --primero-simple-reanotar escena_sombra
+.venv\Scripts\python.exe -m src.oclusion.anotar_oclusion --config configs\fase3.yaml --rutas configs\rutas.yaml
+.venv\Scripts\python.exe -m src.oclusion.anotar_oclusion --config configs\fase3.yaml --rutas configs\rutas.yaml --persona 1
+.venv\Scripts\python.exe -m src.oclusion.anotar_oclusion --config configs\fase3.yaml --rutas configs\rutas.yaml --muestra
+.venv\Scripts\python.exe -m src.oclusion.anotar_oclusion --config configs\fase3.yaml --rutas configs\rutas.yaml --segundo
+.venv\Scripts\python.exe -m src.oclusion.anotar_oclusion --config configs\fase3.yaml --rutas configs\rutas.yaml --segundo-simple
+.venv\Scripts\python.exe -m src.oclusion.anotar_oclusion --config configs\fase3.yaml --rutas configs\rutas.yaml --primero-simple
+.venv\Scripts\python.exe -m src.oclusion.anotar_oclusion --config configs\fase3.yaml --rutas configs\rutas.yaml --primero-simple-resto
+.venv\Scripts\python.exe -m src.oclusion.anotar_oclusion --config configs\fase3.yaml --rutas configs\rutas.yaml --primero-simple-reanotar escena_sombra
 ```
 
 - **Con `--ajuste`:** primer anotador.
   - Abre solo las personas de la muestra con visible RGB, ordenadas de mayor a menor según cuánto se sale la visible
-    de la completa. La lista es `data/oclusion_ajuste_visibles.csv` y la arma `scripts/corregir_oclusion.py`.
+    de la completa. La lista es `data/oclusion_ajuste_visibles.csv` y la arma `src/oclusion/corregir_oclusion.py`.
   - Si la persona está parcialmente tapada, se ajusta la visible RGB a lo que se ve. Si se ve entera, se pasa de largo.
   - Como todas están terminadas, la barra espaciadora pasa a la siguiente.
 - **Con `--muestra`:** primer anotador, con la precarga, solo las 75 personas de la muestra. "Persona N de 75" cuenta

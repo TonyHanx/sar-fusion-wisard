@@ -1,20 +1,20 @@
 # Fase 4: nivel de oclusión (validación del automático y nivel final)
 
-Fecha: 1 de noviembre de 2026. Generado con `scripts/fase4_validacion_auto.py` (configuración en `configs/fase3.yaml`,
-sección `validacion_auto`) y, el nivel final, con `scripts/fase4_nivel.py` (sección `nivel_final`). Tablas e imágenes
+Fecha: 1 de noviembre de 2026. Generado con `src/oclusion/concordancia.py` (configuración en `configs/fase3.yaml`,
+sección `validacion_auto`) y, el nivel final, con `src/oclusion/nivel_final.py` (sección `nivel_final`). Tablas e imágenes
 en `reports/fase4_validacion_auto/`. La validación no tocó `data/`. El nivel final solo escribe
 `data/oclusion_nivel.csv`. No se tocó el dataset original. Cada cálculo agrega una fila a la bitácora.
 
 ## Nivel final (con la escena en sombra reanotada)
 
 **Fase 4 cerrada el 1 de noviembre de 2026**, con la escena en sombra reanotada.
-- Es el nivel que usa la fase 6: `data/oclusion_nivel.csv`, generado con `scripts/fase4_nivel.py`.
+- Es el nivel que usa la fase 6: `data/oclusion_nivel.csv`, generado con `src/oclusion/nivel_final.py`.
 - Antes de reescribirlo, el script guardó el anterior en `data/respaldos/oclusion_nivel_20261101-202246.csv`.
 - Tablas en `reports/fase4_validacion_auto/nivel_final/`, y una fila nueva en la bitácora.
 
 ```
-.venv\Scripts\python.exe scripts\fase4_nivel.py --config configs\fase3.yaml --rutas configs\rutas.yaml
-.venv\Scripts\python.exe scripts\fase4_cajas_dudosas.py --config configs\fase3.yaml --rutas configs\rutas.yaml
+.venv\Scripts\python.exe -m src.oclusion.nivel_final --config configs\fase3.yaml --rutas configs\rutas.yaml
+.venv\Scripts\python.exe -m src.oclusion.cajas_dudosas --config configs\fase3.yaml --rutas configs\rutas.yaml
 ```
 
 | Nivel | Muestra | Resto | Total | % | Fotogramas con alguna |
@@ -57,13 +57,13 @@ el de "Nivel final". Es el nivel del primer anotador en modo simple, con la regl
 - las 75 de la muestra salen de su ronda 2 (`data/oclusion_primero_simple_ronda2.csv`);
 - las 423 restantes salen de `--primero-simple-resto` (`data/oclusion_primero_simple_resto.csv`).
 
-El nivel está en **`data/oclusion_nivel.csv`**, generado con `scripts/fase4_nivel.py` (configuración en la sección
+El nivel está en **`data/oclusion_nivel.csv`**, generado con `src/oclusion/nivel_final.py` (configuración en la sección
 `nivel_final` de `configs/fase3.yaml`). Las tablas están en `reports/fase4_validacion_auto/nivel_final/`, y la ejecución
 agrega una fila a la bitácora. El script solo lee las respuestas: comprueba que las dos fuentes cubren las 498 sin
 solaparse y que las 10 cajas dudosas son "no es persona".
 
 ```
-.venv\Scripts\python.exe scripts\fase4_nivel.py --config configs\fase3.yaml --rutas configs\rutas.yaml
+.venv\Scripts\python.exe -m src.oclusion.nivel_final --config configs\fase3.yaml --rutas configs\rutas.yaml
 ```
 
 | Nivel | Muestra | Resto | Total | % | Fotogramas con alguna |
@@ -150,12 +150,12 @@ fase 4"). **Hecha el 1 de noviembre de 2026.**
   El tramo está en `oclusion.modo_simple.reanotaciones` (`configs/fase3.yaml`).
 
   ```
-  .venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --primero-simple-reanotar escena_sombra
+  .venv\Scripts\python.exe -m src.oclusion.anotar_oclusion --config configs\fase3.yaml --rutas configs\rutas.yaml --primero-simple-reanotar escena_sombra
   ```
 
-- **Qué reemplaza:** el nivel final de esas 94 personas (`scripts/fase4_nivel.py`).
+- **Qué reemplaza:** el nivel final de esas 94 personas (`src/oclusion/nivel_final.py`).
   - **Los kappas de la ronda 2 no cambian:** salen de `data/oclusion_primero_simple_ronda2.csv`, que no se toca.
-  - Si falta el archivo de la reanotación, `fase4_nivel.py` se detiene.
+  - Si falta el archivo de la reanotación, `src/oclusion/nivel_final.py` se detiene.
 - **Las respuestas anteriores se guardan:**
   - siguen en `data/oclusion_primero_simple_ronda2.csv` y `data/oclusion_primero_simple_resto.csv`, que no se tocan;
   - en el nivel final quedan en la columna `respuesta_anterior`, junto con `reanotacion` y `archivo_respuesta`;
@@ -163,7 +163,7 @@ fase 4"). **Hecha el 1 de noviembre de 2026.**
   - los cambios quedan en `nivel_final/reanotacion_escena_sombra.csv` y en `reanotacion_escena_sombra_tabla.csv`.
 - **Las 10 "no es persona" de los dos** quedan sin nivel aunque la reanotación las cambie, porque así se decidió. El
   script lo avisa. En la escena está la 41 (fotograma 474).
-- **Después de la reanotación** se corrieron `scripts/fase4_nivel.py` y `scripts/fase4_cajas_dudosas.py`. Las cifras
+- **Después de la reanotación** se corrieron `src/oclusion/nivel_final.py` y `src/oclusion/cajas_dudosas.py`. Las cifras
   están en "Nivel final".
 - Lo probé con una reanotación simulada sobre una copia de los datos. Reemplaza las 94, guarda la copia del nivel
   anterior y avisa si cambia una de las 10.
@@ -193,7 +193,7 @@ Decidido el 1 de noviembre de 2026:
 - las etiquetas de prueba no se tocan;
 - para el cálculo "sin ellas" de la fase 6, cada caja se sigue también por los fotogramas no anotados.
 
-El yaml lo genera `scripts/fase4_cajas_dudosas.py` (sección `cajas_dudosas` de `configs/fase3.yaml`) a partir de
+El yaml lo genera `src/oclusion/cajas_dudosas.py` (sección `cajas_dudosas` de `configs/fase3.yaml`) a partir de
 `data/oclusion_nivel.csv`, así que no se edita a mano. Tablas e imagen en `reports/fase4_validacion_auto/cajas_dudosas/`.
 
 **Seguimiento:**
@@ -275,7 +275,7 @@ primer anotador en modo simple de la ronda 2 (regla aclarada):
   de la caja y el primero respondió "se ve". Detalle en "Ronda 2". No se revisan.
 
 ```
-.venv\Scripts\python.exe scripts\fase4_validacion_auto.py --config configs\fase3.yaml --rutas configs\rutas.yaml
+.venv\Scripts\python.exe -m src.oclusion.concordancia --config configs\fase3.yaml --rutas configs\rutas.yaml
 ```
 
 ## Decisiones tras la ronda 2
@@ -484,9 +484,9 @@ Primero lo usó solo el segundo anotador (ronda 1). Desde la ronda 2 lo usan los
 regla (decidido el 1 de noviembre de 2026).
 
 ```
-.venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --segundo-simple
-.venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --primero-simple
-.venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --primero-simple-resto
+.venv\Scripts\python.exe -m src.oclusion.anotar_oclusion --config configs\fase3.yaml --rutas configs\rutas.yaml --segundo-simple
+.venv\Scripts\python.exe -m src.oclusion.anotar_oclusion --config configs\fase3.yaml --rutas configs\rutas.yaml --primero-simple
+.venv\Scripts\python.exe -m src.oclusion.anotar_oclusion --config configs\fase3.yaml --rutas configs\rutas.yaml --primero-simple-resto
 ```
 
 - **Personas:** las 75 de la muestra, en su orden (el mismo para los dos). Con `--primero-simple-resto`, las 423 que
@@ -512,7 +512,7 @@ regla (decidido el 1 de noviembre de 2026).
 - **Guarda** en el archivo de la ronda (ver la sección siguiente), después de cada respuesta. Columnas: `id`,
   `respuesta` (`se_ve_rgb`, `no_se_ve_rgb`, `no_es_persona`), `tiempo_s` y `guardado`. Al abrir de nuevo se retoma.
 - **Columna `anotador`:** `segundo_simple` o `primero_simple`. La herramienta no abre un archivo del otro anotador.
-- **Prueba:** `scripts/probar_anotar_oclusion.py` pasó de 59 a 71 comprobaciones con este modo, a 73 con la ronda 2, a
+- **Prueba:** `pruebas/probar_anotar_oclusion.py` pasó de 59 a 71 comprobaciones con este modo, a 73 con la ronda 2, a
   80 con `--primero-simple`, a 92 con `--primero-simple-resto` y a 102 con
   `--primero-simple-reanotar`. Todas correctas. Entre otras cosas, comprueba que los
   paneles del primero y del segundo son idénticos y que el primero solo lee la lista de personas y la muestra. Las
@@ -580,7 +580,7 @@ Pedida el 1 de noviembre de 2026, cuando el segundo anotador terminó las 75 en 
 definición y el realce de contraste (`e`) estaba disponible.
 
 ```
-.venv\Scripts\python.exe scripts\fase4_validacion_auto.py --config configs\fase3.yaml --rutas configs\rutas.yaml --partes entre_anotadores --ronda 1
+.venv\Scripts\python.exe -m src.oclusion.concordancia --config configs\fase3.yaml --rutas configs\rutas.yaml --partes entre_anotadores --ronda 1
 ```
 
 - **Segundo anotador** (`data/oclusion_segundo_simple_ronda1.csv`, antes `data/oclusion_segundo_simple.csv`, sin
@@ -666,9 +666,9 @@ Hecha el 1 de noviembre de 2026. Cada anotador respondió las 75 personas en mod
 respuestas del otro ni las de la ronda 1 ni la anotación con cajas. Regla aclarada en pantalla y realce desactivado.
 
 ```
-.venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --primero-simple
-.venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --segundo-simple
-.venv\Scripts\python.exe scripts\fase4_validacion_auto.py --config configs\fase3.yaml --rutas configs\rutas.yaml --partes entre_anotadores --ronda 2
+.venv\Scripts\python.exe -m src.oclusion.anotar_oclusion --config configs\fase3.yaml --rutas configs\rutas.yaml --primero-simple
+.venv\Scripts\python.exe -m src.oclusion.anotar_oclusion --config configs\fase3.yaml --rutas configs\rutas.yaml --segundo-simple
+.venv\Scripts\python.exe -m src.oclusion.concordancia --config configs\fase3.yaml --rutas configs\rutas.yaml --partes entre_anotadores --ronda 2
 ```
 
 | Anotador | Archivo | Se ve | No se ve | No es persona | Hora | Mediana por persona |
@@ -824,7 +824,7 @@ En `entre_anotadores/rondas.csv`.
 
 ## Cambios en el código
 
-- `scripts/fase4_validacion_auto.py` (nuevo):
+- `src/oclusion/concordancia.py` (nuevo):
   - comparación de dos niveles con la de tres;
   - imágenes de los desacuerdos;
   - mosaico de las "no es persona";
@@ -832,23 +832,23 @@ En `entre_anotadores/rondas.csv`.
   - concordancia entre anotadores (`--partes entre_anotadores`), por ronda (`--ronda N`, por omisión la ronda
     actual), con las salidas en `entre_anotadores/ronda<N>/`. Con el primero en modo simple, también el automático
     contra él y sus cambios respecto de las cajas. Desde la ronda 2, la comparación con la anterior.
-- `scripts/oclusion_auto.py`:
+- `src/oclusion/oclusion_auto.py`:
   - Sale `--comparar` (3 niveles): la comparación ahora está en el script nuevo.
   - `--revisar` acepta otra carpeta de salida y otro motivo (uno para todas o uno por persona), para las imágenes de
     los desacuerdos.
-- `scripts/anotar_oclusion.py`: modo `--segundo-simple`. Las piezas comunes del panel (fondo, triángulos, cursor,
+- `src/oclusion/anotar_oclusion.py`: modo `--segundo-simple`. Las piezas comunes del panel (fondo, triángulos, cursor,
   rótulo), la carga de imágenes y la escritura atómica quedaron en métodos aparte, sin cambiar la herramienta.
   - Para la ronda 2: la regla aclarada en pantalla, el número de ronda en el encabezado, `e` desactivado y escritura en
     el archivo del anotador en `modo_simple.ronda_actual`.
   - `--primero-simple`: el mismo modo para el primer anotador.
   - `--primero-simple-resto`: el primero, en modo simple, sobre las 423 personas de la lista que no son de la muestra.
     Tiene su propio archivo.
-- `scripts/probar_anotar_oclusion.py`: 12 comprobaciones más para `--primero-simple-resto` (92 en total) y 10 para
+- `pruebas/probar_anotar_oclusion.py`: 12 comprobaciones más para `--primero-simple-resto` (92 en total) y 10 para
   `--primero-simple-reanotar` (102 en total). Todas correctas.
-- `scripts/anotar_oclusion.py --primero-simple-reanotar NOMBRE`: reanotación en modo simple de un tramo de
+- `src/oclusion/anotar_oclusion.py --primero-simple-reanotar NOMBRE`: reanotación en modo simple de un tramo de
   `oclusion.modo_simple.reanotaciones`.
-- `scripts/fase4_nivel.py` (nuevo): el nivel final, con las reanotaciones y una copia del anterior en `data/respaldos/`.
-- `scripts/fase4_cajas_dudosas.py` (nuevo): genera `configs/cajas_dudosas.yaml` con el seguimiento por los fotogramas
+- `src/oclusion/nivel_final.py` (nuevo): el nivel final, con las reanotaciones y una copia del anterior en `data/respaldos/`.
+- `src/oclusion/cajas_dudosas.py` (nuevo): genera `configs/cajas_dudosas.yaml` con el seguimiento por los fotogramas
   no anotados y la regla del fotograma anotado más cercano.
 - `configs/cajas_dudosas.yaml` (nuevo, generado): las cajas dudosas, anotadas y seguidas.
 - `configs/fase3.yaml`:

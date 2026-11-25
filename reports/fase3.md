@@ -5,10 +5,10 @@ Fecha: 2026-11-01. No se entrenó nada.
 Para regenerar:
 
 ```
-.venv\Scripts\python.exe scripts\fase3_particion.py --config configs\fase3.yaml --rutas configs\rutas.yaml
-.venv\Scripts\python.exe scripts\anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml --preparar
-.venv\Scripts\python.exe scripts\probar_anotar_oclusion.py --config configs\fase3.yaml --rutas configs\rutas.yaml
-.venv\Scripts\python.exe scripts\oclusion_auto.py --config configs\fase3.yaml --rutas configs\rutas.yaml
+.venv\Scripts\python.exe -m src.particion.particion --config configs\fase3.yaml --rutas configs\rutas.yaml
+.venv\Scripts\python.exe -m src.oclusion.anotar_oclusion --config configs\fase3.yaml --rutas configs\rutas.yaml --preparar
+.venv\Scripts\python.exe -m pruebas.probar_anotar_oclusion --config configs\fase3.yaml --rutas configs\rutas.yaml
+.venv\Scripts\python.exe -m src.oclusion.oclusion_auto --config configs\fase3.yaml --rutas configs\rutas.yaml
 ```
 
 ## 3a. Partición y datasets
@@ -109,7 +109,7 @@ FHL 0405, fotogramas con posición múltiplo de 3: 310 fotogramas y **498 person
 
 ### Herramienta
 
-- **Archivos:** `scripts/anotar_oclusion.py`; las reglas y las teclas están en `docs/reglas_anotacion.md`.
+- **Archivos:** `src/oclusion/anotar_oclusion.py`; las reglas y las teclas están en `docs/reglas_anotacion.md`.
 - **Ventana:** se ajusta al área de trabajo, consciente del DPI. En esta pantalla (1920 × 1140 sin la barra de
   tareas, escala 125 %) el lienzo mide 1 800 × 1 085, con dos paneles de 895 × 821.
 - **Colocación de la ventana:** en la primera versión, la ventana quedaba pegada al borde izquierdo del monitor
@@ -130,7 +130,7 @@ FHL 0405, fotogramas con posición múltiplo de 3: 310 fotogramas y **498 person
 - **Capturas:** `reports/oclusion/herramienta_persona1.jpg` (vista inicial de la persona 1),
   `herramienta_primero.jpg` y `herramienta_segundo.jpg`.
 
-**Prueba con 3 personas simuladas** (`scripts/probar_anotar_oclusion.py`). Las anotaciones van a una carpeta temporal,
+**Prueba con 3 personas simuladas** (`pruebas/probar_anotar_oclusion.py`). Las anotaciones van a una carpeta temporal,
 así que no se toca `data/oclusion.csv`. Las 55 comprobaciones pasaron (versión con la opción (a) y el modo
 `--muestra`):
 
@@ -224,7 +224,7 @@ Plan decidido el 1 de noviembre de 2026; está en CLAUDE.md.
 3. **Comparación de los dos:** kappa de Cohen sobre el nivel. Con kappa de 0.61 o más se usa el automático; si no, se
    vuelve a la anotación manual.
 
-**Regla del automático** (`scripts/oclusion_auto.py`):
+**Regla del automático** (`src/oclusion/oclusion_auto.py`):
 
 - Para cada persona térmica de los 928 pares de FHL 0405 se busca la caja RGB de WiSARD (sin repetidas) más cercana.
   La caja se lleva a la térmica con la semejanza congelada.
@@ -280,7 +280,7 @@ con realce de contraste, sin cajas.
   se ve entera. Queda como estaba: el error de alineación ahí es grande.
 - **Visible RGB dibujada en un par "solo térmica":** 11 personas (28, 38, 39, 42, 44, 45, 46, 47, 63, 64 y 65).
 
-**Correcciones** (`configs/correcciones_oclusion.yaml`, aplicadas con `scripts/corregir_oclusion.py`; respaldo en
+**Correcciones** (`configs/correcciones_oclusion.yaml`, aplicadas con `src/oclusion/corregir_oclusion.py`; respaldo en
 `data/respaldos/`):
 
 - **RGB "no visible" (λ = 1):** 28, 39, 42, 44, 45, 47, 64 y 65. Si la completa RGB estaba movida, vuelve a la
@@ -312,7 +312,7 @@ con realce de contraste, sin cajas.
 
 - Las visibles RGB se salían de la completa en todas las personas con visible: las precargadas son las cajas de
   WiSARD, más holgadas que la completa. Por eso λ RGB daba 0.
-- `scripts/corregir_oclusion.py` arma `data/oclusion_ajuste_visibles.csv`: 29 personas, de mayor a menor según cuánto
+- `src/oclusion/corregir_oclusion.py` arma `data/oclusion_ajuste_visibles.csv`: 29 personas, de mayor a menor según cuánto
   se sale la visible. La que más, un 74 %; la mediana, 40 %; la que menos, 14 %. De ellas, 23 tienen λ RGB = 0.
 - La herramienta las abre con `--ajuste`. Las personas parcialmente tapadas se ajustan; las que se ven enteras quedan
   igual.

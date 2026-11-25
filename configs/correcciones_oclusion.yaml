@@ -1,6 +1,6 @@
 # Correcciones de la anotación manual de la muestra (data/oclusion.csv, primer anotador), decididas por el primer
 # anotador el 2026-11-01 al revisar a ojo las imágenes de reports/oclusion/revision_muestra/ (antes del kappa).
-# Las aplica scripts/corregir_oclusion.py; aplicarlas de nuevo no cambia nada. n = número de la persona en la muestra.
+# Las aplica src/oclusion/corregir_oclusion.py; aplicarlas de nuevo no cambia nada. n = número de la persona en la muestra.
 #   rgb / termica: no_visible  -> "no visible" (λ = 1; si es la RGB, la completa RGB vuelve a donde la pone la semejanza)
 #                  wisard      -> la visible es la caja térmica de WiSARD (solo termica)
 #                  borrar      -> sin visible (estado pendiente)

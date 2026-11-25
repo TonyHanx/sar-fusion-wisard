@@ -2,7 +2,7 @@
 # - FHL 0405/0406 (la prueba) no se usa en nada: ni entrenamiento ni validación. Sus imágenes no se leen.
 # - No se tocan runs/ ni los datasets existentes: todo lo nuevo va en runs/<carpeta>/, reports/fase7.md y este archivo.
 # - Validación: la de siempre (FHL 0134 y MtErie 0007).
-# Partes: C0 auditoría (scripts/fase7_c0_auditoria.py), C1 datasets, C2 receta, C3 corridas y C4 evaluación.
+# Partes: C0 auditoría (src/ampliacion/c0_auditoria_termicas.py), C1 datasets, C2 receta, C3 corridas y C4 evaluación.
 
 carpeta: fase7                       # dentro de runs/
 fase_bitacora: "7"
@@ -76,7 +76,7 @@ c0:
     fotogramas: 15
   # C0. ¿La semejanza congelada de otro vuelo de FHL (mismo dron y mismo día) alinea la RGB con la térmica de FHL 0403,
   # 0564 y 0566 (RGB sin etiquetas)? Medida automática: corrimiento del fondo por correlación de fase de los
-  # gradientes, como en la fase 2. Medida a mano: puntos de control (scripts/fase7_marcar_puntos.py).
+  # gradientes, como en la fase 2. Medida a mano: puntos de control (src/ampliacion/marcar_puntos_vuelos_nuevos.py).
   alineacion:
     vuelos:                          # rango de posiciones que se usaría (null = todo el vuelo)
       210924_FHL_Enterprise_0403: [0, 215]    # la térmica (IR_0404) solo está anotada en 0-215
@@ -95,7 +95,7 @@ c0:
     criterio:                        # fijado el 18 de noviembre de 2026, antes de medir
       fondo_factor_referencia: 1.5   # mediana del corrimiento <= 1.5 x la mayor mediana de las referencias
       puntos_error_medio_px: 13.2    # error medio en los puntos a mano <= el de la fase 2 en FHL (13.2 px)
-  # Puntos de control a mano (scripts/fase7_marcar_puntos.py, que usa la herramienta de la fase 2). Los valores de
+  # Puntos de control a mano (src/ampliacion/marcar_puntos_vuelos_nuevos.py, que usa la herramienta de la fase 2). Los valores de
   # pantalla son los de `marcado` en configs/fase2.yaml; aquí son 2 fotogramas por vuelo.
   marcado:
     carpeta_puntos: configs/fase7_puntos_control   # un yaml por vuelo, relativo a la raíz del repositorio
@@ -151,7 +151,7 @@ c0:
     210924_FHL_Enterprise_IR_0404: [215, 219, 546, 880]
     210924_FHL_Enterprise_IR_0567: [1, 597, 623, 885]
 
-# Copia para git (scripts/fase7_copiar.py): runs/ no va a git, así que las salidas livianas de runs/<carpeta>/ se copian
+# Copia para git (src/utilidades/copiar_fase7.py): runs/ no va a git, así que las salidas livianas de runs/<carpeta>/ se copian
 # a reports/<destino>/ con la misma estructura. Los PNG se guardan como JPEG para que el repositorio pese menos.
 copiar:
   destino: fase7                     # dentro de reports/
@@ -184,7 +184,7 @@ copiar:
   excluir: ["*.pt"]
   jpeg_calidad: 85
 
-# C1. Datasets nuevos (scripts/fase7_c1_datasets.py). Decisiones del usuario del 18 de noviembre de 2026, al cerrar C0:
+# C1. Datasets nuevos (src/ampliacion/c1_datasets_ampliados.py). Decisiones del usuario del 18 de noviembre de 2026, al cerrar C0:
 #   - confirma la clasificación de C0 y la regla de los huecos cortos;
 #   - FHL 0566: solo como térmica sin pareja (RGB en 0); no se marcan sus puntos;
 #   - Carnation 0023/0024: su térmica entra (auditada en C0 como una carpeta más), y en la fusión sin pareja;
@@ -229,7 +229,7 @@ c1:
 
 # Antes de fusion_base (19 de noviembre de 2026, pedido del usuario): de qué vuelo viene cada imagen de los datasets
 # ampliados, comprobado con los archivos (enlaces duros y píxeles de la térmica contra las originales) y no con
-# composicion.csv (scripts/fase7_origen.py). Las carpetas `prohibidas` no se leen.
+# composicion.csv (src/ampliacion/origen_imagenes.py). Las carpetas `prohibidas` no se leen.
 origen:
   datasets: [termico_ampliado, fusion_ampliado]   # en data/<c1.salida>/datasets/; primero el térmico
   vigilar:                           # vuelos (columna `vuelo` de pares.csv): ninguna imagen nueva puede venir de ellos
@@ -241,7 +241,7 @@ origen:
   procesos: 6
   carpeta: c1                        # runs/<carpeta>/c1/; el detalle por imagen, en c1/origen/ (no se copia a git)
 
-# C2: receta para objetos pequeños (scripts/fase7_entrenar.py; el dropout de modalidad está en scripts/modalidad.py).
+# C2: receta para objetos pequeños (src/entrenamiento/entrenar_fase7.py; el dropout de modalidad está en src/entrenamiento/dropout_modalidad.py).
 c2:
   fitness: metrics/mAP50(B)          # best.pt y la parada temprana por el mAP@0.5 de validación (Ultralytics: mAP@0.5:0.95)
   verificacion:                      # --verificar: sin entrenar
@@ -252,7 +252,7 @@ c2:
     seed: 0
     carpeta: c2                      # runs/<carpeta>/c2/
 
-# C3: corridas, en este orden (scripts/fase7_entrenar.py --corrida NOMBRE). Cada una toma `base` y cambia lo que dice.
+# C3: corridas, en este orden (src/entrenamiento/entrenar_fase7.py --corrida NOMBRE). Cada una toma `base` y cambia lo que dice.
 c3:
   carpeta: fase7                     # runs/fase7/<corrida>/
   pesos: weights/yolo26s.pt
@@ -318,8 +318,8 @@ c3:
     rgb_base:
       datos: configs/rgb.yaml
 
-# C4: evaluación en validación con el evaluador propio (scripts/fase7_c4_evaluar.py, que usa las funciones de
-# scripts/evaluar.py sin cambiarlo). Reglas fijadas por el usuario el 21 de noviembre de 2026, antes de evaluar y antes
+# C4: evaluación en validación con el evaluador propio (src/evaluacion/c4_evaluar_validacion.py, que usa las funciones de
+# src/evaluacion/evaluar.py sin cambiarlo). Reglas fijadas por el usuario el 21 de noviembre de 2026, antes de evaluar y antes
 # de anotar la oclusión de la validación (reports/fase7.md, C4).
 c4:
   base: configs/fase6.yaml           # prediccion, evaluacion (IoU 0.5, F2, maxDets), bootstrap, mcnemar, figura y la
@@ -333,7 +333,7 @@ c4:
   # Ultralytics, sin IC). best.pt es secundaria.
   pesos: {last: weights/last.pt, best: weights/best.pt}
   principal: last
-  # Las fusiones se evalúan también con la RGB en 0 (scripts/modalidad.py, p = 1; la térmica igual).
+  # Las fusiones se evalúan también con la RGB en 0 (src/entrenamiento/dropout_modalidad.py, p = 1; la térmica igual).
   rgb_cero: [fusion_base, fusion_ampliado]
   # Umbral de confianza para recall, precisión, F2 y McNemar: la regla de la fase 6 (CLAUDE.md, "Métricas"). Por modelo y
   # peso, el que maximiza el F2 en la validación, en la rejilla de 0.05 a 0.95 con paso 0.05; si hay empate, el más alto.
@@ -349,7 +349,7 @@ c4:
     - [fusion_ampliado_rgb0, fusion_ampliado]
     - [fusion_base_rgb0, fusion_base]
   # Nivel de oclusión de la validación: a mano, en modo simple, por el primer anotador, con la pantalla y la regla de la
-  # ronda 2 de la fase 3 (scripts/fase7_c4_oclusion.py). Las 500 personas de los 442 fotogramas. Respuestas: 1 se ve en
+  # ronda 2 de la fase 3 (src/oclusion/c4_nivel_validacion.py). Las 500 personas de los 442 fotogramas. Respuestas: 1 se ve en
   # la RGB (baja), 2 no se ve en la RGB (severa), 3 no es persona (sin nivel: caja dudosa, como en la prueba).
   oclusion:
     herramienta: configs/fase3.yaml  # sección `oclusion` (pantalla y teclas) y `datasets.alineados`

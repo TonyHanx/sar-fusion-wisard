@@ -20,12 +20,12 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
   plan de energía **Performance** de Windows. Los tres modelos entrenan en las mismas condiciones.
   - **Potencia** (regla ajustada el 1 de noviembre de 2026, fase 5a):
     - Antes de entrenar, la **comprobación previa** (30 s con solo la GPU cargada) tiene que dar un límite aplicado
-      (`enforced.power.limit`, mediana) de al menos 90 W. Si no, detente y avísame. `scripts/entrenar.py` la hace solo.
+      (`enforced.power.limit`, mediana) de al menos 90 W. Si no, detente y avísame. `src/entrenamiento/entrenar.py` la hace solo.
     - El **límite real durante el entrenamiento** se registra en cada corrida (`resumen.json` y bitácora). No tiene
       mínimo: con la CPU ocupada en leer las imágenes baja a unos 70 W (ver "Equipo").
   - **4 procesos de lectura** (`workers: 4`) en todas las corridas, decidido el 1 de noviembre de 2026. Con 8, la RAM
     llegaba al 99.9 %, y con 4 la época no fue más lenta.
-  - **Roblox, ChatGPT y Chrome cerrados en cada corrida.** `scripts/entrenar.py` no entrena si alguno está abierto
+  - **Roblox, ChatGPT y Chrome cerrados en cada corrida.** `src/entrenamiento/entrenar.py` no entrena si alguno está abierto
     (`cerrar_antes` en `configs/fase5.yaml`).
     - Desde la fase 5b (2 de noviembre de 2026) no hace falta avisar antes de cada corrida, porque el script comprueba
       las aplicaciones, la potencia y el plan de energía.
@@ -56,15 +56,15 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
 
 - Dataset original: `C:\Users\User\Downloads\WiSARDv1` (solo lectura).
 - Proyecto: esta carpeta. Datos procesados en `data\` (no van a GitHub).
-- Imágenes alineadas de los 4 617 pares (fase 2, `scripts/alinear.py`): `data\alineados\` con `rgb\`, `termica\`
+- Imágenes alineadas de los 4 617 pares (fase 2, `src/alineacion/alinear.py`): `data\alineados\` con `rgb\`, `termica\`
   (gris, 1 canal), `fusion\` (TIFF con muestras B, G, R, T, que Ultralytics entrega al modelo como R, G, B, T) e
   `indice.csv`.
-- Fase 3a (`scripts/fase3_particion.py`):
+- Fase 3a (`src/particion/particion.py`):
   - Etiquetas de los pares finales sin cajas repetidas: `data\etiquetas\` (`rgb\` y `termica\`).
   - Datasets de Ultralytics: `data\datasets\{fusion,rgb,termico}\`, con enlaces duros a `data\alineados\` y las
     etiquetas térmicas.
   - Yaml de los datasets: `configs\fusion.yaml`, `configs\rgb.yaml` y `configs\termico.yaml`.
-- Anotación de oclusión (fase 3b, `scripts/anotar_oclusion.py`):
+- Anotación de oclusión (fase 3b, `src/oclusion/anotar_oclusion.py`):
   - `data\oclusion_personas.csv`: lista fija de 498 personas, con la precarga.
   - `data\oclusion.csv`: anotaciones del primer anotador. Por persona guarda las dos completas, el corrimiento de la RGB
     respecto de la térmica, las visibles, las marcas y λ.
@@ -79,26 +79,26 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
     en `data\oclusion_primero_simple_resto.csv`. Las 75 de la muestra son las suyas de la ronda 2.
 - Reanotación de la escena en sombra (fotogramas 468 a 588, `--primero-simple-reanotar escena_sombra`):
   `data\oclusion_primero_simple_escena_sombra.csv`.
-- Cajas dudosas de la prueba: `configs\cajas_dudosas.yaml`, generado por `scripts/fase4_cajas_dudosas.py` (sección
+- Cajas dudosas de la prueba: `configs\cajas_dudosas.yaml`, generado por `src/oclusion/cajas_dudosas.py` (sección
   `cajas_dudosas` de `configs/fase3.yaml`); no se edita a mano. Tablas y mosaico en
   `reports\fase4_validacion_auto\cajas_dudosas\`.
-- **Nivel final de oclusión** (cierre de la fase 4, `scripts/fase4_nivel.py`, sección `nivel_final` de
+- **Nivel final de oclusión** (cierre de la fase 4, `src/oclusion/nivel_final.py`, sección `nivel_final` de
   `configs/fase3.yaml`): `data\oclusion_nivel.csv`. Es el que usa la fase 6. Tablas en
   `reports\fase4_validacion_auto\nivel_final\`. Antes de reescribirlo guarda una copia en `data\respaldos\`.
-- Correcciones de la muestra: `configs\correcciones_oclusion.yaml` (las aplica `scripts/corregir_oclusion.py`).
+- Correcciones de la muestra: `configs\correcciones_oclusion.yaml` (las aplica `src/oclusion/corregir_oclusion.py`).
   - Respaldo de las anotaciones antes de cada corrección: `data\respaldos\`.
   - Lista para ajustar la visible RGB (herramienta `--ajuste`): `data\oclusion_ajuste_visibles.csv`.
-- λ RGB automático (`scripts/oclusion_auto.py`): `data\oclusion_auto.csv`, con las 1 501 personas de FHL 0405.
-- Validación del nivel automático (`scripts/fase4_validacion_auto.py`): `reports\fase4_validacion_auto.md`, con tablas
+- λ RGB automático (`src/oclusion/oclusion_auto.py`): `data\oclusion_auto.csv`, con las 1 501 personas de FHL 0405.
+- Validación del nivel automático (`src/oclusion/concordancia.py`): `reports\fase4_validacion_auto.md`, con tablas
   e imágenes en `reports\fase4_validacion_auto\`. Las dos rondas entre anotadores están en `entre_anotadores\ronda1\`
   y `entre_anotadores\ronda2\`.
-- Fase 5 (`scripts/entrenar.py`, corridas en `configs/fase5.yaml`):
+- Fase 5 (`src/entrenamiento/entrenar.py`, corridas en `configs/fase5.yaml`):
   - salidas en `runs\fase5\<corrida>\`, con `resumen.json`, `epocas.csv` y `monitor.csv`;
   - reporte en `reports\fase5a.md`.
-  - Fase 5b: copia de los archivos de cada corrida en `reports\fase5b\<corrida>\` (`scripts/fase5b_copiar.py`), y
-    curvas y tabla de los tres en `reports\fase5b\` (`scripts/fase5b_resumen.py`).
+  - Fase 5b: copia de los archivos de cada corrida en `reports\fase5b\<corrida>\` (`src/utilidades/copiar_fase5b.py`), y
+    curvas y tabla de los tres en `reports\fase5b\` (`src/entrenamiento/resumen_fase5b.py`).
   - La corrida de solo RGB cortada en la época 7 está en `runs\fase5\rgb_100ep_cortada\`. Se descartó y no se usa.
-- Fase 6 (`scripts/evaluar.py`, `configs/fase6.yaml`):
+- Fase 6 (`src/evaluacion/evaluar.py`, `configs/fase6.yaml`):
   - predicciones en `runs\fase6\<particion>\<modelo>\predictions.json`;
   - salidas en `reports\resultados.csv`, `reports\mcnemar.csv` y `reports\recall_por_nivel.png`.
   - La prueba del script en validación está en `runs\fase6\validacion\`.
@@ -240,7 +240,7 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
         regla, sin precarga ni cajas RGB y sin ver ningún archivo de respuestas.
       - El primero usa `anotar_oclusion.py --primero-simple`. No revisa a mano solo la 72 y la 75.
       - Hecha el 1 de noviembre de 2026. Primero: 38 se ven, 21 no se ven y 16 "no es persona". Segundo: 39, 22 y 14.
-    - **Resultados de la ronda 2** (`fase4_validacion_auto.py --partes entre_anotadores --ronda 2`):
+    - **Resultados de la ronda 2** (`src/oclusion/concordancia.py --partes entre_anotadores --ronda 2`):
       - **Primero contra segundo, los dos en modo simple** (decide la concordancia): kappa **0.623** (IC 95 % 0.400 a
         0.846), acuerdo 83.6 %, 9 desacuerdos en 55 comparables. **Se acepta** según la regla; el IC va como
         limitación.
@@ -270,7 +270,7 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
     - Las anota el primer anotador con la herramienta en modo `--muestra` (con la precarga) y se guardan en
       `data/oclusion.csv`.
     - La persona 1 (`..._0405_0000_0`), anotada antes y fuera de la muestra, se conserva en ese archivo.
-  - **Comparación** (`scripts/fase4_validacion_auto.py`): kappa de Cohen sobre el nivel de **dos clases**, matriz de
+  - **Comparación** (`src/oclusion/concordancia.py`): kappa de Cohen sobre el nivel de **dos clases**, matriz de
     confusión y desacuerdos con sus imágenes. Las personas "no es persona" o "fuera de cuadro" van aparte. El kappa de
     3 niveles (λ por áreas) y la diferencia de λ solo se reportan.
   - **Regla de decisión** (fijada el 1 de noviembre de 2026, antes de la ronda 2):
@@ -302,7 +302,7 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
     - Se revisaron a ojo las personas con la completa RGB corrida más de 12 px o con una visible RGB en un par
       "solo térmica" (`oclusion_auto.py --revisar`, imágenes en `reports/oclusion/revision_muestra/`).
     - Correcciones del primer anotador en `configs/correcciones_oclusion.yaml`, aplicadas con
-      `scripts/corregir_oclusion.py`, que guarda un respaldo en `data\respaldos\`:
+      `src/oclusion/corregir_oclusion.py`, que guarda un respaldo en `data\respaldos\`:
       - 8 RGB pasan a "no visible".
       - La 63 tenía cambiadas las teclas `t` y `r`.
       - La 46 y la 38 pasan a "no es persona".
@@ -324,7 +324,7 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
         cercana, mutua y a 1 altura o menos, fotograma a fotograma, hasta el fotograma anotado siguiente.
       - **Regla de las cajas seguidas** (fijada antes de ver las cifras nuevas): cada caja seguida toma la respuesta
         del fotograma anotado más cercano del mismo objeto; si hay empate de distancia, va como dudosa. Lo aplica
-        `scripts/fase4_cajas_dudosas.py`.
+        `src/oclusion/cajas_dudosas.py`.
       - **Resultado final**, con la escena reanotada: 47 anotadas + 84 seguidas = **131 cajas dudosas** de 1 501.
         - Hubo 46 cajas en conflicto (23 pares): 23 quedaron dudosas y 23 como persona.
         - No hubo empates.
@@ -427,7 +427,7 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
         90 % de las personas se ven en la RGB. La causa probable, sin comprobar, es que la RGB no se transfiere entre
         vuelos. Va como limitación.
       - `last.pt` sigue siendo el principal de todos, también de `rgb_base`, y `best.pt` el secundario.
-    - **Resultado en la prueba** (21 de noviembre de 2026, una sola vez; `reports/fase8.md`, `scripts/fase8_evaluar.py`):
+    - **Resultado en la prueba** (21 de noviembre de 2026, una sola vez; `reports/fase8.md`, `src/evaluacion/evaluar_prueba.py`):
       - Recall en la severa (267 personas, `last.pt`, sin dudosas): `termico_base` 0.337, `termico_ampliado` 0.442,
         `fusion_base` 0.154, `fusion_ampliado` 0.124, `rgb_base` 0.004 y `fusion_100ep` (`best.pt`) 0.030.
       - Las 6 diferencias de McNemar quedan demostradas, con McNemar y el IC de acuerdo: la **térmica supera a la
@@ -459,10 +459,19 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
 ## Estructura del repositorio
 
 ```
-configs/     yaml de datasets y de entrenamiento
-scripts/     código de cada fase
-data/        datos procesados (fuera de git)
-reports/     tablas, figuras, resúmenes y bitácora
-runs/        salidas de entrenamiento (fuera de git)
-docs/        reglas de anotación y notas
+configs/       yaml de datasets, de cada fase y de rutas
+src/           código del flujo, una carpeta por etapa
+experimentos/  scripts exploratorios y de diagnóstico (no producen entradas del flujo)
+pruebas/       prueba de la herramienta de anotación
+scripts/       noche.ps1 (corridas de la noche del 3 al 4 de noviembre)
+weights/       pesos preentrenados yolo26s.pt (fuera de git)
+data/          datos procesados (fuera de git)
+reports/       tablas, figuras, resúmenes y bitácora
+runs/          salidas de entrenamiento (fuera de git)
+docs/          reglas de anotación y notas
 ```
+
+- Reorganizado el 25 de noviembre de 2026 (rama `limpieza-estructura`). El detalle, el orden de los pasos y la tabla de
+  rutas viejas y nuevas están en `ESTRUCTURA.md`.
+- Los scripts se corren como módulos desde la raíz del repositorio, por ejemplo
+  `.venv\Scripts\python.exe -m src.pares.emparejar --config configs\fase1.yaml --rutas configs\rutas.yaml`.

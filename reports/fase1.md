@@ -5,7 +5,7 @@ Fecha: 2026-10-30, actualizado el 2026-10-31 (corte de Baker en 2031, exclusione
 Para regenerar:
 
 ```
-.venv\Scripts\python.exe scripts\fase1_pares.py --config configs\fase1.yaml --rutas configs\rutas.yaml
+.venv\Scripts\python.exe -m src.pares.emparejar --config configs\fase1.yaml --rutas configs\rutas.yaml
 ```
 
 Tarda unos 2 minutos: busca el `.txt` de cada uno de los 29 678 fotogramas emparejados (2 × 14 839). Solo lee
@@ -114,7 +114,7 @@ Una fila por par (14 839 filas). No va a GitHub.
 ## Revisión del corte de Baker
 
 El análisis anterior excluía desde la posición 2051, donde la térmica pasa a 0 cajas. Revisé a mano las posiciones
-2030 a 2060 (imágenes lado a lado en `reports/baker_corte/`, generadas con `scripts/fase1_baker_corte.py`; las
+2030 a 2060 (imágenes lado a lado en `reports/baker_corte/`, generadas con `experimentos/fase1_baker_corte.py`; las
 impares 2031 a 2039 se revisaron aparte):
 
 | Posición | Térmica | ¿Persona visible sin caja? |

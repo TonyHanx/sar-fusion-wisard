@@ -11,7 +11,7 @@ franja_inicial: {x: [0.18, 0.84], y: [0.06, 0.98]}
 # Vuelos donde la relación se invierte (la RGB tiene zoom y la térmica la contiene).
 vuelos_invertidos: [210529_Carnation_Enterprise_0023]
 
-# Marcado de puntos de control (scripts/marcar_puntos.py).
+# Marcado de puntos de control (src/alineacion/marcar_puntos.py).
 marcado:
   carpeta_puntos: configs/puntos_control   # un yaml por vuelo, relativo a la raíz del repositorio
   puntos_minimos: 6                        # por fotograma
@@ -34,14 +34,14 @@ marcado:
     210924_FHL_Enterprise_0405: {inicio: 30, mitad: 440, final: 930}
     220109_Baker_Enterprise_1: {inicio: 80, mitad: 1040, final: 1990}
 
-# Homografías RGB (px originales) -> térmica (px), una por vuelo (scripts/fase2_homografias.py).
+# Homografías RGB (px originales) -> térmica (px), una por vuelo (experimentos/fase2_homografias.py).
 homografias:
   salida: configs/homografias.yaml         # relativo a la raíz del repositorio
   umbral_ransac_px: 3.0                    # error de reproyección máximo para contar un punto como inlier (px térmicos)
   umbral_variacion_px: 3.0                 # error cruzado medio máximo entre fotogramas para usar una sola homografía
   rejilla: 9                               # puntos por lado de la rejilla para comparar homografías (informativo)
 
-# Escala RGB/térmica por fotograma a partir de la imagen (scripts/fase2_escala_por_fotograma.py), para encontrar
+# Escala RGB/térmica por fotograma a partir de la imagen (experimentos/fase2_escala_por_fotograma.py), para encontrar
 # despegues, aterrizajes y cambios de zoom. Correlación de bordes entre la RGB reescalada y el centro de la térmica.
 escala_por_fotograma:
   ancho_rgb_trabajo: 480            # la RGB se reduce a este ancho antes de buscar
@@ -58,7 +58,7 @@ escala_por_fotograma:
   procesos: 6
   salida: alineacion/escala_por_fotograma.csv     # dentro de reports/
 
-# Zoom relativo RGB/térmica a lo largo del vuelo (scripts/fase2_zoom_temporal.py): escala entre fotogramas
+# Zoom relativo RGB/térmica a lo largo del vuelo (experimentos/fase2_zoom_temporal.py): escala entre fotogramas
 # consecutivos de cada cámara (ORB + transformación de semejanza con RANSAC). Si solo cambia la RGB, cambió su zoom.
 zoom_temporal:
   ancho_rgb: 960
@@ -72,7 +72,7 @@ zoom_temporal:
   procesos: 6
   salida: alineacion/zoom_temporal.csv          # dentro de reports/
 
-# Barrido visual de cada vuelo (scripts/fase2_barrido.py): un fotograma cada `paso`, RGB recortada a la franja junto
+# Barrido visual de cada vuelo (experimentos/fase2_barrido.py): un fotograma cada `paso`, RGB recortada a la franja junto
 # a la térmica. Es lo que se usó para encontrar despegues, aterrizajes y cambios de zoom (los métodos automáticos de
 # arriba dieron demasiadas falsas alarmas).
 barrido:
@@ -84,7 +84,7 @@ barrido:
   salida: alineacion/barrido        # dentro de reports/
 
 # Tramos excluidos que se encontraron con el barrido (confirmados el 2026-10-31 y ya en configs/fase1.yaml).
-# Imágenes de cada borde: antes, borde y después (scripts/fase2_bordes_tramos.py).
+# Imágenes de cada borde: antes, borde y después (experimentos/fase2_bordes_tramos.py).
 bordes_tramos:
   alto_panel: 300
   calidad_jpg: 88
@@ -106,7 +106,7 @@ bordes_tramos:
       tipo: aterrizaje
       nota: el dron baja hasta el pasto; desde la 857 las personas de las dos cámaras se separan más de 25 px (semejanza)
 
-# Pares lado a lado para revisar antes de alinear (scripts/fase2_lado_a_lado.py).
+# Pares lado a lado para revisar antes de alinear (experimentos/fase2_lado_a_lado.py).
 lado_a_lado:
   fotogramas:                       # por vuelo: inicio, mitad, final o posiciones
     210529_Carnation_Enterprise_0023: [inicio, mitad, final, 400, 440, 470, 500, 530, 560, 600, 630, 660]
@@ -115,7 +115,7 @@ lado_a_lado:
   salida: alineacion/lado_a_lado    # dentro de reports/
 
 # Alineación RGB -> térmica de cada vuelo con los centros de las cajas de personas
-# (scripts/fase2_homografias_cajas.py). Solo pares con persona en las dos imágenes; la mitad (al azar, seed) estima
+# (src/alineacion/semejanza_por_vuelo.py). Solo pares con persona en las dos imágenes; la mitad (al azar, seed) estima
 # la transformación y la otra mitad mide la distancia entre centros. Decidido el 2026-10-31 en lugar del marcado a
 # mano; modelo: semejanza (la homografía completa se deformaba en FHL 0134 y MtErie 0007).
 homografias_cajas:
@@ -178,7 +178,7 @@ homografias_cajas:
   salida: configs/homografias_cajas.yaml            # relativo a la raíz del repositorio
   carpeta_reporte: alineacion/homografias_cajas     # dentro de reports/
 
-# Revisión de los tramos de desfase de la regla relativa (scripts/fase2_revision_desfases.py), decidida el 2026-10-31:
+# Revisión de los tramos de desfase de la regla relativa (src/alineacion/revision_desfases.py), decidida el 2026-10-31:
 # los tramos donde todas las personas (2 o más) se corren más de 1 altura en todos sus pares se excluyen sin revisión;
 # los de una sola persona, los mixtos y todos los de `vuelos_revisar_todos` se revisan a ojo (también el fondo).
 revision_desfases:
@@ -206,7 +206,7 @@ revision_desfases:
     - {vuelo: 210417_MtErie_Enterprise_0005, desde: 160, hasta: 162}
     - {vuelo: 220109_Baker_Enterprise_1, desde: 620, hasta: 626}
 
-# Imágenes finales alineadas (scripts/alinear.py), de los pares anotados y no excluidos, con la semejanza congelada de
+# Imágenes finales alineadas (src/alineacion/alinear.py), de los pares anotados y no excluidos, con la semejanza congelada de
 # `homografias_cajas.salida`. Por par: RGB alineada (PNG, 3 canales), térmica en gris (PNG, 1 canal) y TIFF de 4
 # canales uint8 con las muestras en el orden B, G, R, térmica (fotométrica RGB + 1 muestra extra sin especificar).
 alinear:

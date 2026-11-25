@@ -1,12 +1,12 @@
-# Diagnóstico del mAP@0.5 de validación (18 de noviembre de 2026), con scripts/diagnostico.py y scripts/entrenar.py.
+# Diagnóstico del mAP@0.5 de validación (18 de noviembre de 2026), con experimentos/diagnostico.py y src/entrenamiento/entrenar.py.
 # No cambia nada de lo ya hecho: solo lee runs/fase5, las etiquetas y los datasets, y escribe en runs/<carpeta>/ y en
 # reports/diagnostico.md. La prueba (FHL 0405) no se usa: solo se cuenta en el inventario (A1) y se comprueba que no
 # comparta archivos con entrenamiento ni validación (A6).
 # Uso:
-#   .venv\Scripts\python.exe scripts\diagnostico.py --config configs\diagnostico.yaml --rutas configs\rutas.yaml --parte inventario
+#   .venv\Scripts\python.exe -m experimentos.diagnostico --config configs\diagnostico.yaml --rutas configs\rutas.yaml --parte inventario
 #   (partes: inventario, estado, tamanos, integridad, validar, hoja, b1_datos, copiar; b_evaluar y b_por_vuelo con --corrida)
-#   .venv\Scripts\python.exe scripts\entrenar.py --config configs\diagnostico.yaml --rutas configs\rutas.yaml --corrida b1_termico_aleatoria_30ep
-#   .venv\Scripts\python.exe scripts\diagnostico.py --config configs\diagnostico.yaml --rutas configs\rutas.yaml --parte b_evaluar --corrida b1_termico_aleatoria_30ep
+#   .venv\Scripts\python.exe -m src.entrenamiento.entrenar --config configs\diagnostico.yaml --rutas configs\rutas.yaml --corrida b1_termico_aleatoria_30ep
+#   .venv\Scripts\python.exe -m experimentos.diagnostico --config configs\diagnostico.yaml --rutas configs\rutas.yaml --parte b_evaluar --corrida b1_termico_aleatoria_30ep
 
 carpeta: diagnostico                 # dentro de runs/: salidas del diagnóstico
 fase_bitacora: diagnostico
