@@ -67,3 +67,41 @@ c3:
       datos: configs/fusion.yaml
       inicio_cuarto_canal: promedio
       ultralytics: {close_mosaic: 0, epochs: 30, cos_lr: true}
+    # R3 (aprobada el 26 de noviembre de 2026): el control con entrada de 960 px (las imágenes de 640 x 512 se agrandan
+    # x1.5 por interpolación, también en la validación: no hay más detalle real) y scale 0.3 en vez de 0.5 (por omisión), para no achicar tanto a las personas.
+    # Causas 1 y 4 del diagnóstico: una persona de 11 px pasa a ~16 px, unas 2 celdas de P3. Lote 16 igual.
+    r3_fusion_base:
+      datos: configs/fusion.yaml
+      inicio_cuarto_canal: promedio
+      ultralytics: {imgsz: 960, scale: 0.3}
+
+# Evaluación de R1 por vuelo de validación (src/evaluacion/fase9_validacion.py), sin la prueba: predicciones de
+# weights/elegida.pt de cada corrida con el validador de Ultralytics (src/evaluacion/evaluar.py, predecir) y el mAP@0.5
+# propio de experimentos/diagnostico_sobreajuste.py (101 puntos, IoU 0.5, hasta 300 por imagen), en total y por vuelo.
+evaluacion:
+  carpeta: fase9/validacion          # dentro de runs/: <carpeta>/val/<corrida>/predictions.json
+  salidas: reports/fase9             # r1_corridas.csv, r1_recetas.csv, r1_comparaciones.csv
+  prediccion: {batch: 16, conf: 0.001, device: 0, workers: 4, plots: false}   # imgsz: el de cada corrida (args.yaml)
+  ruido: configs/diagnostico_sobreajuste.yaml   # etiquetas de validación, tamaño, IoU, max_det
+  recetas:                           # receta -> corrida base (sus semillas: <corrida>_s<N>; la semilla 0 del control
+    control: control_fusion_base     # es control_fusion_base, sin sufijo)
+    r2: r2_fusion_base
+    # r3: r3_fusion_base             # se agrega cuando terminen sus 3 semillas
+  semilla0_sin_sufijo: [control_fusion_base]
+  comparaciones:
+    - [r2, control]
+  minimo_relevante: 0.08             # diferencia mínima del diagnóstico (ruido de la validación por bloques)
+
+# Tiempo por imagen en inferencia (src/evaluacion/fase9_tiempo_inferencia.py), para la viabilidad en Jetson: validador
+# de Ultralytics con lote 1 sobre las 442 imágenes de validación (4 canales), con la GPU libre (sin entrenamiento en
+# curso). Mide la arquitectura, no los pesos: se usan los de control_fusion_base. El tiempo absoluto es el de la RTX 6000
+# Ada; para la Jetson sirve la razón entre tamaños, y el tiempo real hay que medirlo allá.
+tiempo_inferencia:
+  corrida: control_fusion_base
+  pesos: weights/elegida.pt
+  datos: configs/fusion.yaml
+  tamanos: [640, 960]
+  precisiones: [fp32, fp16]
+  repeticiones: 2                    # pasadas completas por tamaño y precisión; se informa la segunda (la primera calienta)
+  prediccion: {batch: 1, conf: 0.001, device: 0, workers: 4, plots: false}
+  salida: reports/fase9/tiempo_inferencia.csv

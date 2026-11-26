@@ -1,0 +1,7 @@
+receta,semilla,corrida,imgsz,epocas,epoca_r1,r1_media_movil,map50_epoca_r1,map50_ultralytics_elegida,map50_propio,map50_210417_MtErie_Enterprise_0007,map50_210924_FHL_Enterprise_0134
+control,0,control_fusion_base,640,50,27,0.3699,0.4499,0.4471,0.4491,0.6465,0.1833
+control,1,control_fusion_base_s1,640,50,39,0.3029,0.2769,0.2808,0.2854,0.4669,0.0636
+control,2,control_fusion_base_s2,640,50,36,0.3695,0.3365,0.3341,0.3379,0.4674,0.1634
+r2,0,r2_fusion_base_s0,640,30,16,0.3409,0.3165,0.3149,0.3183,0.4550,0.1239
+r2,1,r2_fusion_base_s1,640,30,15,0.2916,0.2711,0.2700,0.2741,0.4562,0.0418
+r2,2,r2_fusion_base_s2,640,30,26,0.3487,0.3519,0.3545,0.3577,0.5370,0.1049

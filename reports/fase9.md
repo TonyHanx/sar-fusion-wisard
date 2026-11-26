@@ -54,3 +54,64 @@ La receta es la de `fusion_base` de la fase 7 (laptop), más `save_period: 1`. S
 - **R1 casi coincide entre máquinas** (0.363 y 0.370). Las cifras del final y del máximo cambian unas 0.05.
 - **En la estación la caída final es mayor.** Del máximo de la media móvil a las últimas 5 épocas baja 0.10; en la laptop bajó 0.046.
 - **Las recetas se comparan contra este control, no contra la laptop.**
+
+## R3: entrada de 960 px con `scale: 0.3` (aprobada el 26 de noviembre de 2026)
+
+**Qué cambia respecto al control:** solo `imgsz` (de 640 a 960) y `scale` (de 0.5, el valor por omisión, a 0.3). Se comprobó por código que no cambia nada más. Se corre con las semillas 0, 1 y 2.
+
+- **No hay más detalle real.** Las imágenes miden 640 × 512. A 960 px se agrandan ×1.5 por interpolación, y la validación también se agranda. Una persona de 11 px pasa a ~16 px, pero los ~16 px salen de interpolar los mismos 11 px de la imagen original.
+- **De dónde viene el beneficio esperado.** La red ve a la persona agrandada, así que en las capas de detección ocupa más celdas. En P3 (paso de 8 px), una persona de 11 px pasa de ~1.4 a ~2 celdas. Con más celdas, la red tiene más posiciones desde donde detectarla y más contexto en el campo receptivo.
+- **Por qué `scale: 0.3`.** Con 0.5, el aumento de escala achica a las personas hasta la mitad: justo las pequeñas, que son las que fallan. Con 0.3 se achican hasta el 70 %.
+- **Costo:** unas 2.25 veces más píxeles por imagen, tanto en el entrenamiento como en la inferencia. El tiempo por imagen en inferencia a 640 y a 960 px se mide en la sección siguiente, para la viabilidad en Jetson.
+
+Estimado: 45 a 55 s por época, unos 40 a 48 min por semilla y unos 15 a 18 GB de GPU. Los valores reales se agregan cuando terminen las corridas.
+
+## Control y R2 con 3 semillas: R1 por receta y por vuelo
+
+Fuente: `src/evaluacion/fase9_validacion.py`; tablas en `reports/fase9/r1_corridas.csv`, `r1_recetas.csv` y `r1_comparaciones.csv`.
+
+Qué mide cada columna:
+
+- **R1:** la media móvil de 5 épocas del mAP@0.5 de validación (Ultralytics) en la época que elige R1.
+- **Los mAP@0.5 por vuelo:** salen de las predicciones de `elegida.pt`, con el evaluador propio del diagnóstico. En total, ese evaluador difiere del de Ultralytics en 0.002 a 0.005.
+
+Las semillas 1 y 2 del control y todas las de R2 corrieron con `workers: 12`. La semilla 0 del control corrió con 4.
+
+| Receta | Semilla | Época R1 | R1 | mAP@0.5 `elegida.pt` | MtErie 0007 | FHL 0134 |
+|---|---:|---:|---:|---:|---:|---:|
+| Control | 0 | 27 | 0.370 | 0.449 | 0.646 | 0.183 |
+| Control | 1 | 39 | 0.303 | 0.285 | 0.467 | 0.064 |
+| Control | 2 | 36 | 0.369 | 0.338 | 0.467 | 0.163 |
+| R2 | 0 | 16 | 0.341 | 0.318 | 0.455 | 0.124 |
+| R2 | 1 | 15 | 0.292 | 0.274 | 0.456 | 0.042 |
+| R2 | 2 | 26 | 0.349 | 0.358 | 0.537 | 0.105 |
+
+Promedio ± desviación estándar entre las 3 semillas:
+
+| Receta | R1 | mAP@0.5 `elegida.pt` | MtErie 0007 | FHL 0134 |
+|---|---:|---:|---:|---:|
+| Control | 0.347 ± 0.039 | 0.357 ± 0.084 | 0.527 ± 0.104 | 0.137 ± 0.064 |
+| R2 | 0.327 ± 0.031 | 0.317 ± 0.042 | 0.483 ± 0.047 | 0.090 ± 0.043 |
+| R2 − control | −0.020 (EE 0.029, p de Welch 0.52) | −0.041 (EE 0.054) | −0.044 (EE 0.066) | −0.047 (EE 0.045) |
+
+**R2 no supera al control.** Las diferencias son negativas en todas las métricas y en los dos vuelos. Ninguna supera dos errores típicos entre semillas ni el mínimo relevante de 0.08.
+
+- La dispersión entre semillas del mismo control es de 0.039 en R1, y entre sus semillas R1 va de 0.303 a 0.370. Es casi el doble de la diferencia entre recetas.
+- R2 tarda unos 14 min por semilla y el control unos 25. Con el mosaico hasta el final la caída del tramo final desaparece, pero el nivel que alcanza R2 no es mayor.
+
+## Tiempo por imagen en inferencia (lote 1, RTX 6000 Ada): no sirve para la Jetson
+
+Fuente: `src/evaluacion/fase9_tiempo_inferencia.py` y `reports/fase9/tiempo_inferencia.csv`. Se midió con la GPU libre, antes de R3, sobre las 442 imágenes de validación.
+
+| Tamaño | Precisión | Preproceso | Inferencia | Posproceso | Total (ms/imagen) |
+|---:|---|---:|---:|---:|---:|
+| 640 | fp32 | 1.76 | 11.66 | 1.19 | 14.6 |
+| 640 | fp16 | 1.91 | 12.23 | 1.09 | 15.2 |
+| 960 | fp32 | 3.05 | 9.55 | 0.96 | 13.6 |
+| 960 | fp16 | 3.47 | 10.58 | 1.06 | 15.1 |
+
+**Estas cifras no miden el cómputo.** Con lote 1, esta GPU pasa casi todo el tiempo lanzando operaciones desde Python, no calculando. Por eso salen dos resultados que no tienen sentido físico: 960 px "más rápido" que 640, y fp16 más lento que fp32.
+
+- Sirve como dato el costo teórico de la red: 20.8 GFLOPs a 640 px, que escala con los píxeles a unos 47 GFLOPs a 960 px (×2.25).
+- En una Jetson, donde el límite sí es el cómputo, cabe esperar que el tiempo crezca cerca de ×2.25.
+- El tiempo real tiene que medirse en la Jetson.

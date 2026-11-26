@@ -1,0 +1,5 @@
+a,b,metrica,dif,ee_semillas,t_welch,p_welch,supera_2ee,supera_minimo
+r2,control,r1_media_movil,-0.0203,0.0286,-0.7122,0.5174,False,False
+r2,control,map50_propio,-0.0408,0.0540,-0.7559,0.5056,False,False
+r2,control,map50_210417_MtErie_Enterprise_0007,-0.0441,0.0656,-0.6722,0.5529,False,False
+r2,control,map50_210924_FHL_Enterprise_0134,-0.0466,0.0446,-1.0444,0.3631,False,False
