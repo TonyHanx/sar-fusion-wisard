@@ -115,3 +115,33 @@ Fuente: `src/evaluacion/fase9_tiempo_inferencia.py` y `reports/fase9/tiempo_infe
 - Sirve como dato el costo teórico de la red: 20.8 GFLOPs a 640 px, que escala con los píxeles a unos 47 GFLOPs a 960 px (×2.25).
 - En una Jetson, donde el límite sí es el cómputo, cabe esperar que el tiempo crezca cerca de ×2.25.
 - El tiempo real tiene que medirse en la Jetson.
+
+## R3 con 3 semillas: resultado
+
+**Recursos reales.** Unos 33 a 36 s por época y de 31 a 33 min por semilla, con `workers: 12`. Se había estimado de 45 a 55 s por época. El pico de memoria GPU fue de 15.3 GB de 48 GB.
+
+**R1 por semilla**
+
+| Semilla | Época R1 | R1 | mAP@0.5 `elegida.pt` | MtErie 0007 | FHL 0134 |
+|---:|---:|---:|---:|---:|---:|
+| 0 | 31 | 0.309 | 0.316 | 0.554 | 0.037 |
+| 1 | 29 | 0.316 | 0.304 | 0.428 | 0.146 |
+| 2 | 28 | 0.333 | 0.258 | 0.302 | 0.192 |
+
+**Promedio ± desviación estándar entre las 3 semillas, y diferencia con el control**
+
+| Receta | R1 | mAP@0.5 `elegida.pt` | MtErie 0007 | FHL 0134 |
+|---|---:|---:|---:|---:|
+| Control | 0.347 ± 0.039 | 0.358 ± 0.084 | 0.527 ± 0.104 | 0.137 ± 0.064 |
+| R2 | 0.327 ± 0.031 | 0.317 ± 0.042 | 0.483 ± 0.047 | 0.090 ± 0.043 |
+| R3 | 0.319 ± 0.012 | 0.293 ± 0.031 | 0.428 ± 0.126 | 0.125 ± 0.080 |
+| R3 − control | −0.028 (EE 0.023, p 0.34) | −0.065 (EE 0.052) | −0.099 (EE 0.094) | −0.012 (EE 0.059) |
+
+**R3 no supera al control.** Ninguna diferencia supera dos errores típicos ni el mínimo relevante de 0.08.
+
+- Ni siquiera mejora en FHL 0134, el vuelo de personas pequeñas al que apuntaba: −0.012.
+- En MtErie 0007 baja 0.099, aunque con mucha dispersión entre semillas.
+
+Agrandar la imagen por interpolación no compensó la falta de detalle real. Con las semillas que hay, ninguna de las dos recetas corrige el problema mejor que la receta original.
+
+Nota: al reevaluar con R3, `fase9_validacion.py` volvió a escribir en la bitácora la fila de R2 contra el control, con las mismas cifras.

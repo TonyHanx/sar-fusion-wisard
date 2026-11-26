@@ -3,3 +3,7 @@ r2,control,r1_media_movil,-0.0203,0.0286,-0.7122,0.5174,False,False
 r2,control,map50_propio,-0.0408,0.0540,-0.7559,0.5056,False,False
 r2,control,map50_210417_MtErie_Enterprise_0007,-0.0441,0.0656,-0.6722,0.5529,False,False
 r2,control,map50_210924_FHL_Enterprise_0134,-0.0466,0.0446,-1.0444,0.3631,False,False
+r3,control,r1_media_movil,-0.0280,0.0234,-1.1955,0.3360,False,False
+r3,control,map50_propio,-0.0648,0.0515,-1.2584,0.3114,False,False
+r3,control,map50_210417_MtErie_Enterprise_0007,-0.0992,0.0942,-1.0524,0.3541,False,False
+r3,control,map50_210924_FHL_Enterprise_0134,-0.0115,0.0590,-0.1955,0.8549,False,False

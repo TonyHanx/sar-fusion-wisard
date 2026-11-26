@@ -86,10 +86,11 @@ evaluacion:
   recetas:                           # receta -> corrida base (sus semillas: <corrida>_s<N>; la semilla 0 del control
     control: control_fusion_base     # es control_fusion_base, sin sufijo)
     r2: r2_fusion_base
-    # r3: r3_fusion_base             # se agrega cuando terminen sus 3 semillas
+    r3: r3_fusion_base
   semilla0_sin_sufijo: [control_fusion_base]
   comparaciones:
     - [r2, control]
+    - [r3, control]
   minimo_relevante: 0.08             # diferencia mínima del diagnóstico (ruido de la validación por bloques)
 
 # Tiempo por imagen en inferencia (src/evaluacion/fase9_tiempo_inferencia.py), para la viabilidad en Jetson: validador
