@@ -15,30 +15,54 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
 - Cada entrenamiento o evaluación agrega una fila a `reports/bitacora.csv` (fecha, fase, modelo, configuración, resultado).
 - Si algo no está claro o los datos no son como dice este archivo, **muéstrame ejemplos y pregúntame** antes de suponer.
 - Ejecuta Python con el entorno virtual del proyecto (`.venv`).
-- La memoria es limitada (16 GB de RAM y 8 GB en la GPU): procesa las imágenes por partes, nunca todas en memoria.
-- Todos los entrenamientos se hacen con la laptop **enchufada**, en modo **Rendimiento** de Armoury Crate y con el
-  plan de energía **Performance** de Windows. Los tres modelos entrenan en las mismas condiciones.
+- Procesa las imágenes por partes, nunca todas en memoria. En la laptop la memoria es limitada (16 GB de RAM y 8 GB en
+  la GPU); en la estación hay más, pero la regla se mantiene para que el código funcione en los dos.
+- **Equipo de entrenamiento** (cambio de método del 26 de noviembre de 2026): desde ahora todos los entrenamientos que
+  se reporten corren en la **estación del laboratorio** (ver "Equipo"). Los tres modelos entrenan en las mismas
+  condiciones.
+  - Los tres modelos (fusión, solo RGB y solo térmica) se vuelven a entrenar en la estación con **la misma receta entre
+    ellos**: los mismos datos, la misma partición, la misma semilla y los mismos hiperparámetros para los tres.
+  - Esa receta **puede ser distinta de la de la laptop**, porque el objetivo es corregir el sobreajuste que señaló la
+    asesora el 20 de noviembre de 2026.
+    - Los cambios de receta se eligen **solo con la partición de validación**.
+    - Cada cambio se registra con su motivo.
+  - Las corridas de la laptop (fases 5 a 8) quedan como **primera versión**: se citan, pero no se mezclan con las de la
+    estación en una misma comparación.
+  - **La prueba:** la evaluación única de la prueba ya se hizo con la primera versión (fase 8). La segunda versión se
+    evalúa en la prueba **una sola vez, al final**. En el reporte se declara que la prueba se usó dos veces, una por
+    versión.
+  - Las comprobaciones previas dependen del equipo: hay un perfil por GPU en `potencia.maquinas` de
+    `configs/fase5.yaml`, y con una GPU sin perfil no se entrena.
+    - Laptop: enchufada, Armoury Crate en Rendimiento, plan Performance y 90 W.
+    - Estación: plan High performance y 285 W (95 % de su límite fijo de 300 W); sin Armoury Crate ni batería.
   - **Potencia** (regla ajustada el 1 de noviembre de 2026, fase 5a):
     - Antes de entrenar, la **comprobación previa** (30 s con solo la GPU cargada) tiene que dar un límite aplicado
-      (`enforced.power.limit`, mediana) de al menos 90 W. Si no, detente y avísame. `src/entrenamiento/entrenar.py` la hace solo.
+      (`enforced.power.limit`, mediana) de al menos el mínimo del perfil del equipo (90 W en la laptop, 285 W en la
+      estación). Si no, detente y avísame. `src/entrenamiento/entrenar.py` la hace solo.
     - El **límite real durante el entrenamiento** se registra en cada corrida (`resumen.json` y bitácora). No tiene
       mínimo: con la CPU ocupada en leer las imágenes baja a unos 70 W (ver "Equipo").
   - **4 procesos de lectura** (`workers: 4`) en todas las corridas, decidido el 1 de noviembre de 2026. Con 8, la RAM
     llegaba al 99.9 %, y con 4 la época no fue más lenta.
-  - **Roblox, ChatGPT y Chrome cerrados en cada corrida.** `src/entrenamiento/entrenar.py` no entrena si alguno está abierto
-    (`cerrar_antes` en `configs/fase5.yaml`).
+  - **Roblox, ChatGPT y Chrome cerrados en cada corrida, en los dos equipos.** `src/entrenamiento/entrenar.py` no
+    entrena si alguno está abierto (`cerrar_antes` en `configs/fase5.yaml`).
     - Desde la fase 5b (2 de noviembre de 2026) no hace falta avisar antes de cada corrida, porque el script comprueba
       las aplicaciones, la potencia y el plan de energía.
     - Si una comprobación falla, me detengo y dejo anotado por qué.
 
 ## Equipo
 
+- **Estación del laboratorio** (desde el 26 de noviembre de 2026): Windows 11 Enterprise, Intel Xeon w7-2495X (24
+  núcleos, 48 hilos), 255 GB de RAM y una NVIDIA RTX 6000 Ada de 48 GB con el controlador 596.51 (CUDA hasta 13.2).
+  - El límite de potencia es fijo, de 300 W, sin Dynamic Boost: bajo carga se mantuvo en 300 W, con un consumo de
+    unos 280 W.
+  - PyTorch 2.15.0+cu132 y Python 3.12.16 (con uv). Detalle en `reports/entorno_laboratorio.md`.
+- Laptop (primera versión, fases 5 a 8): lo que sigue.
 - Laptop con Windows 11, Intel Core i7-13620H (10 núcleos, 16 hilos), 16 GB de RAM.
 - GPU NVIDIA GeForce RTX 4070 Laptop GPU, 8 GB. Límite de potencia medido el 30 de octubre de 2026 con `nvidia-smi`
   (enchufada, modo Rendimiento): **hasta 100 W bajo carga** (80 W por defecto + hasta 20 W de Dynamic Boost; máximo
   configurable 120 W). El límite aplicado varía entre corridas (medianas de 92 a 100 W) según la temperatura y la
   carga de la CPU. Los 55 W anotados antes eran una lectura en modo de bajo consumo.
-- Todos los entrenamientos que se reporten corren en esta misma laptop.
+- Las corridas de la primera versión (fases 5 a 8) corrieron en esta laptop.
 - Controlador NVIDIA 617.42 (CUDA 13.4), actualizado el 30 de octubre de 2026 (antes 555.97).
 - **Bajo la carga real del entrenamiento** (fase 5a, 1 de noviembre de 2026), el límite aplicado baja a unos **70 W**.
   - Pasa aunque la comprobación previa, con solo la GPU cargada, dé de 95 a 99 W.
@@ -367,8 +391,8 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
     baja 175 de 498.
   - Antes eran tres niveles según λ RGB: baja (0 a 35 %), moderada (35 a 70 %) y severa (más de 70 %). Solo se usan
     para reportar la comparación.
-- **Configuración base:** 100 épocas, imagen de 640, lote 16 (bajar si no entra en 8 GB; el mismo para los tres),
-  optimizador y tasa de aprendizaje por defecto de Ultralytics para YOLO26 (registrar cuáles fueron).
+- **Configuración base:** 100 épocas, imagen de 640, lote 16 como punto de partida (el mismo para los tres; puede
+  cambiar como parte de la corrección del sobreajuste, y el cambio se registra), optimizador y tasa de aprendizaje por defecto de Ultralytics para YOLO26 (registrar cuáles fueron).
   - **Lote 16:** entra (fase 5a: pico de 5 331 de 8 188 MiB con la fusión), así que es el de los tres.
   - **4 procesos de lectura** (`workers: 4`) en los tres (ver "Reglas de trabajo").
   - **Tiempo estimado de 100 épocas** (fase 5a): fusión ≈ 74 min, solo RGB ≈ 71 min y solo térmica ≈ 70 min. Los tres
