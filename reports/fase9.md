@@ -145,3 +145,21 @@ Fuente: `src/evaluacion/fase9_tiempo_inferencia.py` y `reports/fase9/tiempo_infe
 Agrandar la imagen por interpolación no compensó la falta de detalle real. Con las semillas que hay, ninguna de las dos recetas corrige el problema mejor que la receta original.
 
 Nota: al reevaluar con R3, `fase9_validacion.py` volvió a escribir en la bitácora la fila de R2 contra el control, con las mismas cifras.
+
+## Pendiente al cierre del 26 de noviembre de 2026
+
+Por decisión del usuario, no se lanzó nada más después de R3. Quedan pendientes, en este orden:
+
+1. **R4: rebalanceo de vuelos.** Tomar 1 de cada 2 fotogramas de Baker y duplicar FHL 0401, como dataset nuevo en `configs/`; el WiSARD original no se toca.
+   - Es la única receta del diagnóstico que queda por probar, y ataca otra causa: el desbalance de vuelos.
+   - Se corre sobre el control, con las semillas 0, 1 y 2, y se compara con la misma regla que R2 y R3.
+   - Costo estimado: unos 75 min para las 3 semillas.
+2. **Datos base o ampliados.** Con la receta elegida: el control, salvo que R4 lo supere. Se decide una sola vez, igual para los tres modelos.
+   - Con los datos ampliados, cada época cuesta unas 4 veces más: entre 1.5 y 2 h por semilla.
+3. **Pasar la receta a los modelos de solo térmica y solo RGB.** Misma receta y mismos datos, con R1 y las 3 semillas, sin ajustar nada por modelo.
+   - Antes de pasar al paso 4 se comprueba en validación que ninguno colapse; la señal sería la solo RGB con su mejor época en la 1.
+   - Son 6 corridas: entre 2.5 y 5 h con datos base, más con los ampliados.
+4. **La evaluación única de los tres modelos en la prueba.** Sería el segundo uso de la prueba, y el informe tiene que declararlo.
+5. **El tiempo de inferencia real en la Jetson**, a 640 px. Lo medido en la RTX 6000 con lote 1 no sirve para eso.
+
+Trabajo futuro, fuera de este curso: R5, el aumento fotométrico por modalidad.
