@@ -1,0 +1,568 @@
+{
+  "corrida": "r2_fusion_base_s0",
+  "configuracion": {
+    "fase": "9",
+    "inicio_cuarto_canal": "promedio",
+    "p_sin_rgb": 0.0,
+    "ultralytics": {
+      "seed": 0,
+      "deterministic": true,
+      "imgsz": 640,
+      "epochs": 30,
+      "batch": 16,
+      "hsv_h": 0.0,
+      "hsv_s": 0.0,
+      "hsv_v": 0.0,
+      "device": 0,
+      "workers": 12,
+      "cache": false,
+      "patience": 0,
+      "close_mosaic": 0,
+      "optimizer": "AdamW",
+      "lr0": 0.002,
+      "momentum": 0.9,
+      "warmup_bias_lr": 0.0,
+      "save_period": 1,
+      "cos_lr": true
+    },
+    "datos": "configs/fusion.yaml"
+  },
+  "canales": 4,
+  "carpeta": "C:\\Users\\I21326\\tesis\\sar-fusion-wisard\\runs\\fase9\\r2_fusion_base_s0",
+  "fitness": "metrics/mAP50(B)",
+  "p_sin_rgb": 0.0,
+  "potencia_antes": {
+    "equipo": "NVIDIA RTX 6000 Ada Generation",
+    "perfil": {
+      "minimo_w": 285,
+      "plan": "High performance",
+      "armoury_crate": null,
+      "enchufe": false,
+      "cerrar_antes": [
+        "RobloxPlayerBeta",
+        "ChatGPT"
+      ]
+    },
+    "enchufada": "no aplica",
+    "plan": "High performance",
+    "armoury_crate_declarado": "no aplica",
+    "limite_mediana_w": 300.0,
+    "limite_min_w": 300.0,
+    "limite_max_w": 300.0,
+    "consumo_mediana_w": 283.1,
+    "segundos_carga": 30,
+    "ram_antes_mib": 24924,
+    "cerradas": [
+      "RobloxPlayerBeta",
+      "ChatGPT"
+    ]
+  },
+  "optimizador": "AdamW",
+  "lr0": 0.002,
+  "momentum_args": 0.9,
+  "optimizer_args": "AdamW",
+  "grupos": [
+    {
+      "lr_inicial": 0.002,
+      "momentum": null,
+      "betas": [
+        0.9,
+        0.999
+      ],
+      "weight_decay": 0.0005,
+      "parametros": 126
+    },
+    {
+      "lr_inicial": 0.002,
+      "momentum": null,
+      "betas": [
+        0.9,
+        0.999
+      ],
+      "weight_decay": 0.0,
+      "parametros": 114
+    },
+    {
+      "lr_inicial": 0.002,
+      "momentum": null,
+      "betas": [
+        0.9,
+        0.999
+      ],
+      "weight_decay": 0.0,
+      "parametros": 126
+    }
+  ],
+  "acumula_lotes": 4,
+  "nbs": 64,
+  "imagenes_entrenamiento": 3247,
+  "imagenes_validacion": 442,
+  "lotes_por_epoca": 203,
+  "iteraciones_para_auto": 1530,
+  "iteraciones_para_auto_100_epocas": 5100,
+  "auto_con_100_epocas": "AdamW",
+  "amp": true,
+  "lote_inicial": 16,
+  "trabajadores": 12,
+  "primera_capa": {
+    "forma": [
+      32,
+      4,
+      3,
+      3
+    ],
+    "forma_preentrenada": [
+      32,
+      3,
+      3,
+      3
+    ],
+    "color_igual_a_preentrenada": true,
+    "ema_igual_al_modelo": true,
+    "desv_color": 0.33328914642333984,
+    "desv_cuarto": 0.18177083134651184,
+    "max_dif_cuarto_vs_promedio_color": 0.0
+  },
+  "s_final_eval_y_graficos": 5.1,
+  "s_total_corrida": 788.07,
+  "lote_pedido": 16,
+  "lote_final": 16,
+  "entra": true,
+  "error": null,
+  "gpu_pico_memoria_mib": 7851.0,
+  "gpu_memoria_total_mib": 49140.0,
+  "gpu_limite_aplicado_mediana_w": 300.0,
+  "gpu_consumo_mediana_w": 235.9,
+  "gpu_temperatura_max": 85.0,
+  "ram_pico_mib": 53532,
+  "ram_pico_pct": 20.5,
+  "epocas": [
+    {
+      "epoca": 1,
+      "lote": 16,
+      "mosaico": true,
+      "s_entrenamiento": 61.43,
+      "s_validacion_y_guardado": 47.69,
+      "s_total": 109.12,
+      "torch_max_asignada_entreno_mib": 4472,
+      "torch_max_reservada_entreno_mib": 5160,
+      "torch_max_asignada_mib": 4472,
+      "torch_max_reservada_mib": 5546
+    },
+    {
+      "epoca": 2,
+      "lote": 16,
+      "mosaico": true,
+      "s_entrenamiento": 19.86,
+      "s_validacion_y_guardado": 2.25,
+      "s_total": 22.11,
+      "torch_max_asignada_entreno_mib": 4472,
+      "torch_max_reservada_entreno_mib": 5546,
+      "torch_max_asignada_mib": 4472,
+      "torch_max_reservada_mib": 5546
+    },
+    {
+      "epoca": 3,
+      "lote": 16,
+      "mosaico": true,
+      "s_entrenamiento": 19.84,
+      "s_validacion_y_guardado": 2.16,
+      "s_total": 22.0,
+      "torch_max_asignada_entreno_mib": 4474,
+      "torch_max_reservada_entreno_mib": 5546,
+      "torch_max_asignada_mib": 4474,
+      "torch_max_reservada_mib": 5546
+    },
+    {
+      "epoca": 4,
+      "lote": 16,
+      "mosaico": true,
+      "s_entrenamiento": 19.71,
+      "s_validacion_y_guardado": 2.3,
+      "s_total": 22.01,
+      "torch_max_asignada_entreno_mib": 4472,
+      "torch_max_reservada_entreno_mib": 5546,
+      "torch_max_asignada_mib": 4472,
+      "torch_max_reservada_mib": 5546
+    },
+    {
+      "epoca": 5,
+      "lote": 16,
+      "mosaico": true,
+      "s_entrenamiento": 19.81,
+      "s_validacion_y_guardado": 2.24,
+      "s_total": 22.06,
+      "torch_max_asignada_entreno_mib": 4472,
+      "torch_max_reservada_entreno_mib": 5546,
+      "torch_max_asignada_mib": 4472,
+      "torch_max_reservada_mib": 5546
+    },
+    {
+      "epoca": 6,
+      "lote": 16,
+      "mosaico": true,
+      "s_entrenamiento": 19.82,
+      "s_validacion_y_guardado": 2.16,
+      "s_total": 21.98,
+      "torch_max_asignada_entreno_mib": 4472,
+      "torch_max_reservada_entreno_mib": 5546,
+      "torch_max_asignada_mib": 4472,
+      "torch_max_reservada_mib": 5546
+    },
+    {
+      "epoca": 7,
+      "lote": 16,
+      "mosaico": true,
+      "s_entrenamiento": 19.87,
+      "s_validacion_y_guardado": 2.15,
+      "s_total": 22.03,
+      "torch_max_asignada_entreno_mib": 4479,
+      "torch_max_reservada_entreno_mib": 5546,
+      "torch_max_asignada_mib": 4479,
+      "torch_max_reservada_mib": 5546
+    },
+    {
+      "epoca": 8,
+      "lote": 16,
+      "mosaico": true,
+      "s_entrenamiento": 19.83,
+      "s_validacion_y_guardado": 2.14,
+      "s_total": 21.98,
+      "torch_max_asignada_entreno_mib": 4474,
+      "torch_max_reservada_entreno_mib": 5546,
+      "torch_max_asignada_mib": 4474,
+      "torch_max_reservada_mib": 5546
+    },
+    {
+      "epoca": 9,
+      "lote": 16,
+      "mosaico": true,
+      "s_entrenamiento": 19.73,
+      "s_validacion_y_guardado": 2.33,
+      "s_total": 22.06,
+      "torch_max_asignada_entreno_mib": 4472,
+      "torch_max_reservada_entreno_mib": 5546,
+      "torch_max_asignada_mib": 4472,
+      "torch_max_reservada_mib": 5546
+    },
+    {
+      "epoca": 10,
+      "lote": 16,
+      "mosaico": true,
+      "s_entrenamiento": 19.77,
+      "s_validacion_y_guardado": 2.13,
+      "s_total": 21.9,
+      "torch_max_asignada_entreno_mib": 4472,
+      "torch_max_reservada_entreno_mib": 5546,
+      "torch_max_asignada_mib": 4472,
+      "torch_max_reservada_mib": 5546
+    },
+    {
+      "epoca": 11,
+      "lote": 16,
+      "mosaico": true,
+      "s_entrenamiento": 19.81,
+      "s_validacion_y_guardado": 2.23,
+      "s_total": 22.04,
+      "torch_max_asignada_entreno_mib": 4474,
+      "torch_max_reservada_entreno_mib": 5546,
+      "torch_max_asignada_mib": 4474,
+      "torch_max_reservada_mib": 5546
+    },
+    {
+      "epoca": 12,
+      "lote": 16,
+      "mosaico": true,
+      "s_entrenamiento": 19.92,
+      "s_validacion_y_guardado": 2.18,
+      "s_total": 22.1,
+      "torch_max_asignada_entreno_mib": 4474,
+      "torch_max_reservada_entreno_mib": 5546,
+      "torch_max_asignada_mib": 4474,
+      "torch_max_reservada_mib": 5546
+    },
+    {
+      "epoca": 13,
+      "lote": 16,
+      "mosaico": true,
+      "s_entrenamiento": 19.83,
+      "s_validacion_y_guardado": 2.15,
+      "s_total": 21.98,
+      "torch_max_asignada_entreno_mib": 4474,
+      "torch_max_reservada_entreno_mib": 5546,
+      "torch_max_asignada_mib": 4474,
+      "torch_max_reservada_mib": 5546
+    },
+    {
+      "epoca": 14,
+      "lote": 16,
+      "mosaico": true,
+      "s_entrenamiento": 19.71,
+      "s_validacion_y_guardado": 2.34,
+      "s_total": 22.05,
+      "torch_max_asignada_entreno_mib": 4472,
+      "torch_max_reservada_entreno_mib": 5546,
+      "torch_max_asignada_mib": 4472,
+      "torch_max_reservada_mib": 5546
+    },
+    {
+      "epoca": 15,
+      "lote": 16,
+      "mosaico": true,
+      "s_entrenamiento": 19.85,
+      "s_validacion_y_guardado": 2.32,
+      "s_total": 22.18,
+      "torch_max_asignada_entreno_mib": 4472,
+      "torch_max_reservada_entreno_mib": 5546,
+      "torch_max_asignada_mib": 4472,
+      "torch_max_reservada_mib": 5546
+    },
+    {
+      "epoca": 16,
+      "lote": 16,
+      "mosaico": true,
+      "s_entrenamiento": 20.1,
+      "s_validacion_y_guardado": 2.18,
+      "s_total": 22.28,
+      "torch_max_asignada_entreno_mib": 4474,
+      "torch_max_reservada_entreno_mib": 5546,
+      "torch_max_asignada_mib": 4474,
+      "torch_max_reservada_mib": 5546
+    },
+    {
+      "epoca": 17,
+      "lote": 16,
+      "mosaico": true,
+      "s_entrenamiento": 19.89,
+      "s_validacion_y_guardado": 2.15,
+      "s_total": 22.04,
+      "torch_max_asignada_entreno_mib": 4472,
+      "torch_max_reservada_entreno_mib": 5546,
+      "torch_max_asignada_mib": 4472,
+      "torch_max_reservada_mib": 5546
+    },
+    {
+      "epoca": 18,
+      "lote": 16,
+      "mosaico": true,
+      "s_entrenamiento": 19.89,
+      "s_validacion_y_guardado": 2.16,
+      "s_total": 22.05,
+      "torch_max_asignada_entreno_mib": 4472,
+      "torch_max_reservada_entreno_mib": 5546,
+      "torch_max_asignada_mib": 4472,
+      "torch_max_reservada_mib": 5546
+    },
+    {
+      "epoca": 19,
+      "lote": 16,
+      "mosaico": true,
+      "s_entrenamiento": 19.85,
+      "s_validacion_y_guardado": 2.12,
+      "s_total": 21.97,
+      "torch_max_asignada_entreno_mib": 4476,
+      "torch_max_reservada_entreno_mib": 5546,
+      "torch_max_asignada_mib": 4476,
+      "torch_max_reservada_mib": 5546
+    },
+    {
+      "epoca": 20,
+      "lote": 16,
+      "mosaico": true,
+      "s_entrenamiento": 19.89,
+      "s_validacion_y_guardado": 2.26,
+      "s_total": 22.15,
+      "torch_max_asignada_entreno_mib": 4472,
+      "torch_max_reservada_entreno_mib": 5546,
+      "torch_max_asignada_mib": 4472,
+      "torch_max_reservada_mib": 5546
+    },
+    {
+      "epoca": 21,
+      "lote": 16,
+      "mosaico": true,
+      "s_entrenamiento": 19.9,
+      "s_validacion_y_guardado": 2.14,
+      "s_total": 22.04,
+      "torch_max_asignada_entreno_mib": 4474,
+      "torch_max_reservada_entreno_mib": 5546,
+      "torch_max_asignada_mib": 4474,
+      "torch_max_reservada_mib": 5546
+    },
+    {
+      "epoca": 22,
+      "lote": 16,
+      "mosaico": true,
+      "s_entrenamiento": 19.89,
+      "s_validacion_y_guardado": 2.16,
+      "s_total": 22.05,
+      "torch_max_asignada_entreno_mib": 4472,
+      "torch_max_reservada_entreno_mib": 5546,
+      "torch_max_asignada_mib": 4472,
+      "torch_max_reservada_mib": 5546
+    },
+    {
+      "epoca": 23,
+      "lote": 16,
+      "mosaico": true,
+      "s_entrenamiento": 19.98,
+      "s_validacion_y_guardado": 2.13,
+      "s_total": 22.11,
+      "torch_max_asignada_entreno_mib": 4474,
+      "torch_max_reservada_entreno_mib": 5546,
+      "torch_max_asignada_mib": 4474,
+      "torch_max_reservada_mib": 5546
+    },
+    {
+      "epoca": 24,
+      "lote": 16,
+      "mosaico": true,
+      "s_entrenamiento": 19.87,
+      "s_validacion_y_guardado": 2.19,
+      "s_total": 22.06,
+      "torch_max_asignada_entreno_mib": 4468,
+      "torch_max_reservada_entreno_mib": 5546,
+      "torch_max_asignada_mib": 4468,
+      "torch_max_reservada_mib": 5546
+    },
+    {
+      "epoca": 25,
+      "lote": 16,
+      "mosaico": true,
+      "s_entrenamiento": 25.19,
+      "s_validacion_y_guardado": 2.61,
+      "s_total": 27.81,
+      "torch_max_asignada_entreno_mib": 4474,
+      "torch_max_reservada_entreno_mib": 5546,
+      "torch_max_asignada_mib": 4474,
+      "torch_max_reservada_mib": 5546
+    },
+    {
+      "epoca": 26,
+      "lote": 16,
+      "mosaico": true,
+      "s_entrenamiento": 24.67,
+      "s_validacion_y_guardado": 2.38,
+      "s_total": 27.05,
+      "torch_max_asignada_entreno_mib": 4474,
+      "torch_max_reservada_entreno_mib": 5546,
+      "torch_max_asignada_mib": 4474,
+      "torch_max_reservada_mib": 5546
+    },
+    {
+      "epoca": 27,
+      "lote": 16,
+      "mosaico": true,
+      "s_entrenamiento": 24.81,
+      "s_validacion_y_guardado": 2.42,
+      "s_total": 27.22,
+      "torch_max_asignada_entreno_mib": 4472,
+      "torch_max_reservada_entreno_mib": 5546,
+      "torch_max_asignada_mib": 4472,
+      "torch_max_reservada_mib": 5546
+    },
+    {
+      "epoca": 28,
+      "lote": 16,
+      "mosaico": true,
+      "s_entrenamiento": 24.62,
+      "s_validacion_y_guardado": 2.4,
+      "s_total": 27.02,
+      "torch_max_asignada_entreno_mib": 4472,
+      "torch_max_reservada_entreno_mib": 5546,
+      "torch_max_asignada_mib": 4472,
+      "torch_max_reservada_mib": 5546
+    },
+    {
+      "epoca": 29,
+      "lote": 16,
+      "mosaico": true,
+      "s_entrenamiento": 24.53,
+      "s_validacion_y_guardado": 2.43,
+      "s_total": 26.96,
+      "torch_max_asignada_entreno_mib": 4474,
+      "torch_max_reservada_entreno_mib": 5546,
+      "torch_max_asignada_mib": 4474,
+      "torch_max_reservada_mib": 5546
+    },
+    {
+      "epoca": 30,
+      "lote": 16,
+      "mosaico": true,
+      "s_entrenamiento": 24.28,
+      "s_validacion_y_guardado": 2.59,
+      "s_total": 26.86,
+      "torch_max_asignada_entreno_mib": 4474,
+      "torch_max_reservada_entreno_mib": 5546,
+      "torch_max_asignada_mib": 4474,
+      "torch_max_reservada_mib": 5546
+    }
+  ],
+  "val_elegida": {
+    "metrics/precision(B)": 0.51603,
+    "metrics/recall(B)": 0.372,
+    "metrics/mAP50(B)": 0.36837,
+    "metrics/mAP50-95(B)": 0.15599,
+    "epoca": 14
+  },
+  "val_ultima_epoca": {
+    "metrics/precision(B)": 0.53711,
+    "metrics/recall(B)": 0.306,
+    "metrics/mAP50(B)": 0.31726,
+    "metrics/mAP50-95(B)": 0.14238,
+    "epoca": 30
+  },
+  "val_promedio_ultimas": {
+    "metrics/precision(B)": 0.478606,
+    "metrics/recall(B)": 0.326334,
+    "metrics/mAP50(B)": 0.311796,
+    "metrics/mAP50-95(B)": 0.137752,
+    "epocas": [
+      26,
+      27,
+      28,
+      29,
+      30
+    ]
+  },
+  "epocas_corridas": 30,
+  "paro_antes": false,
+  "val_best_pt_final_eval": {
+    "metrics/precision(B)": 0.5139923826736089,
+    "metrics/recall(B)": 0.372,
+    "metrics/mAP50(B)": 0.3676773498317608,
+    "metrics/mAP50-95(B)": 0.1565109965560882
+  },
+  "best_pt_train_metrics": {
+    "metrics/precision(B)": 0.51603,
+    "metrics/recall(B)": 0.372,
+    "metrics/mAP50(B)": 0.36837,
+    "metrics/mAP50-95(B)": 0.15599,
+    "fitness": 0.36837
+  },
+  "best_pt_es_la_elegida": true,
+  "args_yaml": {
+    "optimizer": "AdamW",
+    "lr0": 0.002,
+    "momentum": 0.9,
+    "lrf": 0.01,
+    "weight_decay": 0.0005,
+    "warmup_epochs": 3.0,
+    "warmup_bias_lr": 0.0,
+    "close_mosaic": 0,
+    "batch": 16,
+    "seed": 0,
+    "patience": 0,
+    "epochs": 30
+  },
+  "r1": {
+    "criterio": "media móvil centrada de 5 épocas de metrics/mAP50(B)",
+    "epoca": 16,
+    "media_movil": 0.340944,
+    "pesos": "weights/epoch15.pt -> weights/elegida.pt",
+    "metrics/precision(B)": 0.43193,
+    "metrics/recall(B)": 0.368,
+    "metrics/mAP50(B)": 0.3165,
+    "metrics/mAP50-95(B)": 0.12911
+  }
+}

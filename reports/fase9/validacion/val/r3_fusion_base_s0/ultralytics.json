@@ -1,0 +1,10 @@
+{
+  "pesos": "runs\\fase9\\r3_fusion_base_s0\\weights\\elegida.pt",
+  "segundos": 26.1,
+  "sin_metricas": false,
+  "rgb_cero": false,
+  "map50": 0.31267677821381684,
+  "map50_95": 0.1441529022492009,
+  "precision": 0.5518765764354834,
+  "recall": 0.31
+}

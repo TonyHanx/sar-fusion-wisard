@@ -163,3 +163,16 @@ Por decisión del usuario, no se lanzó nada más después de R3. Quedan pendien
 5. **El tiempo de inferencia real en la Jetson**, a 640 px. Lo medido en la RTX 6000 con lote 1 no sirve para eso.
 
 Trabajo futuro, fuera de este curso: R5, el aumento fotométrico por modalidad.
+
+## Copia de las corridas
+
+`runs/` no va a git. Por eso, las salidas livianas de las 9 corridas están en `reports/fase9/<corrida>/`, con 135 archivos y 17.8 MiB:
+
+- `results.csv`, `args.yaml`, `resumen.json`, `epocas.csv` y `monitor.csv`;
+- las figuras de Ultralytics: curvas, matrices de confusión, etiquetas y `results`. Los PNG se guardaron como JPEG.
+
+También quedaron en `reports/fase9/validacion/` las predicciones de validación de cada `elegida.pt`.
+
+Los copió `src/utilidades/copiar_fase7.py` con la sección `copiar` de `configs/fase9.yaml`.
+
+Los pesos no van a git. `elegida.pt`, `best.pt` y `last.pt` de las 9 corridas se guardaron en un zip aparte, fuera del repositorio, con la misma estructura de carpetas. No se guardaron los pesos de cada época.

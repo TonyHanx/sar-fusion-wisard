@@ -106,3 +106,24 @@ tiempo_inferencia:
   repeticiones: 2                    # pasadas completas por tamaño y precisión; se informa la segunda (la primera calienta)
   prediccion: {batch: 1, conf: 0.001, device: 0, workers: 4, plots: false}
   salida: reports/fase9/tiempo_inferencia.csv
+
+# Copia de las salidas livianas de runs/fase9/ a reports/fase9/ para git (src/utilidades/copiar_fase7.py, que lee
+# `carpeta` y `copiar`; pedido del usuario del 26 de noviembre de 2026, antes de dejar la estación). Sin pesos. Los PNG
+# van como JPEG. No se copian los mosaicos de lotes (train_batch*, val_batch*): son muestras de imágenes, no resultados.
+carpeta: fase9                       # dentro de runs/
+copiar:
+  destino: fase9                     # dentro de reports/
+  desde_runs:
+    - "*_fusion_base*/results.csv"
+    - "*_fusion_base*/args.yaml"
+    - "*_fusion_base*/resumen.json"
+    - "*_fusion_base*/epocas.csv"
+    - "*_fusion_base*/monitor.csv"
+    - "*_fusion_base*/results.png"
+    - "*_fusion_base*/Box*_curve.png"
+    - "*_fusion_base*/confusion_matrix*.png"
+    - "*_fusion_base*/labels.jpg"
+    - validacion/val/*/predictions.json   # predicciones de validación de cada elegida.pt (fase9_validacion.py)
+    - validacion/val/*/ultralytics.json
+  excluir: ["*.pt"]
+  jpeg_calidad: 85
