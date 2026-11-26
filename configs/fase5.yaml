@@ -24,13 +24,27 @@ base:
     cache: false                     # las imágenes se leen del disco por lotes, nunca todas en memoria
 
 potencia:                            # comprobación previa, antes de cada corrida (CLAUDE.md)
-  minimo_w: 90                       # mediana del límite aplicado (enforced.power.limit) con solo la GPU cargada
-                                     # el límite real durante el entrenamiento se registra, sin mínimo
   segundos_carga: 30
-  plan: Performance                  # plan de energía de Windows
-  armoury_crate: Rendimiento         # no se puede leer desde Python; se declara
+  # Un perfil por equipo, elegido por el nombre de la GPU que da nvidia-smi (`name`). Si la GPU no tiene perfil, no se
+  # entrena. El límite real durante el entrenamiento se registra, sin mínimo.
+  # - minimo_w: mediana del límite aplicado (enforced.power.limit) con solo la GPU cargada.
+  # - plan: plan de energía de Windows (el nombre que da powercfg).
+  # - armoury_crate: no se puede leer desde Python; se declara. null si el equipo no lo tiene.
+  # - enchufe: si se comprueba que el equipo está enchufado (solo tiene sentido con batería).
+  maquinas:
+    NVIDIA GeForce RTX 4070 Laptop GPU:    # laptop: fases 5 a 8, primera versión de las corridas
+      minimo_w: 90
+      plan: Performance
+      armoury_crate: Rendimiento
+      enchufe: true
+    NVIDIA RTX 6000 Ada Generation:        # estación del laboratorio: límite fijo de 300 W, sin batería
+      minimo_w: 285                        # 95 % de 300 W: detecta una GPU limitada
+      plan: High performance
+      armoury_crate: null
+      enchufe: false
 
 cerrar_antes:                        # no se entrena si alguno está abierto (CLAUDE.md); nombres de proceso sin .exe
+                                     # la misma lista en todos los equipos (decidido el 26 de noviembre de 2026)
   - RobloxPlayerBeta
   - ChatGPT
   - chrome
@@ -38,7 +52,8 @@ cerrar_antes:                        # no se entrena si alguno está abierto (CL
 codigos_salida:                      # de src/entrenamiento/entrenar.py cuando no entrena; scripts/noche.ps1 reintenta solo `potencia`
   otro: 1                            # corrida inexistente, configuración, o un error al entrenar (Python sale con 1)
   aplicaciones: 3                    # alguna de cerrar_antes está abierta
-  potencia: 4                        # sin enchufe, otro plan de energía o límite aplicado bajo el mínimo
+  potencia: 4                        # sin enchufe, otro plan de energía o límite aplicado bajo el mínimo del perfil
+                                     # (una GPU sin perfil en potencia.maquinas sale con `otro`)
   carpeta_existe: 5                  # runs/<carpeta>/<corrida> ya existe
 
 monitor:

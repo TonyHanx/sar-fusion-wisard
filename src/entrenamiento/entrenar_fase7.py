@@ -327,7 +327,7 @@ def entrenar(cfg, rutas, nombre):
     potencia, problemas = entrenar_fase5.comprobar_potencia(comprobaciones["potencia"])
     print(f"Potencia: {potencia}", flush=True)
     if problemas:
-        salir("No se entrena: " + "; ".join(problemas) + ". Revisa la laptop y vuelve a correr.", codigos["potencia"])
+        salir("No se entrena: " + "; ".join(problemas) + ". Revisa el equipo y vuelve a correr.", codigos["potencia"])
     potencia["ram_antes_mib"] = round(psutil.virtual_memory().used / 2 ** 20)
     potencia["cerradas"] = comprobaciones.get("cerrar_antes", [])
 
@@ -411,7 +411,7 @@ def entrenar(cfg, rutas, nombre):
                   + (f"; cuarto canal: {corrida_cfg['inicio_cuarto_canal']}; dropout de modalidad p={corrida_cfg['p_sin_rgb']}"
                      if canales == 4 else "")
                   + (f"; optimizador {registro.info['optimizador']} lr0={registro.info['lr0']}" if registro.info else "")
-                  + f"; potencia bajo carga {potencia['limite_mediana_w']} W; {carpeta.relative_to(RAIZ).as_posix()}")
+                  + f"; equipo {potencia['equipo']}; potencia bajo carga {potencia['limite_mediana_w']} W; {carpeta.relative_to(RAIZ).as_posix()}")
     if error is None:
         e, ultima_val, promedio_ultimas = resumen["val_elegida"], resumen["val_ultima_epoca"], resumen["val_promedio_ultimas"]
         res_txt = (f"{'entra' if entra else 'no entra'} (lote {lote_final}); {resumen['epocas_corridas']} épocas"

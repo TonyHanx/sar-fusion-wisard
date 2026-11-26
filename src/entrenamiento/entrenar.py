@@ -1,8 +1,9 @@
 """Fase 5: entrena YOLO26s desde yolo26s.pt con una corrida de configs/fase5.yaml y la registra en la bitácora.
 
 Antes de entrenar comprueba que la carpeta de la corrida no exista (Ultralytics la renombraría), que las aplicaciones
-de `cerrar_antes` estén cerradas, que la laptop esté enchufada y con el plan de energía de la configuración, y que el
-límite de potencia aplicado bajo carga (enforced.power.limit) llegue al mínimo. Si no, se detiene sin entrenar, con el
+de `cerrar_antes` estén cerradas y, con el perfil del equipo (`potencia.maquinas`, elegido por el nombre de la GPU),
+que esté enchufado si el perfil lo pide, con el plan de energía del perfil, y que el límite de potencia aplicado bajo
+carga (enforced.power.limit) llegue a su mínimo. Si no, se detiene sin entrenar, con el
 código de salida de `codigos_salida` (scripts/noche.ps1 reintenta solo el de potencia). Con --solo-comprobar hace las
 comprobaciones de aplicaciones y potencia y sale, sin entrenar.
 
@@ -38,7 +39,7 @@ from ultralytics import YOLO
 from ultralytics.models.yolo.detect import DetectionTrainer
 
 from src.comun import RAIZ, agregar_a_bitacora, leer_rutas, leer_yaml, yaml_para_ultralytics
-from src.entorno.entorno import plan_de_energia, potencia_bajo_carga
+from src.entorno.entorno import nvidia_smi, plan_de_energia, potencia_bajo_carga
 
 PRIMERA_CAPA = "model.0.conv.weight"
 CAMPOS_GPU = ["power.draw", "enforced.power.limit", "memory.used", "memory.total", "temperature.gpu",
@@ -205,25 +206,40 @@ class Registro:
         self.info["s_total_corrida"] = round(time.perf_counter() - self.t_inicio, 2)
 
 
+def perfil_de_maquina(cfg):
+    """Nombre de la GPU (nvidia-smi) y su perfil en `potencia.maquinas`. Sin perfil para esa GPU, termina sin entrenar
+    (código 1, `otro`)."""
+    gpu = nvidia_smi("name")[0]
+    maquinas = cfg.get("maquinas", {})
+    if gpu not in maquinas:
+        raise SystemExit(f"No se entrena: la GPU {gpu} no tiene perfil en potencia.maquinas "
+                         f"(hay: {', '.join(maquinas)}).")
+    return gpu, maquinas[gpu]
+
+
 def comprobar_potencia(cfg):
-    """Comprobación previa: que la laptop esté enchufada, con el plan de energía pedido, y que el límite aplicado de la
-    GPU bajo carga llegue al mínimo. Devuelve la medida y la lista de problemas."""
+    """Comprobación previa con el perfil del equipo (perfil_de_maquina): que esté enchufado (si el perfil lo pide),
+    con el plan de energía del perfil, y que el límite aplicado de la GPU bajo carga llegue a su mínimo. Devuelve la
+    medida y la lista de problemas."""
+    gpu, perfil = perfil_de_maquina(cfg)
     bateria = psutil.sensors_battery()
     enchufada = bateria is None or bateria.power_plugged
     plan = plan_de_energia()
     limite, consumo = potencia_bajo_carga(cfg["segundos_carga"])
     torch.cuda.empty_cache()
-    medida = {"enchufada": enchufada, "plan": plan, "armoury_crate_declarado": cfg["armoury_crate"],
-         "limite_mediana_w": round(statistics.median(limite), 1), "limite_min_w": round(min(limite), 1),
-         "limite_max_w": round(max(limite), 1), "consumo_mediana_w": round(statistics.median(consumo), 1),
-         "segundos_carga": cfg["segundos_carga"]}
+    medida = {"equipo": gpu, "perfil": perfil, "enchufada": enchufada if perfil["enchufe"] else "no aplica",
+              "plan": plan, "armoury_crate_declarado": perfil["armoury_crate"] or "no aplica",
+              "limite_mediana_w": round(statistics.median(limite), 1), "limite_min_w": round(min(limite), 1),
+              "limite_max_w": round(max(limite), 1), "consumo_mediana_w": round(statistics.median(consumo), 1),
+              "segundos_carga": cfg["segundos_carga"]}
     problemas = []
-    if not enchufada:
-        problemas.append("la laptop no está enchufada")
-    if plan != cfg["plan"]:
-        problemas.append(f"el plan de energía es {plan}, no {cfg['plan']}")
-    if medida["limite_mediana_w"] < cfg["minimo_w"]:
-        problemas.append(f"el límite aplicado bajo carga es {medida['limite_mediana_w']} W, menos de {cfg['minimo_w']} W")
+    if perfil["enchufe"] and not enchufada:
+        problemas.append("el equipo no está enchufado")
+    if plan != perfil["plan"]:
+        problemas.append(f"el plan de energía es {plan}, no {perfil['plan']}")
+    if medida["limite_mediana_w"] < perfil["minimo_w"]:
+        problemas.append(f"el límite aplicado bajo carga es {medida['limite_mediana_w']} W, "
+                         f"menos de {perfil['minimo_w']} W")
     return medida, problemas
 
 
@@ -286,7 +302,7 @@ def main():
         print("Comprobaciones previas: bien (aplicaciones cerradas y potencia). No se entrena (--solo-comprobar).")
         return
     if problemas:
-        salir("No se entrena: " + "; ".join(problemas) + ". Revisa la laptop y vuelve a correr.", codigos["potencia"])
+        salir("No se entrena: " + "; ".join(problemas) + ". Revisa el equipo y vuelve a correr.", codigos["potencia"])
     potencia["ram_antes_mib"] = round(psutil.virtual_memory().used / 2 ** 20)
     potencia["cerradas"] = cfg.get("cerrar_antes", [])
 
@@ -358,7 +374,7 @@ def main():
                   + ", ".join(f"{k}={v}" for k, v in ultra.items())
                   + (f"; cuarto canal: {corrida_cfg['inicio_cuarto_canal']}" if canales == 4 else "")
                   + (f"; optimizador {registro.info['optimizador']} lr0={registro.info['lr0']} (auto)" if registro.info else "")
-                  + f"; potencia bajo carga {potencia['limite_mediana_w']} W; {carpeta.relative_to(RAIZ).as_posix()}")
+                  + f"; equipo {potencia['equipo']}; potencia bajo carga {potencia['limite_mediana_w']} W; {carpeta.relative_to(RAIZ).as_posix()}")
     if error is None:
         v = resumen["val_ultima_epoca"]
         res_txt = (f"{'entra' if entra else 'no entra'} (lote {lote_final}); pico de memoria GPU {pico_mib:.0f} de "
