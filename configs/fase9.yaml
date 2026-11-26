@@ -1,0 +1,69 @@
+# Fase 9 (26 de noviembre de 2026): segunda versión, corrección del sobreajuste en la estación del laboratorio
+# (reports/diagnostico_sobreajuste/informe.md). Decisiones del usuario del 26 de noviembre de 2026:
+# - Las recetas se prueban con los datos base. Base o ampliados se decide al final, igual para los tres modelos.
+# - R1 en todas las corridas nuevas: se guardan los pesos de cada época (save_period = 1) y la época elegida es la de
+#   mayor media móvil centrada de 5 épocas del mAP@0.5 de validación (`seleccion`), no el máximo ruidoso. Se copia a
+#   weights/elegida.pt. best.pt y last.pt siguen como los deja Ultralytics.
+# - Primero el control (fusion_base con la receta de la laptop); después R2 y R3, una sola cosa cambiada por corrida
+#   respecto al control, cada una con aprobación previa. R4 después de R2 y R3. R5 no se hace (trabajo futuro).
+# - La prueba (FHL 0405/0406) no se usa: el entrenamiento se detiene si sus imágenes aparecen.
+#   .venv\Scripts\python.exe -m src.entrenamiento.entrenar_fase9 --config configs\fase9.yaml --rutas configs\rutas.yaml --corrida control_fusion_base
+
+prohibidas: [210924_FHL_Enterprise_IR_0406, 210924_FHL_Enterprise_VIS_0405]
+c1:
+  particion: configs/particion.yaml
+c2:
+  fitness: metrics/mAP50(B)          # best.pt por el mAP@0.5 de validación, como en la fase 7 (dato secundario)
+
+seleccion:                           # R1
+  metrica: metrics/mAP50(B)
+  ventana: 5                         # centrada; solo épocas con la ventana completa (de la 3 a la antepenúltima + 1)
+
+c3:
+  carpeta: fase9                     # runs/fase9/<corrida>/
+  pesos: weights/yolo26s.pt
+  comprobaciones: configs/fase5.yaml # potencia por equipo, cerrar_antes, códigos de salida, monitor y memoria
+  ultimas_epocas: 5
+  base:                              # la receta de la fase 7 (configs/fase7.yaml, c3.base), más save_period
+    fase: "9"
+    inicio_cuarto_canal: azar
+    p_sin_rgb: 0.0
+    ultralytics:
+      seed: 0
+      deterministic: true
+      imgsz: 640
+      epochs: 50
+      batch: 16
+      hsv_h: 0.0
+      hsv_s: 0.0
+      hsv_v: 0.0
+      device: 0
+      # Carga (decisión del usuario del 26 de noviembre de 2026, después del control): 12 procesos de lectura en vez de 4.
+      # Solo cambia qué proceso hace cada aumento al azar (otro orden aleatorio), no la receta. control_fusion_base (la
+      # semilla 0 del control) corrió con 4. cache: ram NO se usa: en Ultralytics 8.4.194 cambia cómo el mosaico elige
+      # sus otras 3 imágenes (de todo el dataset en vez del búfer de las últimas leídas), y avisa que no es determinista.
+      workers: 12
+      cache: false
+      patience: 0
+      close_mosaic: 10
+      optimizer: AdamW
+      lr0: 0.002
+      momentum: 0.9
+      warmup_bias_lr: 0.0
+      save_period: 1                 # R1: epoch{N-1}.pt por cada época N de results.csv (Ultralytics cuenta desde 0)
+  # Semillas (decisión del usuario del 26 de noviembre de 2026, por el ruido de la validación): cada receta se corre con
+  # las semillas 0, 1 y 2 (--semilla N, carpeta <corrida>_sN) y se comparan los promedios de R1 con su dispersión. La
+  # semilla 0 del control es runs/fase9/control_fusion_base.
+  semillas: [0, 1, 2]
+  corridas:
+    # Control: fusion_base de la fase 7 (runs/fase7/fusion_base, laptop), repetida en la estación.
+    control_fusion_base:
+      datos: configs/fusion.yaml
+      inicio_cuarto_canal: promedio
+    # R2 (aprobada el 26 de noviembre de 2026): el control con el mosaico hasta el final, 30 épocas y tasa coseno.
+    # Causa 3 del diagnóstico: apagar el mosaico bajó el mAP@0.5 en todas las corridas, y la meseta llega antes de la
+    # época 30. lrf (0.01) y el resto, igual que el control.
+    r2_fusion_base:
+      datos: configs/fusion.yaml
+      inicio_cuarto_canal: promedio
+      ultralytics: {close_mosaic: 0, epochs: 30, cos_lr: true}
