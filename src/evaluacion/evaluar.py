@@ -51,7 +51,7 @@ from pycocotools.cocoeval import COCOeval  # noqa: E402
 from statsmodels.stats.contingency_tables import mcnemar  # noqa: E402
 
 from src.comun import (RAIZ, agregar_a_bitacora, fijar_semilla, leer_rutas, leer_yaml, pares_anotados,  # noqa: E402
-                       ruta_del_dataset)
+                       ruta_del_dataset, yaml_para_ultralytics)
 
 METRICAS = ["recall", "precision", "f2", "map50"]
 SUFIJO_RGB_CERO = "_rgb0"  # carpeta de predicciones y sufijo de las salidas con --rgb-cero
@@ -262,7 +262,8 @@ def predecir(clave, info, cfg, rutas, nombre_part, part, sin_metricas=False, rgb
             raise SystemExit(f"No existen los pesos {pesos}")
         modelo = YOLO(str(pesos))
         t_inicio = time.time()
-        metricas_ultra = modelo.val(validator=Validador, data=str(ruta(info["datos"])), split=part["split"], save_json=True,
+        metricas_ultra = modelo.val(validator=Validador, data=str(yaml_para_ultralytics(ruta(info["datos"]), rutas)),
+                                     split=part["split"], save_json=True,
                          project=str(carpeta.parent), name=carpeta.name, exist_ok=True, **cfg["prediccion"])
         ultra = {"pesos": rel(pesos), "segundos": round(time.time() - t_inicio, 1), "sin_metricas": sin_metricas,
                  "rgb_cero": rgb_cero}

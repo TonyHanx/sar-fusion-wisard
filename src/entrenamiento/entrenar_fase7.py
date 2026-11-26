@@ -41,7 +41,7 @@ from ultralytics import YOLO
 from ultralytics.data.dataset import YOLODataset
 
 import src.entrenamiento.entrenar as entrenar_fase5
-from src.comun import RAIZ, agregar_a_bitacora, leer_rutas, leer_yaml, ruta_del_dataset
+from src.comun import RAIZ, agregar_a_bitacora, leer_rutas, leer_yaml, ruta_del_dataset, yaml_para_ultralytics
 from src.entrenamiento.dropout_modalidad import DatasetSinRGB, quitar_rgb
 
 CLAVES = ["metrics/precision(B)", "metrics/recall(B)", "metrics/mAP50(B)", "metrics/mAP50-95(B)"]
@@ -154,8 +154,9 @@ def verificar(cfg, rutas):
     comprobar_datos(datos, cfg)
     EntrenadorFase7.clave_fitness = cfg["c2"]["fitness"]
     ultra = dict(c3["base"]["ultralytics"])
-    entrenador = EntrenadorFase7(overrides={**ultra, "model": str(ruta(c3["pesos"])), "data": str(datos),
-                                    "project": str(carpeta_salida), "name": "entrenador", "exist_ok": True})
+    entrenador = EntrenadorFase7(overrides={**ultra, "model": str(ruta(c3["pesos"])),
+                                            "data": str(yaml_para_ultralytics(datos, rutas)),
+                                            "project": str(carpeta_salida), "name": "entrenador", "exist_ok": True})
     entrenador.model = SimpleNamespace(stride=torch.tensor([8.0, 16.0, 32.0]))  # build_dataset solo usa el paso del modelo
 
     # 1. criterio: un validador simulado con dos épocas en que el mAP@0.5 y el mAP@0.5:0.95 eligen distinto
@@ -346,8 +347,8 @@ def entrenar(cfg, rutas, nombre):
     monitor.start()
     error = None
     try:
-        modelo.train(trainer=EntrenadorFase7, data=str(datos), project=str(rutas["runs"] / c3["carpeta"]), name=nombre,
-                     exist_ok=False, **ultra)
+        modelo.train(trainer=EntrenadorFase7, data=str(yaml_para_ultralytics(datos, rutas)),
+                     project=str(rutas["runs"] / c3["carpeta"]), name=nombre, exist_ok=False, **ultra)
     except Exception as e:  # se registra en la bitácora y se vuelve a lanzar
         error = e
         traceback.print_exc()

@@ -37,7 +37,7 @@ import torch
 from ultralytics import YOLO
 from ultralytics.models.yolo.detect import DetectionTrainer
 
-from src.comun import RAIZ, agregar_a_bitacora, leer_rutas, leer_yaml
+from src.comun import RAIZ, agregar_a_bitacora, leer_rutas, leer_yaml, yaml_para_ultralytics
 from src.entorno.entorno import plan_de_energia, potencia_bajo_carga
 
 PRIMERA_CAPA = "model.0.conv.weight"
@@ -303,7 +303,7 @@ def main():
     monitor.start()
     error = None
     try:
-        modelo.train(trainer=Entrenador, data=str(datos), project=str(rutas["runs"] / corrida_cfg["carpeta"]), name=args.corrida,
+        modelo.train(trainer=Entrenador, data=str(yaml_para_ultralytics(datos, rutas)), project=str(rutas["runs"] / corrida_cfg["carpeta"]), name=args.corrida,
                      exist_ok=False, **ultra)
     except Exception as e:  # se registra en la bitácora y se vuelve a lanzar
         error = e

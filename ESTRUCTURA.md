@@ -113,7 +113,9 @@ trabajo); el detalle está en `reports/entorno.md`.
 
 El `path:` de los yaml de datasets es relativo a la raíz del repositorio (por ejemplo `data/datasets/fusion`), así que
 no depende de la laptop. Si `data:` de `configs/rutas.yaml` apunta fuera del repositorio, los scripts escriben la ruta
-absoluta.
+absoluta. Ultralytics resolvería un `path` relativo contra la carpeta desde donde se lanza el comando, así que los
+scripts no le pasan el yaml de git: le pasan una copia con la ruta absoluta de la máquina en `runs/_datos/`
+(`yaml_para_ultralytics` de `src/comun.py`), que se reescribe en cada corrida y no va a git.
 
 ### Pasos del experimento, en orden
 

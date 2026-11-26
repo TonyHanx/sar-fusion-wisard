@@ -33,7 +33,7 @@ import numpy as np
 import pandas as pd
 from PIL import Image, ImageDraw, ImageFont
 
-from src.comun import RAIZ, agregar_a_bitacora, leer_rutas, leer_yaml, ruta_del_dataset
+from src.comun import RAIZ, agregar_a_bitacora, leer_rutas, leer_yaml, ruta_del_dataset, yaml_para_ultralytics
 
 TRAMOS_ETIQUETA = None  # se fija con la configuración
 
@@ -750,7 +750,8 @@ def b_evaluar(cfg, rutas, out, corrida):
     m = YOLO(str(c / "weights" / "best.pt"))
     filas = []
     for split in cfg["evaluar_b"][corrida]["splits"]:
-        met = m.val(validator=validador(), data=str(datos), split=split, project=str(c), name=f"eval_{split}",
+        met = m.val(validator=validador(), data=str(yaml_para_ultralytics(datos, rutas)), split=split, project=str(c),
+                    name=f"eval_{split}",
                     exist_ok=True, verbose=False, **v)
         filas.append({"corrida": corrida, "split": split, "pesos": "best.pt", "imgsz": v["imgsz"],
                       "map50": float(met.box.map50), "map50_95": float(met.box.map), "precision": float(met.box.mp),

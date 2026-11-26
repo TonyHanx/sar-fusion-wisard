@@ -44,6 +44,24 @@ def ruta_para_yaml(carpeta):
     return (p.relative_to(RAIZ) if p.is_relative_to(RAIZ) else p).as_posix()
 
 
+def yaml_para_ultralytics(ruta_yaml, rutas):
+    """Copia del yaml de un dataset con `path` absoluto (ruta_del_dataset), en runs/_datos/, para pasársela a
+    Ultralytics. Devuelve la ruta de la copia.
+
+    Ultralytics resuelve un `path` relativo contra la carpeta desde donde se lanza el comando (y, si no existe, contra
+    su DATASETS_DIR), no contra la raíz del repositorio. Con la copia, el resultado no depende de esa carpeta ni de la
+    máquina, y el yaml de git sigue sin rutas de ninguna máquina. La copia se reescribe en cada llamada."""
+    ruta_yaml = Path(ruta_yaml).resolve()
+    datos = leer_yaml(ruta_yaml)
+    datos["path"] = ruta_del_dataset(datos).as_posix()
+    origen = ruta_para_yaml(ruta_yaml)
+    destino = Path(rutas["runs"]) / "_datos" / origen.replace(":", "").replace("/", "__")
+    destino.parent.mkdir(parents=True, exist_ok=True)
+    destino.write_text(f"# Copia de {origen} con path absoluto (src/comun.py, yaml_para_ultralytics): no editar.\n"
+                       + yaml.safe_dump(datos, allow_unicode=True, sort_keys=False), encoding="utf-8")
+    return destino
+
+
 def fijar_semilla(seed):
     """Fija la semilla de random, NumPy y PyTorch (CPU y GPU), para que lo aleatorio salga igual en cada corrida (seed=0
     en todo el proyecto)."""

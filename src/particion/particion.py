@@ -29,7 +29,8 @@ import numpy as np
 import pandas as pd
 import yaml
 
-from src.comun import RAIZ, agregar_a_bitacora, leer_rutas, leer_yaml, pares_anotados, ruta_para_yaml
+from src.comun import (RAIZ, agregar_a_bitacora, leer_rutas, leer_yaml, pares_anotados, ruta_para_yaml,
+                       yaml_para_ultralytics)
 
 RUTA_ETIQUETA = {"rgb": "ruta_rgb", "termica": "ruta_termica"}
 
@@ -252,6 +253,8 @@ def main():
     print(resumen.to_string(index=False))
 
     # 4. verificación con Ultralytics
+    # Ultralytics lee una copia con `path` absoluto (yaml_para_ultralytics), como en el entrenamiento
+    rutas_yaml = {modelo: yaml_para_ultralytics(r, rutas) for modelo, r in rutas_yaml.items()}
     ver, muestras = verificar(c["modelos"], divisiones, data / c["carpeta"], rutas_yaml, c["muestras_verificacion"],
                               cfg["seed"], alineados, indice)
     print(ver.to_string(index=False))
