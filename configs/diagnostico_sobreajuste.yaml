@@ -1,0 +1,45 @@
+# Diagnóstico del sobreajuste de la primera versión (experimentos/diagnostico_sobreajuste.py). Solo lee runs/ y data/;
+# no entrena ni predice. La partición de prueba (FHL 0405) no se usa: ni sus predicciones ni sus etiquetas.
+#   .venv\Scripts\python.exe -m experimentos.diagnostico_sobreajuste --config configs\diagnostico_sobreajuste.yaml --rutas configs\rutas.yaml
+seed: 0
+salida: diagnostico_sobreajuste        # carpeta dentro de reports/
+
+# Corridas con results.csv (dentro de runs/). `criterio`: con qué métrica eligió Ultralytics el best.pt de esa corrida
+# (fase 5 y diagnóstico: fitness = mAP@0.5:0.95; fase 7: mAP@0.5).
+corridas:
+  fusion_100ep:       {carpeta: fase5/fusion_100ep,              nombre: "Fusión, fase 5 (100 ép.)",            criterio: "metrics/mAP50-95(B)", close_mosaic: 10}
+  rgb_100ep_cortada2: {carpeta: fase5/rgb_100ep_cortada2,        nombre: "Solo RGB, fase 5 (cortada en la 67)", criterio: "metrics/mAP50-95(B)", close_mosaic: 10}
+  b2_termico:         {carpeta: diagnostico/b2_termico_vuelo_30ep, nombre: "Solo térmica, receta fase 5 (B2, 30 ép.)", criterio: "metrics/mAP50-95(B)", close_mosaic: 10}
+  fusion_base:        {carpeta: fase7/fusion_base,               nombre: "Fusión, fase 7 base (50 ép.)",        criterio: "metrics/mAP50(B)", close_mosaic: 10}
+  rgb_base:           {carpeta: fase7/rgb_base,                  nombre: "Solo RGB, fase 7 base (50 ép.)",      criterio: "metrics/mAP50(B)", close_mosaic: 10}
+  termico_base:       {carpeta: fase7/termico_base,              nombre: "Solo térmica, fase 7 base (50 ép.)",  criterio: "metrics/mAP50(B)", close_mosaic: 10}
+  fusion_ampliado:    {carpeta: fase7/fusion_ampliado,           nombre: "Fusión, fase 7 ampliado (50 ép.)",    criterio: "metrics/mAP50(B)", close_mosaic: 10}
+  termico_ampliado:   {carpeta: fase7/termico_ampliado,          nombre: "Solo térmica, fase 7 ampliado (50 ép.)", criterio: "metrics/mAP50(B)", close_mosaic: 10}
+suavizado: 5                           # ventana centrada (épocas) de la media móvil del mAP@0.5 de validación
+ultimas: 10                            # épocas finales (sin mosaico y con la tasa casi en 0) para medir el salto entre épocas
+
+# Ruido de la validación: remuestreo de las predicciones de validación que ya existen (conf >= 0.001), sin predecir.
+ruido:
+  etiquetas: data/datasets/fusion/labels/val   # las mismas etiquetas para los tres modelos (térmicas, sin repetidas)
+  tam_imagen: [640, 512]
+  iou: 0.5
+  max_det: 300
+  bloque: 20                           # fotogramas seguidos por bloque, dentro de cada vuelo (los vecinos son casi iguales)
+  remuestreos: 2000
+  predicciones:                        # dentro de runs/; solo validación
+    fusion_base:      fase7/c4/validacion/fusion_base_last/predictions.json
+    termico_base:     fase7/c4/validacion/termico_base_last/predictions.json
+    rgb_base:         fase8/validacion/rgb_base_last/predictions.json
+    fusion_ampliado:  fase7/c4/validacion/fusion_ampliado_last/predictions.json
+    termico_ampliado: fase7/c4/validacion/termico_ampliado_last/predictions.json
+  pares:                               # diferencia emparejada (mismos bloques remuestreados): cuánto debe ganar una receta
+    - [fusion_ampliado, fusion_base]
+    - [termico_ampliado, termico_base]
+    - [fusion_base, termico_base]
+
+# Tamaño de las personas: etiquetas térmicas (640 x 512, que entran a 640 sin reescalar) de entrenamiento y validación
+tamanos:
+  etiquetas: {entrenamiento: data/datasets/fusion/labels/train, validacion: data/datasets/fusion/labels/val}
+  tramos: [0, 8, 12, 20, 32, 100000]
+  escala_aumento: 0.5                  # `scale` de Ultralytics en la receta: factor uniforme en [1 - s, 1 + s]
+  paso_minimo: 8                       # paso de la cabeza más fina de YOLO26 (P3)

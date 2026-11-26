@@ -1,0 +1,4 @@
+a,b,dif,ee_dif_bloques,ic95_dif
+fusion_ampliado,fusion_base,0.0242,0.0398,[     -0.054       0.106]
+termico_ampliado,termico_base,0.1408,0.0447,[      0.056        0.23]
+fusion_base,termico_base,0.0863,0.0696,[     -0.055       0.208]
