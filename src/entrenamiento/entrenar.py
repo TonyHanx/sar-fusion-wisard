@@ -217,6 +217,11 @@ def perfil_de_maquina(cfg):
     return gpu, maquinas[gpu]
 
 
+def aplicaciones_a_cerrar(cfg):
+    """`cerrar_antes` del perfil del equipo (perfil_de_maquina con la sección `potencia`)."""
+    return perfil_de_maquina(cfg["potencia"])[1].get("cerrar_antes", [])
+
+
 def comprobar_potencia(cfg):
     """Comprobación previa con el perfil del equipo (perfil_de_maquina): que esté enchufado (si el perfil lo pide),
     con el plan de energía del perfil, y que el límite aplicado de la GPU bajo carga llegue a su mínimo. Devuelve la
@@ -286,7 +291,7 @@ def main():
         salir(f"No se entrena: ya existe {carpeta_corrida} (Ultralytics la renombraría). Muévela antes.",
               codigos["carpeta_existe"])
 
-    abiertos = procesos_abiertos(cfg.get("cerrar_antes", []))
+    abiertos = procesos_abiertos(aplicaciones_a_cerrar(cfg))
     mensaje_apps = f"No se entrena: cierra antes {', '.join(abiertos)} (cerrar_antes en {args.config})."
     if abiertos and not args.solo_comprobar:
         salir(mensaje_apps, codigos["aplicaciones"])
@@ -304,7 +309,7 @@ def main():
     if problemas:
         salir("No se entrena: " + "; ".join(problemas) + ". Revisa el equipo y vuelve a correr.", codigos["potencia"])
     potencia["ram_antes_mib"] = round(psutil.virtual_memory().used / 2 ** 20)
-    potencia["cerradas"] = cfg.get("cerrar_antes", [])
+    potencia["cerradas"] = aplicaciones_a_cerrar(cfg)
 
     modelo = YOLO(str(RAIZ / corrida_cfg["pesos"]))
     primera_capa_pre = modelo.model.state_dict()[PRIMERA_CAPA].detach().float().cpu().clone()

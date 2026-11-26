@@ -251,8 +251,8 @@ solo se usan al reportar esa comparación.
 ```
 
 - `entrenar`: antes de entrenar comprueba la potencia de la GPU, el plan de energía y que estén cerradas las
-  aplicaciones de `cerrar_antes`; si algo falla, no entrena. El mínimo de potencia, el plan y si se comprueba el
-  enchufe dependen del equipo: hay un perfil por GPU en `potencia.maquinas` de `configs/fase5.yaml` (la laptop y la
+  aplicaciones de `cerrar_antes`; si algo falla, no entrena. El mínimo de potencia, el plan, si se comprueba el
+  enchufe y las aplicaciones de `cerrar_antes` dependen del equipo: hay un perfil por GPU en `potencia.maquinas` de `configs/fase5.yaml` (la laptop y la
   estación del laboratorio), y con una GPU sin perfil no entrena. Las corridas están en `corridas` de `configs/fase5.yaml`:
   las pruebas cortas (`fusion_lote16_2ep`, `fusion_azar_10ep`, `fusion_promedio_10ep`, ...) y las de 100 épocas
   (`fusion_100ep`, `rgb_100ep`, `termico_100ep`). Escribe en `runs/fase5/<corrida>/`, con `resumen.json`,

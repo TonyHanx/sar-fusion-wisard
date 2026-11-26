@@ -320,7 +320,7 @@ def entrenar(cfg, rutas, nombre):
     if carpeta_corrida.exists():
         salir(f"No se entrena: ya existe {carpeta_corrida} (Ultralytics la renombraría). Muévela antes.",
               codigos["carpeta_existe"])
-    abiertos = entrenar_fase5.procesos_abiertos(comprobaciones.get("cerrar_antes", []))
+    abiertos = entrenar_fase5.procesos_abiertos(entrenar_fase5.aplicaciones_a_cerrar(comprobaciones))
     if abiertos:
         salir(f"No se entrena: cierra antes {', '.join(abiertos)} (cerrar_antes en {c3['comprobaciones']}).",
               codigos["aplicaciones"])
@@ -329,7 +329,7 @@ def entrenar(cfg, rutas, nombre):
     if problemas:
         salir("No se entrena: " + "; ".join(problemas) + ". Revisa el equipo y vuelve a correr.", codigos["potencia"])
     potencia["ram_antes_mib"] = round(psutil.virtual_memory().used / 2 ** 20)
-    potencia["cerradas"] = comprobaciones.get("cerrar_antes", [])
+    potencia["cerradas"] = entrenar_fase5.aplicaciones_a_cerrar(comprobaciones)
 
     modelo = YOLO(str(ruta(c3["pesos"])))
     primera_capa_pre = modelo.model.state_dict()[entrenar_fase5.PRIMERA_CAPA].detach().float().cpu().clone()

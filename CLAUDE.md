@@ -43,8 +43,9 @@ cámara, cuando la vegetación tapa más del 70 % del cuerpo?
       mínimo: con la CPU ocupada en leer las imágenes baja a unos 70 W (ver "Equipo").
   - **4 procesos de lectura** (`workers: 4`) en todas las corridas, decidido el 1 de noviembre de 2026. Con 8, la RAM
     llegaba al 99.9 %, y con 4 la época no fue más lenta.
-  - **Roblox, ChatGPT y Chrome cerrados en cada corrida, en los dos equipos.** `src/entrenamiento/entrenar.py` no
-    entrena si alguno está abierto (`cerrar_antes` en `configs/fase5.yaml`).
+  - **Aplicaciones cerradas en cada corrida:** Roblox, ChatGPT y Chrome en la laptop; Roblox y ChatGPT en la estación
+    (Chrome no se cierra ahí, decidido el 26 de noviembre de 2026). `src/entrenamiento/entrenar.py` no entrena si
+    alguna está abierta (`cerrar_antes` del perfil de cada equipo, en `potencia.maquinas` de `configs/fase5.yaml`).
     - Desde la fase 5b (2 de noviembre de 2026) no hace falta avisar antes de cada corrida, porque el script comprueba
       las aplicaciones, la potencia y el plan de energía.
     - Si una comprobación falla, me detengo y dejo anotado por qué.

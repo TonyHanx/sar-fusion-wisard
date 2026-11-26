@@ -31,27 +31,24 @@ potencia:                            # comprobación previa, antes de cada corri
   # - plan: plan de energía de Windows (el nombre que da powercfg).
   # - armoury_crate: no se puede leer desde Python; se declara. null si el equipo no lo tiene.
   # - enchufe: si se comprueba que el equipo está enchufado (solo tiene sentido con batería).
+  # - cerrar_antes: no se entrena si alguno está abierto (CLAUDE.md); nombres de proceso sin .exe.
   maquinas:
     NVIDIA GeForce RTX 4070 Laptop GPU:    # laptop: fases 5 a 8, primera versión de las corridas
       minimo_w: 90
       plan: Performance
       armoury_crate: Rendimiento
       enchufe: true
+      cerrar_antes: [RobloxPlayerBeta, ChatGPT, chrome]
     NVIDIA RTX 6000 Ada Generation:        # estación del laboratorio: límite fijo de 300 W, sin batería
       minimo_w: 285                        # 95 % de 300 W: detecta una GPU limitada
       plan: High performance
       armoury_crate: null
       enchufe: false
-
-cerrar_antes:                        # no se entrena si alguno está abierto (CLAUDE.md); nombres de proceso sin .exe
-                                     # la misma lista en todos los equipos (decidido el 26 de noviembre de 2026)
-  - RobloxPlayerBeta
-  - ChatGPT
-  - chrome
+      cerrar_antes: [RobloxPlayerBeta, ChatGPT]   # sin chrome (decidido el 26 de noviembre de 2026)
 
 codigos_salida:                      # de src/entrenamiento/entrenar.py cuando no entrena; scripts/noche.ps1 reintenta solo `potencia`
   otro: 1                            # corrida inexistente, configuración, o un error al entrenar (Python sale con 1)
-  aplicaciones: 3                    # alguna de cerrar_antes está abierta
+  aplicaciones: 3                    # alguna de cerrar_antes (del perfil del equipo) está abierta
   potencia: 4                        # sin enchufe, otro plan de energía o límite aplicado bajo el mínimo del perfil
                                      # (una GPU sin perfil en potencia.maquinas sale con `otro`)
   carpeta_existe: 5                  # runs/<carpeta>/<corrida> ya existe
