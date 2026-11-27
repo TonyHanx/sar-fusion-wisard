@@ -1,0 +1,64 @@
+{
+  "regla": "r4 gana si su R1 promedio supera al de control por 0.08 o más y por más de 2 errores típicos entre semillas (Welch); si no, control",
+  "candidata": {
+    "receta": "r4",
+    "corridas": [
+      {
+        "corrida": "r4_fusion_base_s0",
+        "semilla": 0,
+        "epoca_r1": 23,
+        "r1": 0.339368
+      },
+      {
+        "corrida": "r4_fusion_base_s1",
+        "semilla": 1,
+        "epoca_r1": 41,
+        "r1": 0.407882
+      },
+      {
+        "corrida": "r4_fusion_base_s2",
+        "semilla": 2,
+        "epoca_r1": 30,
+        "r1": 0.39065000000000005
+      }
+    ],
+    "media": 0.3793,
+    "de": 0.03563928905014803
+  },
+  "control": {
+    "receta": "control",
+    "corridas": [
+      {
+        "corrida": "control_fusion_base",
+        "semilla": 0,
+        "epoca_r1": 27,
+        "r1": 0.36989799999999995
+      },
+      {
+        "corrida": "control_fusion_base_s1",
+        "semilla": 1,
+        "epoca_r1": 39,
+        "r1": 0.302908
+      },
+      {
+        "corrida": "control_fusion_base_s2",
+        "semilla": 2,
+        "epoca_r1": 36,
+        "r1": 0.369468
+      }
+    ],
+    "media": 0.34742466666666666,
+    "de": 0.03855316372664288
+  },
+  "diferencia": 0.03187533333333337,
+  "error_tipico": 0.030312293201127345,
+  "supera_minimo": false,
+  "supera_errores_tipicos": false,
+  "gana_candidata": false,
+  "receta_final": "control",
+  "datos": "base",
+  "corridas_paso3": [
+    "control_termico_base",
+    "control_rgb_base"
+  ]
+}
