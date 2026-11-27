@@ -1,0 +1,10 @@
+modelo,pesos,rgb_cero,datos,n_predicciones,segundos,ultralytics_map50,ultralytics_map50_95,ultralytics_precision,ultralytics_recall
+fusion_s0_elegida,runs\fase9\control_fusion_base\weights\elegida.pt,False,configs/fusion.yaml,3190,30.5,0.3967118421090211,0.1803636008393783,0.806379350236537,0.33018271540440103
+fusion_s1_elegida,runs\fase9\control_fusion_base_s1\weights\elegida.pt,False,configs/fusion.yaml,3183,27.0,0.2959128578402585,0.11511114404523184,0.7159116145354822,0.2798134576948701
+fusion_s2_elegida,runs\fase9\control_fusion_base_s2\weights\elegida.pt,False,configs/fusion.yaml,2429,25.5,0.4363873509620758,0.18247638903998012,0.826840562924651,0.3849288591741213
+termico_s0_elegida,runs\fase9\control_termico_base_s0\weights\elegida.pt,False,configs/termico.yaml,2417,25.4,0.4316371862996369,0.20548349069380567,0.7282489581311637,0.3944037308461026
+termico_s1_elegida,runs\fase9\control_termico_base_s1\weights\elegida.pt,False,configs/termico.yaml,2572,24.4,0.4064219369452636,0.18863706019821003,0.7595383750724334,0.374579016937091
+termico_s2_elegida,runs\fase9\control_termico_base_s2\weights\elegida.pt,False,configs/termico.yaml,23444,24.7,0.5964307501990376,0.3217609115801658,0.7778196769416313,0.5411039512445179
+rgb_s0_elegida,runs\fase9\control_rgb_base_s0\weights\elegida.pt,False,configs/rgb.yaml,50751,28.0,0.02718489236343722,0.006498198891709441,0.15568262006887695,0.08127914723517655
+rgb_s1_elegida,runs\fase9\control_rgb_base_s1\weights\elegida.pt,False,configs/rgb.yaml,197855,27.1,0.020642829067000337,0.005381555356847806,0.1390363054183999,0.0832778147901399
+rgb_s2_elegida,runs\fase9\control_rgb_base_s2\weights\elegida.pt,False,configs/rgb.yaml,51013,25.5,0.010193186809139547,0.002389395978687752,0.104877745761719,0.04330446369087275

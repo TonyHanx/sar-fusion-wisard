@@ -1,0 +1,7 @@
+comparacion,principal,subconjunto,dudosas,n_personas,semillas_que_cumplen,resultado_tres_semillas,dif_s0,ic_inf_s0,ic_sup_s0,p_bonf_s0,solo_a_s0,solo_b_s0,resultado_s0,dif_s1,ic_inf_s1,ic_sup_s1,p_bonf_s1,solo_a_s1,solo_b_s1,resultado_s1,dif_s2,ic_inf_s2,ic_sup_s2,p_bonf_s2,solo_a_s2,solo_b_s2,resultado_s2,dif_media
+fusion_vs_termico,True,baja,sin,184,3.0000,demostrada,-0.1196,-0.3288,-0.0415,0.0000,2.0000,24.0000,demostrada,-0.1359,-0.2805,-0.0802,0.0000,2.0000,27.0000,demostrada,-0.0870,-0.3438,-0.0201,0.0157,7.0000,23.0000,demostrada,-0.1141
+fusion_vs_termico,True,severa,sin,267,2.0000,no concluyente,-0.0936,-0.1651,-0.0464,0.0002,7.0000,32.0000,demostrada,-0.1161,-0.2347,0.0086,0.0001,13.0000,44.0000,no concluyente (solo McNemar),-0.3408,-0.4000,-0.2000,0.0000,3.0000,94.0000,demostrada,-0.1835
+fusion_vs_rgb,False,baja,sin,184,3.0000,demostrada,0.6685,0.2143,0.8045,0.0000,123.0000,0.0000,demostrada,0.4076,0.2246,0.5132,0.0000,77.0000,2.0000,demostrada,0.7663,0.4750,0.8492,0.0000,141.0000,0.0000,demostrada,0.6141
+fusion_vs_rgb,False,severa,sin,267,3.0000,demostrada,0.1049,0.0417,0.1880,0.0000,28.0000,0.0000,demostrada,0.0824,0.0365,0.1862,0.0000,22.0000,0.0000,demostrada,0.1685,0.0938,0.3302,0.0000,45.0000,0.0000,demostrada,0.1186
+termico_vs_rgb,False,baja,sin,184,,solo IC,0.7880,0.5349,0.8718,,,,,0.5435,0.4494,0.6875,,,,,0.8533,0.7887,0.8889,,,,,0.7283
+termico_vs_rgb,False,severa,sin,267,,solo IC,0.1985,0.1217,0.3191,,,,,0.1985,0.1309,0.3413,,,,,0.5094,0.4408,0.6066,,,,,0.3021
