@@ -1,0 +1,8 @@
+# Dataset de Ultralytics R4 del modelo 'termico' (fase 9, rebalanceo de vuelos). Generado por src/particion/rebalanceo_r4.py con la sección r4 de configs/fase9.yaml: no editar a mano.
+# Entrenamiento: el de configs/termico.yaml con 220109_Baker_Enterprise_1 en las posiciones con posición % 2 == 0 y 210924_FHL_Enterprise_0401 2 veces (enlaces duros). Validación: la misma de configs/termico.yaml. Sin prueba.
+path: data/datasets/r4_termico
+train: images/train
+val: ../termico/images/val
+channels: 3
+names:
+  0: persona

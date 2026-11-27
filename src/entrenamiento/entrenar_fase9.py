@@ -13,6 +13,11 @@ Uso:
   .venv\\Scripts\\python.exe -m src.entrenamiento.entrenar_fase9 --config configs\\fase9.yaml --rutas configs\\rutas.yaml --corrida control_fusion_base
   .venv\\Scripts\\python.exe -m src.entrenamiento.entrenar_fase9 --config configs\\fase9.yaml --rutas configs\\rutas.yaml --corrida r2_fusion_base --semilla 1
   .venv\\Scripts\\python.exe -m src.entrenamiento.entrenar_fase9 --config configs\\fase9.yaml --rutas configs\\rutas.yaml --solo-r1 control_fusion_base
+  .venv\\Scripts\\python.exe -m src.entrenamiento.entrenar_fase9 --config configs\\fase9.yaml --rutas configs\\rutas.yaml --solo-comprobar r4_fusion_base --semilla 0
+  .venv\\Scripts\\python.exe -m src.entrenamiento.entrenar_fase9 --config configs\\fase9.yaml --rutas configs\\rutas.yaml --comparar r4_fusion_base control_fusion_base
+
+--solo-comprobar hace las comprobaciones previas del entrenamiento sin entrenar. --comparar comprueba que la primera
+corrida solo cambie los datos de entrenamiento respecto de la segunda.
 
 Con --semilla N (una de c3.semillas), la corrida usa seed = N y va en runs/fase9/<corrida>_sN/.
 """
@@ -20,6 +25,7 @@ import argparse
 import copy
 import json
 import shutil
+import sys
 from pathlib import Path
 
 import pandas as pd
@@ -65,22 +71,94 @@ def aplicar_r1(cfg, rutas, nombre):
     print(texto)
 
 
+def solo_comprobar(cfg, rutas, nombre):
+    """Las comprobaciones previas de entrenar_fase7.entrenar, sin entrenar: datos sin la prueba, carpeta nueva,
+    aplicaciones cerradas y potencia (30 s con solo la GPU cargada). Termina con el mismo código que el entrenamiento si
+    alguna falla."""
+    c3 = cfg["c3"]
+    comprobaciones = leer_yaml(fase7.ruta(c3["comprobaciones"]))
+    codigos = comprobaciones["codigos_salida"]
+    corrida_cfg = fase7.entrenar_fase5.mezclar(c3["base"], c3["corridas"][nombre])
+    datos = fase7.comprobar_datos(fase7.ruta(corrida_cfg["datos"]), cfg)
+    raiz = fase7.ruta_del_dataset(datos)
+    n = {s: sum(1 for _ in (raiz / datos[s]).iterdir()) for s in ("train", "val")}
+    print(f"Datos {corrida_cfg['datos']}: {n['train']} imágenes de entrenamiento y {n['val']} de validación, ninguna de "
+          f"la prueba", flush=True)
+    carpeta = rutas["runs"] / c3["carpeta"] / nombre
+    if carpeta.exists():
+        print(f"Falla: ya existe {carpeta}", file=sys.stderr)
+        sys.exit(codigos["carpeta_existe"])
+    print(f"Carpeta nueva: {carpeta}", flush=True)
+    cerrar = fase7.entrenar_fase5.aplicaciones_a_cerrar(comprobaciones)
+    abiertos = fase7.entrenar_fase5.procesos_abiertos(cerrar)
+    if abiertos:
+        print(f"Falla: abiertas {', '.join(abiertos)}", file=sys.stderr)
+        sys.exit(codigos["aplicaciones"])
+    print(f"Aplicaciones cerradas: {', '.join(cerrar)}", flush=True)
+    potencia, problemas = fase7.entrenar_fase5.comprobar_potencia(comprobaciones["potencia"])
+    print(f"Potencia: {potencia}", flush=True)
+    if problemas:
+        print("Falla: " + "; ".join(problemas), file=sys.stderr)
+        sys.exit(codigos["potencia"])
+    print("Comprobaciones previas: bien")
+
+
+def archivos(datos, split):
+    """Rutas resueltas de las imágenes de `split` de un dataset, y la carpeta."""
+    carpeta = (fase7.ruta_del_dataset(datos) / datos[split]).resolve()
+    return carpeta, sorted(p.name for p in carpeta.iterdir())
+
+
+def comparar(cfg, a, b):
+    """Comprueba por código que la corrida `a` solo cambia los datos de entrenamiento respecto de `b`: la receta
+    mezclada (c3.base + corrida) es igual salvo `datos`, y en los yaml de los datasets solo cambian `path` y `train`; la
+    validación es la misma carpeta y los mismos archivos, y `a` no lleva la prueba. Termina con error si no."""
+    c3 = cfg["c3"]
+    ca = fase7.entrenar_fase5.mezclar(c3["base"], c3["corridas"][a])
+    cb = fase7.entrenar_fase5.mezclar(c3["base"], c3["corridas"][b])
+    claves = sorted(set(ca) | set(cb))
+    dif_receta = {k: (ca.get(k), cb.get(k)) for k in claves if ca.get(k) != cb.get(k)}
+    da, db = (leer_yaml(fase7.ruta(c["datos"])) for c in (ca, cb))
+    dif_datos = {k: (da.get(k), db.get(k)) for k in sorted(set(da) | set(db)) if da.get(k) != db.get(k)}
+    (va, fa), (vb, fb) = archivos(da, "val"), archivos(db, "val")
+    (ta, ea), (tb, eb) = archivos(da, "train"), archivos(db, "train")
+    print(f"{a} contra {b}")
+    print(f"  receta (c3.base + corrida), lo que cambia: {dif_receta}")
+    print(f"  ultralytics: {ca['ultralytics']}")
+    print(f"  yaml del dataset, lo que cambia: {dif_datos}")
+    print(f"  validación: {va} ({len(fa)}) y {vb} ({len(fb)}); misma carpeta: {va == vb}; mismos archivos: {fa == fb}")
+    print(f"  entrenamiento: {len(ea)} imágenes en {ta} y {len(eb)} en {tb}")
+    # `val` puede estar escrito distinto si resuelve a la misma carpeta con los mismos archivos (comprobado aparte), y
+    # `test` solo puede faltar en `a` (R4 no lleva la prueba). channels y names tienen que ser iguales.
+    bien = (set(dif_receta) == {"datos"} and set(dif_datos) <= {"path", "train", "val", "test"}
+            and da.get("test") is None and va == vb and fa == fb)
+    if not bien:
+        raise SystemExit("No solo cambian los datos de entrenamiento")
+    print("Bien: solo cambian los datos de entrenamiento")
+
+
 def main():
-    """Entrena la corrida pedida y aplica R1 (--corrida), o solo R1 sobre una corrida terminada (--solo-r1)."""
+    """Entrena la corrida pedida y aplica R1 (--corrida), solo R1 sobre una corrida terminada (--solo-r1), solo las
+    comprobaciones previas (--solo-comprobar) o la comparación de dos recetas (--comparar)."""
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--config", required=True)
     ap.add_argument("--rutas", required=True)
     g = ap.add_mutually_exclusive_group(required=True)
     g.add_argument("--corrida")
     g.add_argument("--solo-r1", metavar="CORRIDA")
+    g.add_argument("--solo-comprobar", metavar="CORRIDA", help="las comprobaciones previas, sin entrenar")
+    g.add_argument("--comparar", nargs=2, metavar=("A", "B"), help="que A solo cambie los datos de entrenamiento de B")
     ap.add_argument("--semilla", type=int, help="semilla de c3.semillas; la corrida va en <corrida>_s<semilla>")
     args = ap.parse_args()
     cfg = leer_yaml(args.config)
     rutas = leer_rutas(args.rutas)
+    if args.comparar:
+        comparar(cfg, *args.comparar)
+        return
     if args.semilla is not None:
         if args.semilla not in cfg["c3"]["semillas"]:
             raise SystemExit(f"La semilla {args.semilla} no está en c3.semillas ({cfg['c3']['semillas']})")
-        base = args.corrida or args.solo_r1
+        base = args.corrida or args.solo_r1 or args.solo_comprobar
         if base not in cfg["c3"]["corridas"]:
             raise SystemExit(f"No existe la corrida {base}")
         entrada = copy.deepcopy(cfg["c3"]["corridas"][base])
@@ -89,9 +167,13 @@ def main():
         cfg["c3"]["corridas"][nombre] = entrada
         if args.corrida:
             args.corrida = nombre
-        else:
+        elif args.solo_r1:
             args.solo_r1 = nombre
-    if args.corrida:
+        else:
+            args.solo_comprobar = nombre
+    if args.solo_comprobar:
+        solo_comprobar(cfg, rutas, args.solo_comprobar)
+    elif args.corrida:
         if cfg["c3"]["base"]["ultralytics"].get("save_period") != 1:
             raise SystemExit("R1 pide save_period: 1 en c3.base.ultralytics")
         fase7.entrenar(cfg, rutas, args.corrida)
