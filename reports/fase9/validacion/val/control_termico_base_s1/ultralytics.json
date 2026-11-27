@@ -1,0 +1,10 @@
+{
+  "pesos": "runs\\fase9\\control_termico_base_s1\\weights\\elegida.pt",
+  "segundos": 22.8,
+  "sin_metricas": false,
+  "rgb_cero": false,
+  "map50": 0.29915413842823546,
+  "map50_95": 0.1508310460375178,
+  "precision": 0.44720393683205134,
+  "recall": 0.346
+}
