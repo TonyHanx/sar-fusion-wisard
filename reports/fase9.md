@@ -164,6 +164,74 @@ Por decisión del usuario, no se lanzó nada más después de R3. Quedan pendien
 
 Trabajo futuro, fuera de este curso: R5, el aumento fotométrico por modalidad.
 
+## Reglas fijadas el 27 de noviembre de 2026, antes de ver R4
+
+Las fijó el usuario antes de lanzar R4. Están en `decision_r4` de `configs/fase9.yaml`, y las aplica
+`src/evaluacion/fase9_decidir.py`, desde `results.csv` y sin predecir nada.
+
+1. **Receta final.** R4 gana solo si su R1 promedio entre las 3 semillas supera al del control **por 0.08 o más y por
+   más de dos errores típicos entre semillas**. El error típico es el de Welch, el mismo de R2 y R3. Si no gana, la
+   receta final es la del control.
+   - **Por qué.** Es la misma vara que se usó con R2 y R3. El 0.08 es el mínimo relevante del diagnóstico, por el ruido
+     de la validación por bloques. Los dos errores típicos cubren la dispersión entre semillas, que en el control ya es
+     de 0.039 en R1. Con 3 semillas, una sola condición no basta.
+2. **Datos base para los tres modelos, no los ampliados.**
+   - **Por qué.** En la fase 7 los ampliados mejoraron la fusión apenas 0.02, dentro del ruido, y cada época cuesta
+     unas 4 veces más.
+   - Así queda cerrado el punto 2 del pendiente, sin otra corrida.
+
+Con la receta ganadora y los datos base se entrenan **solo térmica y solo RGB** con las semillas 0, 1 y 2, sin ajustar
+nada por modelo. Son 6 corridas: `control_termico_base` y `control_rgb_base`, o `r4_termico_base` y `r4_rgb_base` si
+gana R4. La fusión con esa receta ya existe y no se repite. Si en alguna corrida la época que elige R1 cae entre las 5
+primeras, se marca como posible colapso, pero la cola no se detiene.
+
+## R4: rebalanceo de vuelos (27 de noviembre de 2026)
+
+**Qué cambia respecto al control:** solo los datos de entrenamiento.
+
+- De Baker quedan las posiciones pares, sin azar.
+- FHL 0401 va dos veces.
+- El resto de la receta es la del control: 50 épocas, `close_mosaic` 10, lote 16, AdamW con lr0 0.002, HSV en 0,
+  `workers` 12 y R1, con las semillas 0, 1 y 2.
+
+`src/particion/rebalanceo_r4.py` (sección `r4` de `configs/fase9.yaml`) arma `data/datasets/r4_{fusion,rgb,termico}/` y
+`configs/r4_{fusion,rgb,termico}.yaml`, todo con enlaces duros a los datasets base. No se tocan ni los datasets base ni el
+WiSARD original.
+
+- Las copias de FHL 0401 llevan otro nombre (`<nombre>_copia2`). En una misma carpeta no puede haber dos archivos con el
+  mismo nombre. Una lista `.txt` con rutas repetidas tampoco servía: Ultralytics habría reescrito la caché de etiquetas
+  del dataset base, porque la guarda junto a las etiquetas.
+- La validación es la misma carpeta de la base (`val: ../fusion/images/val`), así que también usa las mismas etiquetas.
+- No hay partición de prueba.
+
+**Pares y personas de entrenamiento por vuelo** (`reports/fase9/r4_vuelos.csv`; es la misma tabla para los tres modelos):
+
+| Vuelo | Pares antes | Pares después | Personas antes | Personas después | Queda |
+|---|---:|---:|---:|---:|---:|
+| MtErie 0003 | 236 | 236 | 905 | 905 | 100 % |
+| MtErie 0005 | 257 | 257 | 494 | 494 | 100 % |
+| FHL 0401 | 783 | 1 566 | 2 755 | 5 510 | 200 % |
+| Baker | 1 971 | 987 | 5 186 | 2 593 | **50.1 % de los pares, 50.0 % de las personas** |
+| Total | 3 247 | 3 046 | 9 340 | 9 502 | 93.8 % y 101.7 % |
+
+En el total, Baker pasa del 60.7 % de los pares al 32.4 %, y FHL 0401 del 24.1 % al 51.4 %.
+
+**Comprobaciones antes de lanzar:**
+
+- **Ultralytics cuenta las copias dos veces.** El lector de Ultralytics (`YOLODataset`) da, en cada modelo, 3 046 imágenes
+  de entrenamiento, 783 de ellas copias, y 9 502 cajas. La validación da 442 imágenes y 500 cajas, como siempre.
+- **Solo cambian los datos de entrenamiento** (`entrenar_fase9 --comparar r4_fusion_base control_fusion_base`, y lo
+  mismo con térmica y RGB).
+  - La receta mezclada solo difiere en `datos`.
+  - En el yaml del dataset solo cambian `path`, `train`, cómo se escribe `val` y la falta de `test`.
+  - La validación es la misma carpeta, con los mismos 442 archivos.
+- **Comprobaciones previas** (`entrenar_fase9 --solo-comprobar`, nuevo): datos sin la prueba, carpeta nueva, Roblox y
+  ChatGPT cerrados, y potencia. Dieron bien.
+- **Caché de validación.** Al leer la validación de solo RGB y solo térmica, Ultralytics rehízo su `val.cache`. La
+  anterior era de la laptop, del 1 de noviembre, y su firma incluye las rutas de los archivos. Lo mismo le pasó ayer
+  a la de la fusión con el primer control en la estación. Solo es el índice de etiquetas que Ultralytics regenera; las
+  imágenes y las etiquetas no cambian.
+
 ## Copia de las corridas
 
 `runs/` no va a git. Por eso, las salidas livianas de las 9 corridas están en `reports/fase9/<corrida>/`, con 135 archivos y 17.8 MiB:

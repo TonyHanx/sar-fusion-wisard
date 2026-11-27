@@ -74,6 +74,56 @@ c3:
       datos: configs/fusion.yaml
       inicio_cuarto_canal: promedio
       ultralytics: {imgsz: 960, scale: 0.3}
+    # R4 (pedida por el usuario el 27 de noviembre de 2026): el control con los vuelos de entrenamiento rebalanceados
+    # (sección r4): Baker en las posiciones pares y FHL 0401 dos veces. Causas 1 y 3 del diagnóstico. Solo cambian los
+    # datos de entrenamiento; la validación es la misma carpeta (entrenar_fase9 --comparar lo comprueba).
+    r4_fusion_base:
+      datos: configs/r4_fusion.yaml
+      inicio_cuarto_canal: promedio
+    # Paso 3 (27 de noviembre de 2026): la receta ganadora (`decision_r4`) en solo térmica y solo RGB, con las semillas
+    # 0, 1 y 2 y sin ajustar nada por modelo. 3 canales: el inicio del cuarto canal no aplica (azar, el de la base, no
+    # cambia nada). La cola entrena solo las de la receta ganadora.
+    control_termico_base:
+      datos: configs/termico.yaml
+    control_rgb_base:
+      datos: configs/rgb.yaml
+    r4_termico_base:
+      datos: configs/r4_termico.yaml
+    r4_rgb_base:
+      datos: configs/r4_rgb.yaml
+
+# R4: datasets con los vuelos de entrenamiento rebalanceados (src/particion/rebalanceo_r4.py). Solo enlaces duros a los
+# datasets base; ni ellos ni el WiSARD original se tocan. La validación es la misma carpeta de la base. Sin prueba.
+r4:
+  origen: {fusion: configs/fusion.yaml, rgb: configs/rgb.yaml, termico: configs/termico.yaml}
+  destino: datasets                  # data/datasets/r4_<modelo>/
+  prefijo: r4_
+  yaml: configs                      # configs/r4_<modelo>.yaml
+  submuestrear: {vuelo: 220109_Baker_Enterprise_1, cada: 2, resto: 0}   # 1 de cada 2: las posiciones pares, sin azar
+  duplicar: {vuelo: 210924_FHL_Enterprise_0401, veces: 2, sufijo: _copia}   # las copias: <nombre>_copia2
+  tabla: reports/fase9/r4_vuelos.csv
+
+# Regla para elegir la receta final (fijada por el usuario el 27 de noviembre de 2026, antes de ver R4;
+# src/evaluacion/fase9_decidir.py). R4 gana solo si su R1 promedio entre semillas supera al del control por
+# `minimo` o más Y por más de `errores_tipicos` errores típicos entre semillas (Welch, como fase9_validacion). Si no,
+# la receta final es el control. Los datos son los base para los tres modelos (no los ampliados): en la fase 7 los
+# ampliados mejoraron la fusión apenas 0.02, dentro del ruido, y cuestan unas 4 veces más por época.
+decision_r4:
+  candidata: r4                      # recetas de evaluacion.recetas
+  control: control
+  minimo: 0.08
+  errores_tipicos: 2
+  salida: reports/fase9/decision_r4.json
+  modelos:                           # corridas del paso 3 según la receta ganadora
+    control: [control_termico_base, control_rgb_base]
+    r4: [r4_termico_base, r4_rgb_base]
+  colapso_hasta_epoca: 5             # época R1 en las primeras 5: posible colapso (se marca, no detiene la cola)
+
+# Cola de los pasos 1 y 3 (src/entrenamiento/cola_fase9.py), independiente de la sesión. Se detiene en el primer fallo.
+cola:
+  log: reports/fase9/cola_log.txt
+  salidas: fase9/cola                # dentro de runs/: la salida completa de cada paso
+  r4: r4_fusion_base
 
 # Evaluación de R1 por vuelo de validación (src/evaluacion/fase9_validacion.py), sin la prueba: predicciones de
 # weights/elegida.pt de cada corrida con el validador de Ultralytics (src/evaluacion/evaluar.py, predecir) y el mAP@0.5
@@ -87,10 +137,17 @@ evaluacion:
     control: control_fusion_base     # es control_fusion_base, sin sufijo)
     r2: r2_fusion_base
     r3: r3_fusion_base
+    r4: r4_fusion_base
+  # Modelos de solo térmica y solo RGB con la receta final (paso 3); se agregan al terminar la cola, según la decisión.
+  modelos: {}
   semilla0_sin_sufijo: [control_fusion_base]
   comparaciones:
     - [r2, control]
     - [r3, control]
+    - [r4, control]
+  # Solo estas comparaciones agregan su fila a la bitácora (las de R2 y R3 ya están; antes se repetían al reevaluar).
+  comparaciones_a_bitacora:
+    - [r4, control]
   minimo_relevante: 0.08             # diferencia mínima del diagnóstico (ruido de la validación por bloques)
 
 # Tiempo por imagen en inferencia (src/evaluacion/fase9_tiempo_inferencia.py), para la viabilidad en Jetson: validador
