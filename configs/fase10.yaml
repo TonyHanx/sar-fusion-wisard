@@ -1,0 +1,115 @@
+# Fase 10 (27 de noviembre de 2026): evaluación final de la segunda versión en la prueba (FHL 0405). Reglas fijadas por
+# el usuario el 27 de noviembre de 2026, ANTES de predecir la prueba, y subidas a GitHub en un commit propio.
+# SEGUNDO USO DE LA PRUEBA: el primero fue la fase 8 (primera versión, laptop, 21 de noviembre de 2026). Se usa una vez
+# por versión, y el informe lo declara (reports/fase10.md).
+# Usa src/evaluacion/evaluar_prueba.py (el de la fase 8) con esta configuración:
+#   .venv\Scripts\python.exe -m src.evaluacion.evaluar_prueba --config configs\fase10.yaml --rutas configs\rutas.yaml --parte umbrales
+#   .venv\Scripts\python.exe -m src.evaluacion.evaluar_prueba --config configs\fase10.yaml --rutas configs\rutas.yaml --parte prueba
+#   .venv\Scripts\python.exe -m src.evaluacion.fase10_resumen --config configs\fase10.yaml --rutas configs\rutas.yaml
+
+estado: confirmada                   # 27 de noviembre de 2026 (usuario)
+base: configs/fase6.yaml             # prediccion, evaluacion (IoU 0.5, maxDets 100, F2), bootstrap (13 bloques, 10 000
+                                     # remuestreos, seed 0), McNemar exacta, subconjuntos y cajas dudosas: como en la fase 8
+carpeta: fase10                      # dentro de runs/: predicciones en runs/fase10/<particion>/<modelo>/
+salidas: reports/fase10
+fase_bitacora: "10"
+nombre_fase: "Fase 10"
+titulo_figura: "Recall en la prueba (FHL 0405) por subconjunto (elegida.pt, receta del control; sin las cajas dudosas)"
+
+# ---------------------------------------------------------------------------------------------------------------------
+# Modelos: los 9 elegida.pt (R1) de la receta del control, con los datos base (reports/fase9.md). Las semillas de solo
+# RGB que colapsaron en la validación (1 y 2, época R1 en la 3) también se evalúan.
+# ---------------------------------------------------------------------------------------------------------------------
+modelos:
+  fusion_s0:  {corridas: fase9, corrida: control_fusion_base,     modalidad: fusion,  datos_prueba: configs/fusion.yaml,  fase: "9"}
+  fusion_s1:  {corridas: fase9, corrida: control_fusion_base_s1,  modalidad: fusion,  datos_prueba: configs/fusion.yaml,  fase: "9"}
+  fusion_s2:  {corridas: fase9, corrida: control_fusion_base_s2,  modalidad: fusion,  datos_prueba: configs/fusion.yaml,  fase: "9"}
+  termico_s0: {corridas: fase9, corrida: control_termico_base_s0, modalidad: termico, datos_prueba: configs/termico.yaml, fase: "9"}
+  termico_s1: {corridas: fase9, corrida: control_termico_base_s1, modalidad: termico, datos_prueba: configs/termico.yaml, fase: "9"}
+  termico_s2: {corridas: fase9, corrida: control_termico_base_s2, modalidad: termico, datos_prueba: configs/termico.yaml, fase: "9"}
+  rgb_s0:     {corridas: fase9, corrida: control_rgb_base_s0,     modalidad: rgb,     datos_prueba: configs/rgb.yaml,     fase: "9"}
+  rgb_s1:     {corridas: fase9, corrida: control_rgb_base_s1,     modalidad: rgb,     datos_prueba: configs/rgb.yaml,     fase: "9"}
+  rgb_s2:     {corridas: fase9, corrida: control_rgb_base_s2,     modalidad: rgb,     datos_prueba: configs/rgb.yaml,     fase: "9"}
+
+pesos:
+  archivos: {elegida: weights/elegida.pt}   # R1: la época de mayor media móvil de 5 del mAP@0.5 de validación
+  principal: {"9": elegida}
+
+rgb_cero: []                         # sin variantes con la RGB en 0
+
+# ---------------------------------------------------------------------------------------------------------------------
+# Umbral: por modelo y semilla, el de mayor F2 en la validación (FHL 0134 y MtErie 0007, todas las personas de WiSARD),
+# con la rejilla de la fase 8 (0.001 a 0.95); si hay empate, el más alto. Se aplica sin cambios a la prueba. Se calcula
+# y se sube a GitHub ANTES de predecir la prueba (evaluar_prueba --parte prueba lo comprueba).
+# ---------------------------------------------------------------------------------------------------------------------
+umbral:
+  rejilla_baja: [0.001, 0.002, 0.005, 0.01, 0.02, 0.03, 0.04]
+  rejilla: {desde: 0.05, hasta: 0.95, paso: 0.05}
+  empate: mas_alto
+  personas_validacion: todas
+  umbrales: reports/fase10/umbrales.csv
+  rejilla_completa: reports/fase10/umbrales_rejilla.csv
+  # Predicciones de validación de cada elegida.pt (se hacen en runs/fase10/validacion/<modelo>_elegida/).
+  validacion:
+    fusion_s0:  {carpeta: fase10, datos: configs/fusion.yaml}
+    fusion_s1:  {carpeta: fase10, datos: configs/fusion.yaml}
+    fusion_s2:  {carpeta: fase10, datos: configs/fusion.yaml}
+    termico_s0: {carpeta: fase10, datos: configs/termico.yaml}
+    termico_s1: {carpeta: fase10, datos: configs/termico.yaml}
+    termico_s2: {carpeta: fase10, datos: configs/termico.yaml}
+    rgb_s0:     {carpeta: fase10, datos: configs/rgb.yaml}
+    rgb_s1:     {carpeta: fase10, datos: configs/rgb.yaml}
+    rgb_s2:     {carpeta: fase10, datos: configs/rgb.yaml}
+  sensibilidad_rejilla_anterior: true   # solo descriptiva, como en la fase 8
+
+# ---------------------------------------------------------------------------------------------------------------------
+# Métricas, como en la fase 8: recall, precisión, F2 y mAP@0.5; globales sobre los 928 fotogramas y sobre los 310
+# anotados; por nivel (baja y severa) sobre los 310 anotados; con y sin las cajas dudosas. CIFRA PRINCIPAL: recall en
+# la severa, sin las dudosas. Por modelo: cada semilla, y el promedio con su desviación estándar entre las 3 semillas
+# (src/evaluacion/fase10_resumen.py).
+# ---------------------------------------------------------------------------------------------------------------------
+# Comparaciones por semilla (s_k contra s_k), en baja y severa sin las dudosas:
+# - McNemar exacta con Bonferroni x3 (cada p se multiplica por 3, como en la fase 8) y el IC del 95 % de la diferencia de
+#   recall por bootstrap de los 13 episodios (10 000 remuestreos, seed 0), con los mismos remuestreos para los dos;
+# - por semilla, cumple si p_bonferroni < 0.05 y el IC excluye el 0 (con el mismo signo);
+# - una diferencia solo cuenta como DEMOSTRADA si se cumple en las tres semillas, con el mismo signo. Si se cumple en una
+#   o dos, es "no concluyente". Si en ninguna, "no demostrada";
+# - RGB contra térmica, solo con IC (sin McNemar).
+# Comparación principal de la tesis: fusión contra térmica. Fusión contra RGB es complementaria.
+comparaciones:
+  bonferroni: 3
+  mcnemar:
+    pares:
+      - [fusion_s0, termico_s0]
+      - [fusion_s1, termico_s1]
+      - [fusion_s2, termico_s2]
+      - [fusion_s0, rgb_s0]
+      - [fusion_s1, rgb_s1]
+      - [fusion_s2, rgb_s2]
+  descriptivas:
+    - [fusion_s0, termico_s0]
+    - [fusion_s1, termico_s1]
+    - [fusion_s2, termico_s2]
+    - [fusion_s0, rgb_s0]
+    - [fusion_s1, rgb_s1]
+    - [fusion_s2, rgb_s2]
+    - [termico_s0, rgb_s0]
+    - [termico_s1, rgb_s1]
+    - [termico_s2, rgb_s2]
+  criterio: mcnemar_y_bootstrap
+  # Agregado entre semillas (fase10_resumen.py): cada comparación se nombra sin la semilla.
+  entre_semillas:
+    semillas: [0, 1, 2]
+    familias:
+      fusion_vs_termico: {a: fusion, b: termico, principal: true}
+      fusion_vs_rgb: {a: fusion, b: rgb, principal: false}
+    descriptiva: {termico_vs_rgb: {a: termico, b: rgb}}
+
+una_sola_vez: true                   # si existe alguna salida de la prueba, no se vuelve a evaluar
+
+# Limitaciones que se declaran desde ya (antes de ver la prueba):
+# - segundo uso de la prueba (el primero, la fase 8, con la primera versión);
+# - el control se eligió con la validación tras probar R2, R3 y R4; ninguna lo superó con la regla fijada;
+# - solo RGB colapsó en la validación en 2 de 3 semillas, y se evalúa igual;
+# - 3 semillas por modelo; 13 bloques para el bootstrap; personas que se repiten entre fotogramas anotados;
+# - el entrenamiento incluye FHL 0401, del mismo sitio y día que la prueba (no rompe la partición por vuelo).

@@ -232,7 +232,7 @@ def umbrales(cfg, base, rutas):
         variantes = [v for v, i in modelos.items() if i.get("umbral_de") == k]
         agregar_a_bitacora(
             rutas["bitacora"], cfg["fase_bitacora"], f"YOLO26s {k}",
-            f"Fase 8, paso 2: umbral en validación ({', '.join(part['vuelos'])}); pesos {rel(resumen_k['pesos'])}; "
+            f"{cfg.get('nombre_fase', 'Fase 8')}, umbrales: umbral en validación ({', '.join(part['vuelos'])}); pesos {rel(resumen_k['pesos'])}; "
             f"predicciones {rel(resumen_k['pj'])} ({'hechas en este paso' if resumen_k['hecha'] else 'reutilizadas'}, confianza >= "
             f"{base['prediccion']['conf']}); mayor F2 (beta {ev['beta']}) con las {resumen_k['n_personas']} personas, IoU "
             f"{ev['iou']}, maxDets {ev['max_dets']}, rejilla {rejilla[0]:g} a {rejilla[-1]:g} ({len(rejilla)} "
@@ -306,7 +306,7 @@ def verificar_prueba(cfg, base, rutas):
     return modelos, umbral, umbral_ant, datos
 
 
-def grafico_prueba(res, modelos, base, part, ruta_png, n_remuestreos, n_bloques):
+def grafico_prueba(res, modelos, base, part, ruta_png, n_remuestreos, n_bloques, cfg_titulo=None):
     """Recall de los modelos del peso principal por subconjunto, sin las dudosas, con su IC."""
     estilo = base["figura"]
     subconjuntos = part["subconjuntos"]
@@ -343,7 +343,7 @@ def grafico_prueba(res, modelos, base, part, ruta_png, n_remuestreos, n_bloques)
                Line2D([], [], marker="o", linestyle="", markersize=7, color=COLOR["rgb"], label="Solo RGB")]
     fig.legend(handles=leyenda, loc="upper left", bbox_to_anchor=(0.005, 0.93), ncol=4, frameon=False, fontsize=8,
                labelcolor=estilo["texto"])
-    fig.suptitle("Recall en la prueba (FHL 0405) por subconjunto (last.pt en la fase 7, best.pt en la fase 6; sin las "
+    fig.suptitle(cfg_titulo or "Recall en la prueba (FHL 0405) por subconjunto (last.pt en la fase 7, best.pt en la fase 6; sin las "
                  "cajas dudosas)", x=0.01, y=0.99, ha="left", va="top", fontsize=10, color=estilo["texto"])
     fig.text(0.01, 0.01, f"Barras: IC del {int(base['bootstrap']['confianza'] * 100)} % por bootstrap de episodios "
              f"({n_remuestreos:,} remuestreos de {n_bloques} bloques).".replace(",", " "), fontsize=7, color=estilo["texto_secundario"])
@@ -393,6 +393,8 @@ def prueba(cfg, base, rutas):
     pares_d = cfg["comparaciones"]["descriptivas"]
     pares_mc = cfg["comparaciones"]["mcnemar"]["pares"]
     alfa, dudosas_mcnemar = base["mcnemar"]["alfa"], base["mcnemar"]["dudosas"]
+    # Fase 8: Bonferroni por el número de pares. Fase 10: el factor fijado en `comparaciones.bonferroni` (x3 por semilla).
+    factor_bonferroni = cfg["comparaciones"].get("bonferroni", len(pares_mc))
     filas, filas_sens, filas_mc = [], [], []
     for subconjunto in part["subconjuntos"]:
         imgs = datos["fot"] if subconjunto["fotogramas"] == "todos" else datos["fot"][datos["fot"].anotado]
@@ -448,7 +450,7 @@ def prueba(cfg, base, rutas):
                     tabla = [[int((det_a & det_b).sum()), int((det_a & ~det_b).sum())],
                              [int((~det_a & det_b).sum()), int((~det_a & ~det_b).sum())]]
                     res = mcnemar(tabla, exact=base["mcnemar"]["exacta"])
-                    p_bonferroni = min(1.0, float(res.pvalue) * len(pares_mc))
+                    p_bonferroni = min(1.0, float(res.pvalue) * factor_bonferroni)
                     diferencia = float(det_a.mean() - det_b.mean())
                     ic_inf, ic_sup = evaluar_fase6.intervalo(boot[modelo_a]["recall"] - boot[modelo_b]["recall"], conf_ic)
                     filas_mc.append({"particion": PRUEBA, "subconjunto": subconjunto["nombre"], "dudosas": dudosas_modo, "modelo_a": modelo_a,
@@ -457,7 +459,7 @@ def prueba(cfg, base, rutas):
                                      "ninguno": tabla[1][1], "recall_a": float(det_a.mean()), "recall_b": float(det_b.mean()),
                                      "diferencia_recall": diferencia, "dif_ic_inf": ic_inf, "dif_ic_sup": ic_sup,
                                      "estadistico": float(res.statistic), "p": float(res.pvalue),
-                                     "comparaciones": len(pares_mc), "p_bonferroni": p_bonferroni, "alfa": alfa,
+                                     "comparaciones": factor_bonferroni, "p_bonferroni": p_bonferroni, "alfa": alfa,
                                      "mcnemar_significativo": p_bonferroni < alfa,
                                      "ic_excluye_0": bool((ic_inf > 0 and diferencia > 0) or (ic_sup < 0 and diferencia < 0)),
                                      "resultado": criterio(p_bonferroni, alfa, diferencia, ic_inf, ic_sup)})
@@ -468,7 +470,8 @@ def prueba(cfg, base, rutas):
     tabla_sensibilidad.to_csv(salidas / "sensibilidad.csv", index=False)
     tabla_mcnemar.to_csv(salidas / "mcnemar.csv", index=False)
     tabla_prediccion.to_csv(salidas / "prediccion.csv", index=False)
-    grafico_prueba(res, modelos, base, part, salidas / "recall_por_nivel.png", n_remuestreos, n_bloques)
+    grafico_prueba(res, modelos, base, part, salidas / "recall_por_nivel.png", n_remuestreos, n_bloques,
+                   cfg.get("titulo_figura"))
     with pd.option_context("display.width", 250, "display.max_columns", 40, "display.precision", 3):
         d = res[(res.tipo == "modelo") & (res.dudosas == "sin")]
         print(d[["subconjunto", "modelo", "umbral", "n_personas", "recall", "recall_ic_inf", "recall_ic_sup",
@@ -486,13 +489,13 @@ def prueba(cfg, base, rutas):
                            f"[{d.recall_ic_inf:.3f}, {d.recall_ic_sup:.3f}], P {d.precision:.3f}, F2 {d.f2:.3f}, "
                            f"mAP50 {d.map50:.3f} [{d.map50_ic_inf:.3f}, {d.map50_ic_sup:.3f}]")
         agregar_a_bitacora(rutas["bitacora"], cfg["fase_bitacora"], f"YOLO26s {k}",
-                           f"Fase 8, prueba ({', '.join(part['vuelos'])}, split {part['split']}); pesos "
+                           f"{cfg.get('nombre_fase', 'Fase 8')}, prueba ({', '.join(part['vuelos'])}, split {part['split']}); pesos "
                            f"{ultra[k]['pesos']}" + ("; RGB en 0 (los 3 canales de color)" if info["rgb0"] else "")
                            + f"; umbral {umbral[k]:g} (F2 en validación, {rel(ruta(cfg['umbral']['umbrales']))})"
                            f", IoU {ev['iou']}, maxDets {ev['max_dets']}; bootstrap {n_remuestreos} remuestreos de {n_bloques} bloques, "
                            f"seed={base['bootstrap']['seed']}; una sola vez; salidas en {rel(salidas)}",
                            "; ".join(resumen) + f"; Ultralytics (su AP) mAP50 {ultra[k].get('map50', float('nan')):.4f}")
-    agregar_a_bitacora(rutas["bitacora"], cfg["fase_bitacora"], "McNemar y criterio (fase 8)",
+    agregar_a_bitacora(rutas["bitacora"], cfg["fase_bitacora"], f"McNemar y criterio ({cfg.get('nombre_fase', 'Fase 8').lower()})",
                        f"Prueba; pares {', '.join(f'{modelo_a}-{modelo_b}' for modelo_a, modelo_b in pares_mc)} con el peso principal, sin las "
                        f"dudosas, Bonferroni x{len(pares_mc)}; demostrada solo si McNemar (p_bonf < {alfa}) y el IC del "
                        f"95 % por episodios de la diferencia de recall coinciden; {rel(salidas / 'mcnemar.csv')}",
