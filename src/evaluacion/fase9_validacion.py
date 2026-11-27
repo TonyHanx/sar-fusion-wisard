@@ -5,6 +5,10 @@ Para cada corrida de cada receta (semillas de c3.semillas):
 - predicciones de validación de weights/elegida.pt (validador de Ultralytics con save_json, como src/evaluacion/evaluar.py),
   y con ellas el mAP@0.5 propio en total y por vuelo (funciones de experimentos/diagnostico_sobreajuste.py).
 
+Los modelos de `evaluacion.modelos` (solo térmica y solo RGB con la receta final) se evalúan igual, como grupos aparte.
+La columna `posible_colapso` marca las corridas con la época de R1 en las primeras `decision_r4.colapso_hasta_epoca`.
+Solo las comparaciones de `comparaciones_a_bitacora` (si está) agregan su fila a la bitácora.
+
 Por receta: promedio y desviación estándar entre semillas. Por comparación (a − b): diferencia de promedios, su error
 típico entre semillas (Welch), la t de Welch y si supera el `minimo_relevante` del diagnóstico.
 
@@ -43,7 +47,8 @@ def main():
     salidas.mkdir(parents=True, exist_ok=True)
 
     filas = []
-    for receta, base in ev["recetas"].items():
+    # Los modelos de solo térmica y solo RGB (paso 3) van como grupos aparte, con su corrida base (`evaluacion.modelos`).
+    for receta, base in (ev["recetas"] | (ev.get("modelos") or {})).items():
         for semilla in c3["semillas"]:
             nombre = nombre_corrida(base, semilla, ev)
             carpeta = rutas["runs"] / c3["carpeta"] / nombre
@@ -59,7 +64,8 @@ def main():
             preds, ultra = evaluar.predecir(nombre, info, cfg_pred, rutas, "val", {"split": "val"})
             emp = emparejar(gt, preds, rc["iou"], rc["max_det"])
             fila = {"receta": receta, "semilla": semilla, "corrida": nombre, "imgsz": imgsz, "epocas": len(res),
-                    "epoca_r1": epoca, "r1_media_movil": suave,
+                    "epoca_r1": epoca, "posible_colapso": epoca <= cfg["decision_r4"]["colapso_hasta_epoca"],
+                    "r1_media_movil": suave,
                     "map50_epoca_r1": float(res.loc[res["epoch"] == epoca, "metrics/mAP50(B)"].iloc[0]),
                     "map50_ultralytics_elegida": ultra.get("map50"), "map50_propio": ap50([emp[i] for i in gt])}
             for v in vuelos:
@@ -93,7 +99,10 @@ def main():
     print(corridas.to_string(index=False))
     print(recetas.to_string())
     print(comp.to_string(index=False))
+    a_bitacora = {tuple(p) for p in ev.get("comparaciones_a_bitacora", ev["comparaciones"])}
     for _, c in comp[comp["metrica"] == "r1_media_movil"].iterrows():
+        if (c["a"], c["b"]) not in a_bitacora:  # ya está en la bitácora de una evaluación anterior
+            continue
         agregar_a_bitacora(rutas["bitacora"], c3["base"]["fase"], f"{c['a']} vs {c['b']} (R1, {len(c3['semillas'])} semillas)",
                            "validación; media móvil de 5 del mAP@0.5 en la época R1",
                            f"diferencia {c['dif']:+.4f}, error típico entre semillas {c['ee_semillas']:.4f}, "

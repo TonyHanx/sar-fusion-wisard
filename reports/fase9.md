@@ -232,9 +232,147 @@ En el total, Baker pasa del 60.7 % de los pares al 32.4 %, y FHL 0401 del 24.1 %
   a la de la fusión con el primer control en la estación. Solo es el índice de etiquetas que Ultralytics regenera; las
   imágenes y las etiquetas no cambian.
 
+## R4 con 3 semillas: resultado
+
+Fuente: `src/evaluacion/fase9_validacion.py`. Las tablas están en `reports/fase9/r1_corridas.csv`, `r1_recetas.csv` y
+`r1_comparaciones.csv`, y la decisión en `reports/fase9/decision_r4.json`.
+
+**Recursos:** de 24.1 a 24.8 min por semilla, con una mediana de 26 a 27 s por época. El pico de memoria de la GPU fue de
+7.3 a 8.1 GB, el consumo de unos 216 W, con un límite aplicado de 300 W, y la temperatura máxima de 85 °C. La RAM llegó
+al 19.4 %.
+
+**R1 por semilla**
+
+| Semilla | Época R1 | R1 | mAP@0.5 `elegida.pt` | MtErie 0007 | FHL 0134 |
+|---:|---:|---:|---:|---:|---:|
+| 0 | 23 | 0.339 | 0.407 | 0.631 | 0.090 |
+| 1 | 41 | 0.408 | 0.442 | 0.618 | 0.221 |
+| 2 | 30 | 0.391 | 0.393 | 0.542 | 0.189 |
+
+**Promedio ± desviación estándar entre las 3 semillas, y diferencia con el control**
+
+| Receta | R1 | mAP@0.5 `elegida.pt` | MtErie 0007 | FHL 0134 |
+|---|---:|---:|---:|---:|
+| Control | 0.347 ± 0.039 | 0.358 ± 0.084 | 0.527 ± 0.104 | 0.137 ± 0.064 |
+| R2 | 0.327 ± 0.031 | 0.317 ± 0.042 | 0.483 ± 0.047 | 0.090 ± 0.043 |
+| R3 | 0.319 ± 0.012 | 0.293 ± 0.031 | 0.428 ± 0.126 | 0.125 ± 0.080 |
+| R4 | 0.379 ± 0.036 | 0.414 ± 0.025 | 0.597 ± 0.048 | 0.167 ± 0.068 |
+| R4 − control | +0.032 (EE 0.030, p 0.35) | +0.057 (EE 0.050) | +0.070 (EE 0.066) | +0.030 (EE 0.054) |
+
+**R4 no supera al control según la regla fijada antes.** En R1, la diferencia es de +0.032. Para ganar necesitaba 0.08 o
+más y, además, más de dos errores típicos (2 × 0.030 = 0.061). No cumple ninguna de las dos. **La receta final es la del
+control, con los datos base.**
+
+- Es la primera receta con diferencias positivas en las cuatro métricas y en los dos vuelos. Ninguna llega a dos errores
+  típicos ni al mínimo de 0.08.
+- Con 3 semillas por receta, la comparación tiene poca potencia. Que R4 no gane no demuestra que sea igual al control:
+  el resultado es que no se pudo distinguir del ruido. Va como limitación.
+- **Posible limitación del rebalanceo.** Con R4, FHL 0401 pasa al 51 % de los pares de entrenamiento, y la mitad de
+  ellos son copias exactas. No hay fotogramas nuevos de ese vuelo: el modelo ve dos veces las mismas imágenes, aunque
+  con aumentos al azar distintos en cada lectura. Esto puede llevar a memorizar ese vuelo en vez de aprender más del
+  tipo de escena.
+
+## Paso 3: solo térmica y solo RGB con la receta del control
+
+Son la misma receta y los mismos datos base que el control de la fusión, con R1 y las semillas 0, 1 y 2, sin ajustar
+nada por modelo. Las corridas son `control_termico_base_s{0,1,2}` y `control_rgb_base_s{0,1,2}`; a diferencia de la
+fusión, la semilla 0 lleva sufijo. **La fusión con esta receta es la del control y no se repitió.**
+
+**Recursos:**
+
+- solo térmica: de 21.0 a 24.1 min por semilla, con una mediana de 22 a 26 s por época;
+- solo RGB: de 21.0 a 21.3 min, con 23 s por época;
+- en las dos, un pico de memoria de la GPU de 7.9 a 8.5 GB, un consumo de unos 233 W y una temperatura máxima de 85 °C.
+
+**R1 por corrida.** Hay posible colapso cuando la época R1 cae entre las 5 primeras.
+
+| Modelo | Semilla | Época R1 | R1 | mAP@0.5 `elegida.pt` | MtErie 0007 | FHL 0134 | Posible colapso |
+|---|---:|---:|---:|---:|---:|---:|---|
+| Fusión (control) | 0 | 27 | 0.370 | 0.449 | 0.646 | 0.183 | no |
+| Fusión (control) | 1 | 39 | 0.303 | 0.285 | 0.467 | 0.064 | no |
+| Fusión (control) | 2 | 36 | 0.369 | 0.338 | 0.467 | 0.163 | no |
+| Solo térmica | 0 | 27 | 0.287 | 0.371 | 0.409 | 0.352 | no |
+| Solo térmica | 1 | 35 | 0.299 | 0.304 | 0.256 | 0.357 | no |
+| Solo térmica | 2 | 10 | 0.321 | 0.213 | 0.280 | 0.165 | no |
+| Solo RGB | 0 | 10 | 0.136 | 0.117 | 0.211 | 0.000 | no |
+| Solo RGB | 1 | 3 | 0.112 | 0.165 | 0.284 | 0.000 | **sí** |
+| Solo RGB | 2 | 3 | 0.067 | 0.045 | 0.073 | 0.000 | **sí** |
+
+**R1 por modelo: promedio ± desviación estándar entre las 3 semillas**
+
+| Modelo | R1 | mAP@0.5 `elegida.pt` | MtErie 0007 | FHL 0134 |
+|---|---:|---:|---:|---:|
+| Fusión | 0.347 ± 0.039 | 0.358 ± 0.084 | 0.527 ± 0.104 | 0.137 ± 0.064 |
+| Solo térmica | 0.302 ± 0.018 | 0.296 ± 0.080 | 0.315 ± 0.082 | 0.291 ± 0.109 |
+| Solo RGB | 0.105 ± 0.035 | 0.109 ± 0.060 | 0.190 ± 0.107 | 0.000 ± 0.000 |
+
+Es solo la validación; la prueba no se usó. Lo que sigue es descripción, sin prueba estadística entre modelos.
+
+- **Fusión contra solo térmica cambia según el vuelo.**
+  - En MtErie 0007, la fusión queda por encima: 0.527 contra 0.315.
+  - En FHL 0134, el vuelo de personas pequeñas, la térmica duplica a la fusión: 0.291 contra 0.137.
+  - En el total, la fusión queda por encima en R1, 0.347 contra 0.302. R1 mezcla los dos vuelos, así que esconde la
+    diferencia entre ellos.
+- **Solo RGB colapsa en 2 de 3 semillas.**
+  - En las semillas 1 y 2, R1 elige la época 3. El mAP@0.5 de validación es mejor en las primeras épocas y baja de forma
+    sostenida: en la semilla 1, de 0.160 en la época 3 a 0.028 en la 50.
+  - Es el mismo patrón que `rgb_base` en la primera versión, que bajó de 0.160 a 0.032.
+  - En FHL 0134 da 0.000 en las tres semillas.
+  - La cola no se detuvo, como se había pedido. Va como limitación del modelo de solo RGB: lo que aprende de los vuelos
+    de entrenamiento no se transfiere a la validación.
+- **Solo térmica, semilla 2.** R1 elige la época 10. No está entre las 5 primeras, así que no se marca como posible
+  colapso. Pero su `elegida.pt` da el mAP@0.5 más bajo de las tres (0.213), y en FHL 0134 baja a 0.165.
+
+## Estado al cierre del 27 de noviembre de 2026
+
+- **Receta final de la segunda versión:** la del control (`fusion_base` de la laptop más R1), con los datos base, para los
+  tres modelos y con las semillas 0, 1 y 2.
+- **Pendiente:**
+  - La evaluación única de los tres modelos en la prueba. Es el segundo uso de la prueba, una vez por versión, y el
+    informe tiene que declararlo.
+  - Qué pesos y qué semilla se llevan a la prueba no está decidido.
+  - El tiempo de inferencia real en la Jetson.
+- **Pesos de las 9 corridas de hoy:** `elegida.pt`, `best.pt` y `last.pt` están en un zip aparte, fuera del repositorio
+  (`fase9_pesos_27nov.zip`, 27 archivos y 1.2 GB), con la misma estructura que el de ayer. No se guardaron los pesos de
+  cada época.
+
+## Corte de la cola del 27 de noviembre de 2026
+
+- **Qué se cortó:** la cola se lanzó a las 13:10. A las 15:04:21 se cortaron la cola y la corrida en curso,
+  `control_termico_base_s1`, en la época 27 de 50; `results.csv` tenía 26 épocas.
+- **Causa:** la consola de la cola recibió un Ctrl+C. Se ve un `^C` al final de su salida
+  (`runs/fase9/cola/cola_stdout_1.txt`), y terminaron todos sus procesos a la vez.
+  - No hubo traceback ni evento en los registros de Windows, y la sesión siguió activa.
+  - **El origen del Ctrl+C no se pudo confirmar.** Coincidió con una consulta de estado de Claude Code, que solo leía
+    archivos.
+  - La cola no lo anotó, porque solo registraba el fallo de un paso y no su propio cierre. Se anotó a mano en
+    `reports/fase9/cola_log.txt`.
+- **Lo que ya estaba hecho no se vio afectado:** R4 con las semillas 0, 1 y 2, la decisión y
+  `control_termico_base_s0`.
+- **Se repitió desde cero, no se retomó.**
+  - La corrida cortada se movió a `runs/fase9/control_termico_base_s1_cortada/`, y su salida a
+    `runs/fase9/cola/control_termico_base_s1_cortada.txt`. No se usa, como `rgb_100ep_cortada`, y no alcanzó a escribir
+    una fila en la bitácora.
+  - `control_termico_base_s1` se volvió a entrenar desde la época 1, con la semilla 1 y la misma receta. Así no depende
+    de cómo Ultralytics reanuda el estado aleatorio.
+- **Relanzamiento:** a las 15:20:40.
+  - La cola saltó las corridas que ya tenían R1, y también la decisión, que ya estaba escrita. Así su fila no se repitió
+    en la bitácora.
+  - Esta vez se lanzó en un grupo de procesos propio (`CREATE_NEW_PROCESS_GROUP`), para que un Ctrl+C de otra consola
+    no le llegue.
+  - `control_termico_base_s1` terminó a las 15:42:58.
+
 ## Copia de las corridas
 
-`runs/` no va a git. Por eso, las salidas livianas de las 9 corridas están en `reports/fase9/<corrida>/`, con 135 archivos y 17.8 MiB:
+`runs/` no va a git. Por eso, las salidas livianas de las corridas están en `reports/fase9/<corrida>/`. Al 26 de noviembre
+eran 9 corridas, con 135 archivos y 17.8 MiB. Al 27 de noviembre son 18, con 284 archivos y 89.7 MiB:
+
+- se suman R4 y las de solo térmica y solo RGB;
+- en `reports/fase9/cola/` está la salida completa de cada paso de la cola;
+- lo más pesado son las predicciones de validación de solo RGB, de 11 a 19 MB cada una. Ese modelo deja muchas
+  detecciones de baja confianza.
+
+Cada corrida tiene:
 
 - `results.csv`, `args.yaml`, `resumen.json`, `epocas.csv` y `monitor.csv`;
 - las figuras de Ultralytics: curvas, matrices de confusión, etiquetas y `results`. Los PNG se guardaron como JPEG.
@@ -243,4 +381,6 @@ También quedaron en `reports/fase9/validacion/` las predicciones de validación
 
 Los copió `src/utilidades/copiar_fase7.py` con la sección `copiar` de `configs/fase9.yaml`.
 
-Los pesos no van a git. `elegida.pt`, `best.pt` y `last.pt` de las 9 corridas se guardaron en un zip aparte, fuera del repositorio, con la misma estructura de carpetas. No se guardaron los pesos de cada época.
+Los pesos no van a git. `elegida.pt`, `best.pt` y `last.pt` de cada corrida se guardaron en zips aparte, fuera del
+repositorio, con la misma estructura de carpetas: `fase9_pesos.zip` tiene las 9 del 26 de noviembre y
+`fase9_pesos_27nov.zip` las 9 del 27. No se guardaron los pesos de cada época.

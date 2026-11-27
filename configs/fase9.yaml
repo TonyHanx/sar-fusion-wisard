@@ -138,8 +138,9 @@ evaluacion:
     r2: r2_fusion_base
     r3: r3_fusion_base
     r4: r4_fusion_base
-  # Modelos de solo térmica y solo RGB con la receta final (paso 3); se agregan al terminar la cola, según la decisión.
-  modelos: {}
+  # Modelos de solo térmica y solo RGB con la receta final (paso 3). Ganó el control (reports/fase9/decision_r4.json),
+  # así que son las corridas control_*; sus semillas llevan todas sufijo (_s0, _s1, _s2). La fusión es `control`.
+  modelos: {termico: control_termico_base, rgb: control_rgb_base}
   semilla0_sin_sufijo: [control_fusion_base]
   comparaciones:
     - [r2, control]
@@ -170,16 +171,28 @@ tiempo_inferencia:
 carpeta: fase9                       # dentro de runs/
 copiar:
   destino: fase9                     # dentro de reports/
+  # Todas las corridas <receta>_base y <receta>_base_s<N>, también solo térmica y solo RGB (27 de noviembre de 2026). La corrida cortada
+  # (control_termico_base_s1_cortada) no se usa y no se copia.
   desde_runs:
-    - "*_fusion_base*/results.csv"
-    - "*_fusion_base*/args.yaml"
-    - "*_fusion_base*/resumen.json"
-    - "*_fusion_base*/epocas.csv"
-    - "*_fusion_base*/monitor.csv"
-    - "*_fusion_base*/results.png"
-    - "*_fusion_base*/Box*_curve.png"
-    - "*_fusion_base*/confusion_matrix*.png"
-    - "*_fusion_base*/labels.jpg"
+    - "*_base/results.csv"
+    - "*_base_s[0-9]/results.csv"
+    - "*_base/args.yaml"
+    - "*_base_s[0-9]/args.yaml"
+    - "*_base/resumen.json"
+    - "*_base_s[0-9]/resumen.json"
+    - "*_base/epocas.csv"
+    - "*_base_s[0-9]/epocas.csv"
+    - "*_base/monitor.csv"
+    - "*_base_s[0-9]/monitor.csv"
+    - "*_base/results.png"
+    - "*_base_s[0-9]/results.png"
+    - "*_base/Box*_curve.png"
+    - "*_base_s[0-9]/Box*_curve.png"
+    - "*_base/confusion_matrix*.png"
+    - "*_base_s[0-9]/confusion_matrix*.png"
+    - "*_base/labels.jpg"
+    - "*_base_s[0-9]/labels.jpg"
+    - cola/*.txt                      # salida completa de cada paso de la cola
     - validacion/val/*/predictions.json   # predicciones de validación de cada elegida.pt (fase9_validacion.py)
     - validacion/val/*/ultralytics.json
   excluir: ["*.pt"]
