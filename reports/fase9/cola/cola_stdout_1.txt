@@ -1,0 +1,18 @@
+2026-11-27T13:10:50 COLA INICIADA (pid 14580): r4_fusion_base con las semillas [0, 1, 2], decisión y paso 3
+2026-11-27T13:10:50 inicio r4_fusion_base_s0 (salida en runs/fase9/cola/r4_fusion_base_s0.txt)
+2026-11-27T13:35:35 fin r4_fusion_base_s0
+2026-11-27T13:35:35 r4_fusion_base_s0: época R1 23, media móvil 0.3394, 50 épocas
+2026-11-27T13:35:35 inicio r4_fusion_base_s1 (salida en runs/fase9/cola/r4_fusion_base_s1.txt)
+2026-11-27T14:01:03 fin r4_fusion_base_s1
+2026-11-27T14:01:03 r4_fusion_base_s1: época R1 41, media móvil 0.4079, 50 épocas
+2026-11-27T14:01:03 inicio r4_fusion_base_s2 (salida en runs/fase9/cola/r4_fusion_base_s2.txt)
+2026-11-27T14:26:15 fin r4_fusion_base_s2
+2026-11-27T14:26:15 r4_fusion_base_s2: época R1 30, media móvil 0.3907, 50 épocas
+2026-11-27T14:26:15 inicio decision_r4 (salida en runs/fase9/cola/decision_r4.txt)
+2026-11-27T14:26:21 fin decision_r4
+2026-11-27T14:26:21 receta final: control (diferencia +0.0319, error típico 0.0303); paso 3: control_termico_base, control_rgb_base
+2026-11-27T14:26:21 inicio control_termico_base_s0 (salida en runs/fase9/cola/control_termico_base_s0.txt)
+2026-11-27T14:51:05 fin control_termico_base_s0
+2026-11-27T14:51:05 control_termico_base_s0: época R1 27, media móvil 0.2866, 50 épocas
+2026-11-27T14:51:05 inicio control_termico_base_s1 (salida en runs/fase9/cola/control_termico_base_s1.txt)
+^C

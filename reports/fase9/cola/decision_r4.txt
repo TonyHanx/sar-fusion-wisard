@@ -1,0 +1,2 @@
+r4 0.3793 ± 0.0356 contra control 0.3474 ± 0.0386: diferencia +0.0319, error típico 0.0303; supera 0.08: False; supera 2 EE: False. Receta final: control (datos base). Paso 3: control_termico_base, control_rgb_base
+Decisión en reports\fase9\decision_r4.json

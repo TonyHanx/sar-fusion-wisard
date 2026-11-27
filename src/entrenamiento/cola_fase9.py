@@ -7,7 +7,11 @@
 Cada paso corre como un proceso aparte. Su salida completa queda en runs/<cola.salidas>/<paso>.txt, y en `cola.log` queda
 una línea por paso, con la hora. Si un paso falla (código distinto de 0), la cola se detiene y lo escribe en el log. Una
 corrida con la época de R1 en las primeras `decision_r4.colapso_hasta_epoca` se marca como posible colapso, pero la cola
-sigue. Si se vuelve a lanzar, salta las corridas que ya tienen R1 en resumen.json. No usa la prueba.
+sigue. Si se vuelve a lanzar, salta las corridas que ya tienen R1 en resumen.json y la decisión si ya está escrita. No
+usa la prueba.
+
+Se lanza en un grupo de procesos propio (CREATE_NEW_PROCESS_GROUP), para que un Ctrl+C de otra consola no le llegue: el
+27 de noviembre de 2026 un Ctrl+C de origen desconocido cortó la primera cola (reports/fase9.md).
 
 Uso: .venv\\Scripts\\python.exe -m src.entrenamiento.cola_fase9 --config configs\\fase9.yaml --rutas configs\\rutas.yaml
 """
@@ -81,8 +85,12 @@ def main():
     cola.anotar(f"COLA INICIADA (pid {os.getpid()}): {cfg['cola']['r4']} con las semillas {semillas}, decisión y paso 3")
     for s in semillas:
         cola.entrenar(cfg["cola"]["r4"], s)
-    cola.correr("decision_r4", "src.evaluacion.fase9_decidir", [])
-    decision = json.loads((RAIZ / cfg["decision_r4"]["salida"]).read_text(encoding="utf-8"))
+    ruta_decision = RAIZ / cfg["decision_r4"]["salida"]
+    if ruta_decision.exists():  # al relanzar: la decisión ya está (y su fila en la bitácora); no se repite
+        cola.anotar(f"salto decision_r4: ya está en {cfg['decision_r4']['salida']}")
+    else:
+        cola.correr("decision_r4", "src.evaluacion.fase9_decidir", [])
+    decision = json.loads(ruta_decision.read_text(encoding="utf-8"))
     cola.anotar(f"receta final: {decision['receta_final']} (diferencia {decision['diferencia']:+.4f}, error típico "
                 f"{decision['error_tipico']:.4f}); paso 3: {', '.join(decision['corridas_paso3'])}")
     for corrida in decision["corridas_paso3"]:
